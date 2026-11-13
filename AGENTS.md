@@ -50,6 +50,10 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.1.0`.
 - Visual baselines in `tests/visual/__screenshots__` are CI-native for
   `ubuntu-26.04`. Local WSL runs can differ by font metrics; do not run
   `--update-snapshots` locally. The Visual workflow is the source of truth.
+- To refresh baselines, dispatch the Visual workflow with
+  `update_snapshots=true` (`gh workflow run Visual -f update_snapshots=true`),
+  download the `playwright-baselines` artifact, copy it over
+  `tests/visual/__screenshots__`, and commit the PNGs.
 
 ## Release and live install
 

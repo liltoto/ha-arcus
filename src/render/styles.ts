@@ -15,6 +15,10 @@ export const STYLES = `${FONT_FACE_CSS}
   --arcus-grid-gap: 12px;
   --arcus-section-gap: clamp(32px, 3vw, 40px);
   --arcus-sheet-pad: 24px;
+  /* Height of the sparkline footer band in vitals and room cards. Text is
+     padded clear of it so charts never run behind labels. */
+  --arcus-spark-vital: 26px;
+  --arcus-spark-room: 46px;
 
   display: block;
   height: calc(100dvh - var(--header-height, 56px));
@@ -639,7 +643,7 @@ button.eyebrow:hover { color: var(--text-2); }
   position: relative;
   overflow: hidden;
   min-height: 94px;
-  padding: 14px 16px;
+  padding: 14px 16px calc(var(--arcus-spark-vital) + 10px);
   border: 1px solid var(--line);
   border-radius: 16px;
   background: linear-gradient(150deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.008));
@@ -695,7 +699,7 @@ button.eyebrow:hover { color: var(--text-2); }
   right: 0;
   bottom: 0;
   width: 100%;
-  height: 32px;
+  height: var(--arcus-spark-vital);
   opacity: 0.55;
   pointer-events: none;
 }
@@ -829,7 +833,8 @@ button.eyebrow:hover { color: var(--text-2); }
   position: relative;
   overflow: hidden;
   min-height: 168px;
-  padding: var(--arcus-card-pad);
+  padding: var(--arcus-card-pad) var(--arcus-card-pad)
+    calc(var(--arcus-spark-room) + 8px);
   border: 1px solid var(--line);
   border-radius: 20px;
   background:
@@ -938,15 +943,15 @@ button.eyebrow:hover { color: var(--text-2); }
   right: 0;
   bottom: 0;
   width: 100%;
-  height: 48px;
+  height: var(--arcus-spark-room);
   opacity: 0.5;
   pointer-events: none;
 }
 
 .room-open {
   position: absolute;
-  right: 20px;
-  bottom: 14px;
+  right: var(--arcus-card-pad);
+  bottom: calc(var(--arcus-spark-room) + 10px);
   font-size: 8px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -2094,15 +2099,20 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
   .arc-label:not(.next):not(.sun) { display: none; }
   .arc-hours { font-size: 7px; }
   .vitals { gap: 8px; }
-  .vital { min-height: 84px; padding: 12px 14px; }
+  .vital {
+    min-height: 84px;
+    padding: 12px 14px calc(var(--arcus-spark-vital) + 8px);
+  }
   .vital-label { font-size: 7px; letter-spacing: 0.16em; }
   .vital-value { font-size: 24px; }
-  .vital-spark { height: 26px; }
   .weather-strip { gap: 6px; padding: 10px 0; }
   .wday { gap: 4px; font-size: 7px; letter-spacing: 0.06em; }
   .wday .wico { display: none; }
   .wday .wtemps { font-size: 8px; }
-  .room-card { min-height: 160px; padding: 16px; }
+  .room-card {
+    min-height: 160px;
+    padding: 16px 16px calc(var(--arcus-spark-room) + 8px);
+  }
   .room-name { font-size: 17px; }
   .room-temp { font-size: 36px; }
   .room-main { gap: 8px; margin-top: 14px; }
@@ -2150,13 +2160,16 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
 
 
 /* ---------- compact density ---------- */
-.app[data-density="compact"] .room-card,
 .app[data-density="compact"] .chapter { padding: 16px; }
-.app[data-density="compact"] .vital { padding: 12px 14px; }
+.app[data-density="compact"] .room-card {
+  padding: 16px 16px calc(var(--arcus-spark-room) + 8px);
+}
+.app[data-density="compact"] .vital {
+  padding: 12px 14px calc(var(--arcus-spark-vital) + 8px);
+}
 .app[data-density="compact"] .section { margin-top: 32px; }
 .app[data-density="compact"] .room-grid,
 .app[data-density="compact"] .chapter-grid { gap: 10px; }
-.app[data-density="compact"] .room-open { right: 16px; bottom: 12px; }
 .app[data-density="compact"] .ch-art { height: 56px; }
 .app[data-density="compact"] .ch-art svg { height: 46px; }
 .app[data-density="compact"] .sheet-head { padding: 18px 20px 14px; }
