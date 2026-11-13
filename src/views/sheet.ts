@@ -117,6 +117,7 @@ export class ArcusSheets extends HTMLElement {
       return;
     }
 
+    const keepCloseFocus = active?.getAttribute("data-act") === "close";
     const scroll = this.querySelector<HTMLElement>(".sheet-scroll");
     const scrollTop = scroll?.scrollTop ?? 0;
 
@@ -126,6 +127,11 @@ export class ArcusSheets extends HTMLElement {
     if (next) next.scrollTop = scrollTop;
 
     this._app._refreshConfirm();
+    if (keepCloseFocus) {
+      this.querySelector<HTMLElement>('[data-act="close"]')?.focus({
+        preventScroll: true,
+      });
+    }
   }
 }
 
