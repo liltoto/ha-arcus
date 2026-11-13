@@ -21,8 +21,17 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: Verify the Marketplace bundle
+        run: |
+          test -f dist/arcus.js
+          node --check dist/arcus.js
+          if grep -Eq "fonts.googleapis|unpkg|cdn.jsdelivr" dist/arcus.js; then
+            echo "dist/arcus.js contains an external runtime URL."
+            exit 1
+          fi
       - name: Publish release asset
         uses: softprops/action-gh-release@v2
         with:
           files: dist/arcus.js
+          fail_on_unmatched_files: true
           generate_release_notes: true
