@@ -272,8 +272,8 @@ input:focus-visible {
 .brand-sub {
   display: block;
   margin-top: 5px;
-  font-size: 9px;
-  letter-spacing: 0.18em;
+  font-size: 10px;
+  letter-spacing: 0.16em;
   color: var(--muted);
 }
 
@@ -588,7 +588,7 @@ button.eyebrow:hover { color: var(--text-2); }
   bottom: -2px;
   display: flex;
   justify-content: space-between;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.1em;
   color: var(--muted);
   opacity: 0.55;
@@ -658,8 +658,8 @@ button.eyebrow:hover { color: var(--text-2); }
 }
 
 .vital-label {
-  font-size: 9px;
-  letter-spacing: 0.16em;
+  font-size: 10px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -733,8 +733,8 @@ button.eyebrow:hover { color: var(--text-2); }
   gap: 7px;
   min-width: 0;
   color: var(--muted);
-  font-size: 9px;
-  letter-spacing: 0.08em;
+  font-size: 10px;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
@@ -869,8 +869,8 @@ button.eyebrow:hover { color: var(--text-2); }
 
 .room-kind {
   margin-top: 4px;
-  font-size: 9px;
-  letter-spacing: 0.15em;
+  font-size: 10px;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -920,8 +920,8 @@ button.eyebrow:hover { color: var(--text-2); }
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 9px;
-  letter-spacing: 0.1em;
+  font-size: 10px;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--muted);
   white-space: nowrap;
@@ -952,8 +952,8 @@ button.eyebrow:hover { color: var(--text-2); }
   position: absolute;
   right: var(--arcus-card-pad);
   bottom: calc(var(--arcus-spark-room) + 10px);
-  font-size: 9px;
-  letter-spacing: 0.13em;
+  font-size: 10px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
   opacity: 0;
@@ -1000,7 +1000,7 @@ button.eyebrow:hover { color: var(--text-2); }
 
 .chapter .num {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.16em;
   color: var(--muted);
   opacity: 0.8;
@@ -1440,7 +1440,7 @@ arcus-sheets {
 }
 
 .reading .v small { font-family: var(--sans); font-size: 10px; color: var(--muted); margin-left: 2px; }
-.reading .l { margin-top: 6px; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.reading .l { margin-top: 6px; font-size: 10px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--muted); }
 
 .big-read {
   font-family: var(--serif);
@@ -1505,7 +1505,7 @@ arcus-sheets {
   gap: 12px;
   padding: 0 2px;
   margin-top: 4px;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.08em;
   color: var(--muted);
 }
@@ -1841,7 +1841,7 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
 }
 
 .day-bars .day-label {
-  font-size: 8px;
+  font-size: 9px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
@@ -1989,16 +1989,16 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
   background: var(--panel);
 }
 
-.mini-stat .k { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.mini-stat .k { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .mini-stat .v { margin-top: 5px; font-family: var(--serif); font-size: 23px; line-height: 1; font-variant-numeric: tabular-nums; }
-.mini-stat .v small { font-family: var(--sans); font-size: 9px; color: var(--muted); margin-left: 2px; }
+.mini-stat .v small { font-family: var(--sans); font-size: 10px; color: var(--muted); margin-left: 2px; }
 
 .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .chip {
   padding: 5px 10px;
   border: 1px solid var(--line);
   border-radius: 99px;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
@@ -2024,7 +2024,7 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
