@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arcus dev</title>
+  <style>
+    html, body { margin: 0; min-height: 100%; background: #080b0f; color: #f2ebe1; font-family: sans-serif; }
+    arcus-card { display: block; height: 100vh; --header-height: 0px; }
+    .pending { padding: 24px; color: #8a929e; }
+  </style>
+</head>
+<body>
+  <div class="pending" id="pending">Arcus dev harness — waiting for the card module…</div>
+  <script type="module">
+    import { makeHass } from "./mock.js";
+    await import("../dist/arcus.js");
+    const el = document.createElement("arcus-card");
+    document.body.appendChild(el);
+    el.setConfig({ type: "custom:arcus-card" });
+    setTimeout(() => el.hass = makeHass(), 40);
+    document.getElementById("pending").remove();
+  </script>
+</body>
+</html>

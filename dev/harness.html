@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Døgnbuen — prototype</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #080b0f; }
+  body { overflow: auto; }
+  hjem-dognet { display: block; height: 100vh; --header-height: 0px; }
+  .err { position: fixed; inset: 0; z-index: 999; padding: 24px; background: #2a0d0d; color: #ffb4a4; font: 13px/1.5 monospace; white-space: pre-wrap; display: none; }
+</style>
+</head>
+<body>
+<div class="err" id="err"></div>
+<script type="module">
+  import { makeHass } from "./mock.js";
+  const q = new URLSearchParams(location.search);
+  const nowStr = q.get("now") || "2026-11-13T01:19:00+01:00";
+  window.__HJEM_NOW = new Date(nowStr);
+  if (q.get("atmo")) localStorage.setItem("hjem-dognet-atmo", q.get("atmo"));
+  if (q.get("route")) location.hash = "#/" + q.get("route");
+
+  const hass = makeHass();
+  if (q.get("light") === "1") hass.themes.darkMode = false;
+  try { await import("./dist/hjem-dognet.js"); await import("./dist/sheets.js"); } catch (e) { showErr(e); }
+
+  const el = document.createElement("hjem-dognet");
+  document.body.appendChild(el);
+  el.setConfig({});
+
+  function showErr(e) {
+    const box = document.getElementById("err");
+    box.style.display = "block";
+    box.textContent = "FEJL\n\n" + (e?.stack || e?.message || String(e));
+  }
+  window.addEventListener("error", (e) => showErr(e.error || e.message));
+  window.addEventListener("unhandledrejection", (e) => showErr(e.reason));
+
+  setTimeout(() => { el.hass = hass; }, 30);
+  setInterval(() => { if (document.body.contains(el)) el.hass = hass; }, 1500);
+
+  if (q.get("full") === "1") {
+    const css = `:host{height:auto!important;min-height:0!important}.app{height:auto!important;min-height:0!important;overflow:visible!important}.scroll{position:relative!important;inset:auto!important;height:auto!important;overflow:visible!important}`;
+    setTimeout(() => {
+      const st = document.createElement("style");
+      st.textContent = css;
+      el.shadowRoot.appendChild(st);
+    }, 100);
+  }
+  if (q.get("click")) {
+    setTimeout(() => {
+      const spec = q.get("click");
+      const [kind, val] = spec.split(":");
+      const sel = kind === "nav" ? `[data-nav="${val}"]` : kind === "act" ? `[data-act="${val}"]` : spec;
+      const target = el.shadowRoot.querySelector(sel);
+      target?.click();
+    }, 1400);
+  }
+  if (q.get("scroll")) {
+    setTimeout(() => {
+      el.shadowRoot.querySelector(".scroll")?.scrollTo(0, Number(q.get("scroll")));
+    }, 600);
+  }
+  window.__READY = true;
+</script>
+</body>
+</html>

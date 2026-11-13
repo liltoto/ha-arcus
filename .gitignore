@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dev/bundle.js
+dev/bundle.js.map
+tests/visual/__screenshots__/
+playwright-report/
+test-results/
+.DS_Store
+*.log
