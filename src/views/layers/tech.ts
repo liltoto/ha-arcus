@@ -1,5 +1,6 @@
 import { formatNumber } from "../../format";
 import { areaPath, sparkPath } from "../../render/charts";
+import { graphAttrs } from "../../render/graph";
 import { icon } from "../../render/icons";
 import type { ArcusConfig, HomeModel, Translator } from "../../types";
 import type { LayerContext, SheetApp } from "./types";
@@ -8,6 +9,9 @@ interface ChartSeries {
   key: string;
   values: Array<number | null>;
   color: string;
+  label?: string;
+  unit?: string;
+  decimals?: number;
 }
 
 let chartSequence = 0;
@@ -108,7 +112,23 @@ function chartBox(
         )}"/>`,
     )
     .join("");
-  return `<div class="chart-box ${hasData ? "" : "no-data"}">
+  const now = Date.now();
+  const graph = hasData
+    ? graphAttrs({
+        start: now - 86_400_000,
+        end: now,
+        unit: "ms",
+        decimals: 1,
+        series: series.map((entry) => ({
+          label: entry.label,
+          color: entry.color,
+          values: entry.values,
+          unit: entry.unit,
+          decimals: entry.decimals,
+        })),
+      })
+    : "";
+  return `<div class="chart-box ${hasData ? "" : "no-data"}" ${graph}>
     <svg viewBox="0 0 560 ${height}" preserveAspectRatio="none" aria-hidden="true">
       <defs><linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${
         first?.color ?? "var(--accent)"
@@ -202,12 +222,13 @@ export function renderTechSheet(ctx: LayerContext): string {
       )}</span></div></div>
       ${chartBox(
         [
-          { key: "router", values: routerSeries, color: "var(--sky)" },
-          { key: "google", values: googleSeries, color: "var(--sage)" },
+          { key: "router", values: routerSeries, color: "var(--sky)", label: t("tech.router") },
+          { key: "google", values: googleSeries, color: "var(--sage)", label: t("tech.google") },
           {
             key: "cloudflare",
             values: cloudflareSeries,
             color: "var(--plum)",
+            label: t("tech.cloudflare"),
           },
         ],
         150,

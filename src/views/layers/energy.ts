@@ -1,5 +1,6 @@
 import { formatPrice } from "../../format";
 import { priceColor } from "../../render/charts";
+import { graphAttrs } from "../../render/graph";
 import { icon } from "../../render/icons";
 import type { HassEntity, Language, PriceModel } from "../../types";
 import type { LayerContext, SheetApp } from "./types";
@@ -117,18 +118,26 @@ function priceBars(
   const bars = values
     .map((value, index) => {
       const height = Math.max(8, ((value - min) / (max - min || 1)) * 100);
-      const title = `${ctx.t("energy.hourRange", {
-        start: hourLabel(index),
-        end: hourLabel(index + 1),
-      })} · ${formatPrice(value, language)} ${ctx.t("energy.kr")}`;
       return `<i class="${index === nowHour ? "now" : ""}" style="height:${height.toFixed(
         1,
-      )}%;background:${priceColor(value, min, max)}" title="${escapeHtml(
-        title,
-      )}"></i>`;
+      )}%;background:${priceColor(value, min, max)}"></i>`;
     })
     .join("");
-  return `<div class="bar-chart">${bars}</div><div class="chart-cap"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>`;
+  const now = nowOf(ctx);
+  const dayStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).getTime();
+  const graph = graphAttrs({
+    mode: "bars",
+    start: dayStart,
+    end: dayStart + 86_400_000,
+    unit: "kr",
+    decimals: 2,
+    series: [{ values }],
+  });
+  return `<div class="bar-chart" ${graph}>${bars}</div><div class="chart-cap"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>`;
 }
 
 /**

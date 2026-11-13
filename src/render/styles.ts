@@ -1497,6 +1497,86 @@ arcus-sheets {
 
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+/* ---------- graph hover readout ---------- */
+[data-graph] { pointer-events: auto; }
+
+.graph-tip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 95;
+  min-width: 64px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-1) 94%, transparent);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 11px;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.38);
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.graph-tip.show { opacity: 1; transform: none; }
+
+.graph-tip b {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.graph-tip .gt-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-tip .gt-row + .gt-row { margin-top: 3px; }
+
+.graph-tip .gt-dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c, var(--accent));
+}
+
+.graph-tip .gt-l {
+  color: var(--muted);
+  margin-right: auto;
+}
+
+.graph-tip .gt-v { margin-left: auto; }
+
+.graph-tip .gt-t {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.graph-cursor {
+  position: fixed;
+  z-index: 90;
+  width: 1px;
+  background: var(--line-strong);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.graph-cursor.show { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .graph-tip,
+  .graph-cursor { transition: none; }
+}
+
 .chart-box svg { display: block; width: 100%; height: auto; overflow: visible; }
 
 .chart-cap {
