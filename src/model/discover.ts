@@ -33,10 +33,12 @@ const AREA_ICON_KEYS: Record<string, string> = {
   fridge: "counter",
   "fridge-outline": "counter",
   kitchen: "counter",
+  stove: "counter",
+  "stove-outline": "counter",
   bed: "bed",
   "bed-king": "bed",
   "bed-double": "bed",
-  "desk": "desk",
+  desk: "desk",
   "desk-chair": "desk",
   "washing-machine": "washer",
   "washing-machine-outline": "washer",
@@ -58,15 +60,10 @@ const AREA_ICON_KEYS: Record<string, string> = {
   bathtub: "home",
   toilet: "home",
   "office-building": "desk",
-  "monitor": "desk",
+  monitor: "desk",
 };
 
-const OPENING_CLASSES = new Set([
-  "door",
-  "window",
-  "garage_door",
-  "opening",
-]);
+const OPENING_CLASSES = new Set(["door", "window", "garage_door", "opening"]);
 
 /** Danish-ish labels for the opening cards; override with `rooms.<id>.openings`. */
 const OPENING_KINDS: Record<string, string> = {
@@ -91,11 +88,7 @@ function domainOf(entityId: string): string {
   return entityId.includes(".") ? entityId.slice(0, entityId.indexOf(".")) : "";
 }
 
-function attrOf(
-  hass: ArcusHass,
-  entityId: string,
-  key: string,
-): unknown {
+function attrOf(hass: ArcusHass, entityId: string, key: string): unknown {
   return hass.states[entityId]?.attributes?.[key];
 }
 
@@ -164,10 +157,7 @@ export function entitiesForArea(
 /** Map an HA area icon (`mdi:sofa`) onto one of the prototype icon names. */
 export function areaIconKey(icon: string | null | undefined): string {
   if (!icon) return "home";
-  const name = String(icon)
-    .trim()
-    .replace(/^mdi:/i, "")
-    .toLowerCase();
+  const name = String(icon).trim().replace(/^mdi:/i, "").toLowerCase();
   if (AREA_ICON_KEYS[name]) return AREA_ICON_KEYS[name];
   if (/sofa|couch|seat|table/.test(name)) return "sofa";
   if (/bed/.test(name)) return "bed";
@@ -176,7 +166,25 @@ export function areaIconKey(icon: string | null | undefined): string {
   if (/door/.test(name)) return "door";
   if (/stair/.test(name)) return "stairs";
   if (/garage|shed/.test(name)) return "shed";
-  if (/counter|kitchen|fridge|oven/.test(name)) return "counter";
+  if (/counter|kitchen|fridge|oven|stove/.test(name)) return "counter";
+  return "home";
+}
+
+/**
+ * Name-based fallback for areas whose icon is unset. Home Assistant does not
+ * require an area icon, and the current home has two icon-less areas (Entre
+ * and Lille Gang) that should still read as a door and a staircase.
+ */
+export function areaNameIcon(name: string): string {
+  const value = String(name).toLowerCase();
+  if (/køkken|kokken|kitchen/.test(value)) return "counter";
+  if (/stue|living|sofa/.test(value)) return "sofa";
+  if (/sove|bedroom/.test(value)) return "bed";
+  if (/kontor|office|desk/.test(value)) return "desk";
+  if (/bryggers|laundry|utility/.test(value)) return "washer";
+  if (/entre|entré|hall|entry/.test(value)) return "door";
+  if (/gang|hallway|corridor/.test(value)) return "stairs";
+  if (/skur|shed|garage|outdoor|ude/.test(value)) return "shed";
   return "home";
 }
 
@@ -276,23 +284,23 @@ function overrideOpenings(
   for (const item of overrides) {
     if (!item?.id || seen.has(item.id)) continue;
     seen.add(item.id);
-    const deviceClass = String(
-      attrOf(hass, item.id, "device_class") ?? "",
-    );
+    const deviceClass = String(attrOf(hass, item.id, "device_class") ?? "");
     out.push({
       id: item.id,
       name: item.name ?? displayName(hass, item.id),
       kind:
-        item.kind ??
-        OPENING_KINDS[deviceClass] ??
-        (deviceClass || "Åbning"),
+        item.kind ?? OPENING_KINDS[deviceClass] ?? (deviceClass || "Åbning"),
       room: roomName,
     });
   }
   return out;
 }
 
-function lightIcon(hass: ArcusHass, entityId: string, roomIcon: string): string {
+function lightIcon(
+  hass: ArcusHass,
+  entityId: string,
+  roomIcon: string,
+): string {
   const icon = attrOf(hass, entityId, "icon");
   if (typeof icon === "string" && icon.startsWith("mdi:")) {
     const key = areaIconKey(icon);
@@ -397,9 +405,7 @@ function overrideLightGroups(
       areaId,
     };
   });
-  const extras = unique.filter(
-    (id) => !groupIds.has(id) && !memberIds.has(id),
-  );
+  const extras = unique.filter((id) => !groupIds.has(id) && !memberIds.has(id));
   if (extras.length && out[0]) {
     out[0].extra = uniqueStrings([...out[0].extra, ...extras]);
   }
@@ -460,8 +466,8 @@ export function discoverRooms(
   selectedAreas(hass, config).forEach((area, index) => {
     const entities = entitiesForArea(hass, area.areaId);
     const overrides = config.rooms[area.areaId] ?? {};
-    const icon = areaIconKey(area.icon);
     const roomName = overrides.name ?? area.name;
+    const icon = area.icon ? areaIconKey(area.icon) : areaNameIcon(roomName);
     const tint =
       overrides.tint ?? ROOM_TINTS[index % ROOM_TINTS.length] ?? "#7FAFC4";
 
@@ -475,10 +481,7 @@ export function discoverRooms(
       (entity) => domainOf(entity.entity_id) === "climate",
     );
 
-    let climate = refForEntity(
-      hass,
-      pickFirst(hass, climateEntities),
-    );
+    let climate = refForEntity(hass, pickFirst(hass, climateEntities));
 
     // A temperature sensor wins over the climate fallback. Available sensors
     // are preferred, then a name that looks like a temperature reading.
@@ -501,9 +504,7 @@ export function discoverRooms(
     if (overrides.climate) {
       climate = resolveEntityRef(hass, overrides.climate);
     }
-    const currentTemp = Number(
-      climate?.attributes?.current_temperature,
-    );
+    const currentTemp = Number(climate?.attributes?.current_temperature);
     const tempFallback = Number.isFinite(currentTemp) ? climate : null;
 
     const humidity = resolveEntityRef(
@@ -511,7 +512,8 @@ export function discoverRooms(
       pickFirst(
         hass,
         sensors,
-        (entity) => attrOf(hass, entity.entity_id, "device_class") === "humidity",
+        (entity) =>
+          attrOf(hass, entity.entity_id, "device_class") === "humidity",
       )?.entity_id,
     );
     const co2 = resolveEntityRef(
@@ -551,14 +553,10 @@ export function discoverRooms(
           (entity) =>
             attrOf(hass, entity.entity_id, "device_class") === "battery",
         ),
-      ) ??
-      refForEntity(hass, pickFirst(hass, batterySensors));
+      ) ?? refForEntity(hass, pickFirst(hass, batterySensors));
 
     const filterSensors = sensors.filter((entity) => {
-      const text = `${entity.entity_id} ${displayName(
-        hass,
-        entity.entity_id,
-      )}`;
+      const text = `${entity.entity_id} ${displayName(hass, entity.entity_id)}`;
       return /filter/i.test(text) && !/alarm|larm|rens/i.test(text);
     });
     const filterAlarms = binarySensors.filter((entity) =>
@@ -612,17 +610,13 @@ export function discoverRooms(
       icon,
       wide: index === 0,
       tint,
-      temp: overrides.temp
-        ? resolveEntityRef(hass, overrides.temp)
-        : temp,
+      temp: overrides.temp ? resolveEntityRef(hass, overrides.temp) : temp,
       tempFallback,
       humidity: overrides.humidity
         ? resolveEntityRef(hass, overrides.humidity)
         : humidity,
       co2: overrides.co2 ? resolveEntityRef(hass, overrides.co2) : co2,
-      pm25: overrides.pm25
-        ? resolveEntityRef(hass, overrides.pm25)
-        : pm25,
+      pm25: overrides.pm25 ? resolveEntityRef(hass, overrides.pm25) : pm25,
       lights,
       openings,
       climate,

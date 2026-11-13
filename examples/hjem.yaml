@@ -19,7 +19,8 @@
           "kontor",
           "bryggers",
           "entre",
-          "skur"
+          "outdoor",
+          "lille_gang"
         ],
         "exclude": [],
         "order": [
@@ -29,7 +30,8 @@
           "kontor",
           "bryggers",
           "entre",
-          "skur"
+          "outdoor",
+          "lille_gang"
         ]
       },
       "weather": "weather.forecast_hjem",
@@ -237,7 +239,31 @@
           }
         }
       ],
-      "rooms": {},
+      "rooms": {
+        "outdoor": {
+          "name": "Skur",
+          "tint": "#8A929E",
+          "temp": "sensor.timmerflotte_temp_hmd_sensor_temperatur",
+          "humidity": "sensor.timmerflotte_temp_hmd_sensor_luftfugtighed",
+          "battery": "sensor.timmerflotte_temp_hmd_sensor_batteri",
+          "lights": [],
+          "openings": []
+        },
+        "sovevaerelse": {
+          "openings": [
+            {
+              "id": "binary_sensor.myggbett_door_window_sensor_dor_6",
+              "name": "Soveværelse dør",
+              "kind": "Dør"
+            },
+            {
+              "id": "binary_sensor.myggbett_door_window_sensor_dor_5",
+              "name": "Badeværelse dør",
+              "kind": "Dør"
+            }
+          ]
+        }
+      },
       "chapters": {},
       "show_weather_forecast": true
     }

@@ -1,10 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { normalizeConfig } from "../src/config";
 import { buildModel } from "../src/model/build";
-import {
-  discoverRooms,
-  entitiesForArea,
-} from "../src/model/discover";
+import { discoverRooms, entitiesForArea } from "../src/model/discover";
 import { HOME_AREA_IDS, makeConfig, makeHass } from "./fixtures/home";
 
 // The mock home is in Europe/Copenhagen. Pin the process zone so the price
@@ -85,8 +82,9 @@ describe("discoverRooms", () => {
 
   test("prefers an available temperature and skips diagnostic/config entities", () => {
     const hass = makeHass();
-    hass.entities["sensor.alpstuga_air_quality_monitor_temperatur"].entity_category =
-      "diagnostic";
+    hass.entities[
+      "sensor.alpstuga_air_quality_monitor_temperatur"
+    ].entity_category = "diagnostic";
     hass.entities["sensor.alpstuga_air_quality_monitor_pm25"].entity_category =
       "config";
 
@@ -241,6 +239,29 @@ describe("discoverRooms", () => {
     expect(kontor.temp?.state).toBeUndefined();
   });
 
+  test("maps a stove icon and falls back to the area name without one", () => {
+    const hass = makeHass();
+    const areas = {
+      ...hass.areas,
+      kokken: { ...hass.areas.kokken, icon: "mdi:stove" },
+      entre: { ...hass.areas.entre, icon: null },
+      lille_gang: { ...hass.areas.lille_gang, icon: null },
+    };
+    const config = makeConfig({
+      areas: {
+        include: ["kokken", "entre", "lille_gang"],
+        order: ["kokken", "entre", "lille_gang"],
+      },
+    });
+    const rooms = discoverRooms({ ...hass, areas }, config);
+
+    expect(rooms.map((room) => room.icon)).toEqual([
+      "counter",
+      "door",
+      "stairs",
+    ]);
+  });
+
   test("an empty home has no rooms", () => {
     const hass = makeHass({
       areas: {},
@@ -248,9 +269,9 @@ describe("discoverRooms", () => {
       entities: {},
       states: {},
     });
-    expect(discoverRooms(hass, normalizeConfig({ type: "custom:arcus-card" }))).toEqual(
-      [],
-    );
+    expect(
+      discoverRooms(hass, normalizeConfig({ type: "custom:arcus-card" })),
+    ).toEqual([]);
   });
 });
 
@@ -410,8 +431,7 @@ describe("buildModel", () => {
     const hass = makeHass();
     hass.states["binary_sensor.klippbok_water_leak_sensor_water_leak"].state =
       "on";
-    hass.states["binary_sensor.myggbett_door_window_sensor_dor_7"].state =
-      "on";
+    hass.states["binary_sensor.myggbett_door_window_sensor_dor_7"].state = "on";
 
     const model = buildModel(hass, makeConfig(), NOW);
     expect(model.alerts.map((alert) => alert.key)).toEqual(
@@ -429,7 +449,10 @@ describe("buildModel", () => {
       entities: {},
       states: {},
     });
-    const model = buildModel(hass, normalizeConfig({ type: "custom:arcus-card" }));
+    const model = buildModel(
+      hass,
+      normalizeConfig({ type: "custom:arcus-card" }),
+    );
 
     expect(model.rooms).toEqual([]);
     expect(model.lights).toEqual([]);
