@@ -13,6 +13,9 @@ export default defineConfig({
   testDir: "tests/visual",
   fullyParallel: true,
   snapshotPathTemplate: "{testDir}/__screenshots__/{arg}{ext}",
+  // The committed baselines are generated on the ubuntu-26.04 CI runner.
+  // Refresh them through the Visual workflow; local WSL runs can differ
+  // slightly because of font metrics.
   use: {
     baseURL: "http://localhost:5173",
     viewport: { width: 1440, height: 1200 },

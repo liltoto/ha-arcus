@@ -7,7 +7,9 @@ on:
 
 jobs:
   visual:
-    runs-on: ubuntu-latest
+    # The screenshot baselines are generated on this image. Keep it pinned so
+    # a GitHub runner rollover does not invalidate the visual suite.
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v4
 
