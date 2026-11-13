@@ -1,3 +1,6 @@
+// Shared Home Assistant fixture for the dev harness and tests.
+// `makeHass()` returns the real home at night; top-level overrides replace
+// registries or services while the default data stays intact.
 const HOUR = 3600e3;
 const DAY = 24 * HOUR;
 
@@ -11,7 +14,7 @@ function state(id, s, attrs = {}) {
   };
 }
 
-export function makeHass() {
+export function makeHass(overrides = {}) {
   const st = {};
   const add = (id, s, attrs) => (st[id] = state(id, s, attrs));
 
@@ -338,25 +341,575 @@ export function makeHass() {
   ];
   realLights.forEach((id, i) => add(id, "off", { friendly_name: `Spot ${i + 1}`, brightness: 0, supported_color_modes: ["color_temp", "hs"] }));
 
+  // --- lysgrupper: medlemslisten ligger i attributterne, som i HA ---
+  const lightGroupMembers = {
+    "light.kokken": [
+      "light.kajplats_gu10_cws_470lm_7",
+      "light.kajplats_gu10_cws_470lm_8",
+      "light.kajplats_gu10_cws_470lm",
+      "light.kajplats_gu10_cws_470lm_2",
+      "light.kajplats_gu10_cws_470lm_3",
+      "light.kajplats_gu10_cws_470lm_5",
+      "light.kajplats_gu10_cws_470lm_4",
+      "light.kajplats_gu10_cws_470lm_6",
+      "light.kajplats_gu10_cws_470lm_9",
+    ],
+    "light.bryggers": [
+      "light.kajplats_gu10_cws_470lm_14",
+      "light.kajplats_gu10_cws_470lm_16",
+      "light.kajplats_gu10_cws_470lm_15",
+    ],
+    "light.entre": [
+      "light.kajplats_gu10_cws_470lm_12",
+      "light.kajplats_gu10_cws_470lm_13",
+    ],
+    "light.lille_gang": [
+      "light.kajplats_gu10_cws_470lm_10",
+      "light.kajplats_gu10_cws_470lm_11",
+    ],
+  };
+  for (const [id, members] of Object.entries(lightGroupMembers)) {
+    if (st[id]) st[id].attributes.entity_id = members;
+  }
+
+  // --- test-entiteter: skjult, deaktiveret og tilstandsløs i køkkenet ---
+  add("sensor.kokken_hidden_temperature", 21.8, {
+    unit_of_measurement: "°C", device_class: "temperature", state_class: "measurement",
+    friendly_name: "Køkken skjult temperatur",
+  });
+  add("sensor.kokken_disabled_temperature", 22.4, {
+    unit_of_measurement: "°C", device_class: "temperature", state_class: "measurement",
+    friendly_name: "Køkken deaktiveret temperatur",
+  });
+
+  // --- device classes som discovery bruger ---
+  const discoveryAttributes = {
+    "sensor.outdoor_temperature": { device_class: "temperature", state_class: "measurement" },
+    "sensor.outdoor_humidity": { device_class: "humidity", state_class: "measurement" },
+    "sensor.alpstuga_air_quality_monitor_temperatur_2": { device_class: "temperature", state_class: "measurement" },
+    "sensor.alpstuga_air_quality_monitor_luftfugtighed_2": { device_class: "humidity", state_class: "measurement" },
+    "sensor.alpstuga_air_quality_monitor_carbon_dioxide_2": { device_class: "carbon_dioxide", state_class: "measurement" },
+    "sensor.alpstuga_air_quality_monitor_pm25_2": { device_class: "pm25", state_class: "measurement" },
+    "sensor.timmerflotte_temp_hmd_sensor_temperatur_2": { device_class: "temperature", state_class: "measurement" },
+    "sensor.timmerflotte_temp_hmd_sensor_luftfugtighed_2": { device_class: "humidity", state_class: "measurement" },
+    "sensor.timmerflotte_temp_hmd_sensor_temperatur": { device_class: "temperature", state_class: "measurement" },
+    "sensor.timmerflotte_temp_hmd_sensor_luftfugtighed": { device_class: "humidity", state_class: "measurement" },
+    "sensor.alpstuga_air_quality_monitor_temperatur": { device_class: "temperature", state_class: "measurement" },
+    "sensor.alpstuga_air_quality_monitor_luftfugtighed": { device_class: "humidity", state_class: "measurement" },
+    "sensor.alpstuga_air_quality_monitor_carbon_dioxide": { device_class: "carbon_dioxide", state_class: "measurement" },
+    "sensor.alpstuga_air_quality_monitor_pm25": { device_class: "pm25", state_class: "measurement" },
+    "sensor.alpstuga_air_quality_monitor_temperatur_3": { device_class: "temperature", state_class: "measurement" },
+    "sensor.alpstuga_air_quality_monitor_luftfugtighed_3": { device_class: "humidity", state_class: "measurement" },
+    "sensor.alpstuga_air_quality_monitor_carbon_dioxide_3": { device_class: "carbon_dioxide", state_class: "measurement" },
+    "sensor.alpstuga_air_quality_monitor_pm25_3": { device_class: "pm25", state_class: "measurement" },
+    "sensor.myggspray_wrlss_mtn_sensor_belysningsstyrke": { device_class: "illuminance", state_class: "measurement" },
+    "binary_sensor.myggspray_wrlss_mtn_sensor_tilstedevaerelse": { device_class: "motion" },
+    "binary_sensor.klippbok_water_leak_sensor_water_leak": { device_class: "moisture" },
+    "binary_sensor.klippbok_water_leak_sensor_water_leak_2": { device_class: "moisture" },
+    "sensor.bilresa_dual_button_batteri": { device_class: "battery" },
+    "sensor.nilan602_actual_room_temperature": { device_class: "temperature", state_class: "measurement" },
+    "sensor.nilan602_humidity": { device_class: "humidity", state_class: "measurement" },
+  };
+  for (const [id, attributes] of Object.entries(discoveryAttributes)) {
+    if (st[id]) Object.assign(st[id].attributes, attributes);
+  }
+
+  // --- areal- og enhedsregistre ---
+  const areaSpecs = [
+    ["stue", "Stue", "mdi:sofa"],
+    ["kokken", "Køkken", "mdi:countertop"],
+    ["sovevaerelse", "Soveværelse", "mdi:bed"],
+    ["kontor", "Kontor", "mdi:desk"],
+    ["bryggers", "Bryggers", "mdi:washing-machine"],
+    ["entre", "Entre", "mdi:door"],
+    ["badevaerelse", "Badeværelse", "mdi:shower"],
+    ["lille_badevaerelse", "Lille Badeværelse", "mdi:toilet"],
+    ["spisestue", "Spisestue", "mdi:table-furniture"],
+    ["skur", "Skur", "mdi:home-variant-outline"],
+    ["lille_gang", "Lille Gang", "mdi:stairs"],
+  ];
+  const areas = Object.fromEntries(
+    areaSpecs.map(([area_id, name, icon]) => [area_id, { area_id, name, icon }])
+  );
+
+  const deviceSpecs = [
+    ["dev_alpstuga_stue", "stue", "Stue luftkvalitet", "Alpstuga", "Air Quality Monitor"],
+    ["dev_alpstuga_kontor", "kontor", "Kontor luftkvalitet", "Alpstuga", "Air Quality Monitor"],
+    ["dev_alpstuga_bryggers", "bryggers", "Bryggers luftkvalitet", "Alpstuga", "Air Quality Monitor"],
+    ["dev_alpstuga_kokken", "kokken", "Køkken luftkvalitet", "Alpstuga", "Air Quality Monitor"],
+    ["dev_timmerflotte_sovevaerelse", "sovevaerelse", "Soveværelse temperatur", "Timmerflotte", "HMD Sensor"],
+    ["dev_timmerflotte_skur", "skur", "Skur temperatur", "Timmerflotte", "HMD Sensor"],
+    ["dev_myggbett_stue_dor", "stue", "Stue dør", "Myggbett", "Door/Window Sensor"],
+    ["dev_myggbett_stue_vindue", "stue", "Stue vindue", "Myggbett", "Door/Window Sensor"],
+    ["dev_myggbett_kontor", "kontor", "Kontor dør", "Myggbett", "Door/Window Sensor"],
+    ["dev_myggbett_kokken", "kokken", "Køkken dør", "Myggbett", "Door/Window Sensor"],
+    ["dev_myggbett_sovevaerelse", "sovevaerelse", "Soveværelse dør", "Myggbett", "Door/Window Sensor"],
+    ["dev_myggbett_badevaerelse", "badevaerelse", "Badeværelse dør", "Myggbett", "Door/Window Sensor"],
+    ["dev_myggbett_lille_badevaerelse", "lille_badevaerelse", "Lille Badeværelse dør", "Myggbett", "Door/Window Sensor"],
+    ["dev_myggbett_spisestue", "spisestue", "Spisestue vindue", "Myggbett", "Door/Window Sensor"],
+    ["dev_myggspray_entre", "entre", "Entre bevægelse", "Myggspray", "Motion Sensor"],
+    ["dev_klippbok_kokken", "kokken", "KLIPPBOK køkken", "KLIPPBOK", "Water Leak Sensor"],
+    ["dev_klippbok_bryggers", "bryggers", "KLIPPBOK bryggers", "KLIPPBOK", "Water Leak Sensor"],
+    ["dev_wavin_stue", "stue", "Gulvvarme Stue", "Wavin", "Thermostat"],
+    ["dev_wavin_kokken", "kokken", "Gulvvarme Køkken", "Wavin", "Thermostat"],
+    ["dev_wavin_sovevaerelse", "sovevaerelse", "Gulvvarme Soveværelse", "Wavin", "Thermostat"],
+    ["dev_wavin_kontor", "kontor", "Gulvvarme Kontor", "Wavin", "Thermostat"],
+    ["dev_wavin_bryggers", "bryggers", "Gulvvarme Bryggers", "Wavin", "Thermostat"],
+    ["dev_wavin_lille_badevaerelse", "lille_badevaerelse", "Gulvvarme Lille Badeværelse", "Wavin", "Thermostat"],
+    ["dev_wavin_badevaerelse", "badevaerelse", "Gulvvarme Badeværelse", "Wavin", "Thermostat"],
+    ["dev_wavin_entre", "entre", "Gulvvarme Entre", "Wavin", "Thermostat"],
+    ["dev_wavin_reserve", null, "Gulvvarme reservekanaler", "Wavin", "Thermostat"],
+    ["dev_nilan", "lille_gang", "Nilan ventilation", "Nilan", "VPL 10"],
+    ["dev_thermex", "kokken", "Thermex emhætte", "Thermex", "Hood"],
+    ["dev_bilresa_sovevaerelse", "sovevaerelse", "Bilresa soveværelse", "IKEA", "Dual Button"],
+    ["dev_bilresa_kokken", "kokken", "Bilresa køkken", "IKEA", "Dual Button"],
+    ["dev_lg_soundbar", "stue", "LG Soundbar", "LG", "SP8YA"],
+    ["dev_fryser", "kokken", "Fryser", "GRILLPLATS", "Smart Plug"],
+    ["dev_server", "bryggers", "Server", "GRILLPLATS", "Smart Plug"],
+    ["dev_pc", "kontor", "PC", "GRILLPLATS", "Smart Plug"],
+    ["dev_sunmate", null, "SunMate inverter", "SunMate", "Pulse"],
+    ["dev_bwt", "bryggers", "BWT Perla", "BWT", "Perla"],
+    ["dev_router", "kontor", "Router", "UniFi", "Gateway"],
+    ["dev_internet", null, "Internet checks", "Ping", "Integration"],
+    ["dev_tesla", null, "Tesla Wall Connector", "Tesla", "Wall Connector"],
+    ["dev_forecast", null, "Solar forecast", "Open-Meteo", "Forecast"],
+    ["dev_prayer", null, "Islamic Prayer Times", "Islamic Prayer Times", "Integration"],
+    ["dev_energy_price", null, "Energy price", "Nord Pool", "Integration"],
+    ["dev_economy", null, "Obligation", "Mock", "Market data"],
+    ["dev_savings", null, "Savings", "Mock", "Template"],
+    ["dev_kajplats_unassigned", null, "KAJPLATS uden areal", "IKEA", "TRÅDFRI"],
+  ];
+  const devices = Object.fromEntries(
+    deviceSpecs.map(([id, area_id, name, manufacturer, model]) => [
+      id,
+      {
+        id,
+        area_id,
+        name,
+        name_by_user: null,
+        manufacturer,
+        model,
+        sw_version: null,
+        hw_version: null,
+        entry_type: null,
+        disabled_by: null,
+        identifiers: [["mock", id]],
+        connections: [],
+      },
+    ])
+  );
+
+  const deviceEntities = {
+    dev_alpstuga_stue: [
+      "sensor.alpstuga_air_quality_monitor_temperatur_2",
+      "sensor.alpstuga_air_quality_monitor_luftfugtighed_2",
+      "sensor.alpstuga_air_quality_monitor_carbon_dioxide_2",
+      "sensor.alpstuga_air_quality_monitor_pm25_2",
+    ],
+    dev_alpstuga_kontor: [
+      "sensor.alpstuga_air_quality_monitor_temperatur",
+      "sensor.alpstuga_air_quality_monitor_luftfugtighed",
+      "sensor.alpstuga_air_quality_monitor_carbon_dioxide",
+      "sensor.alpstuga_air_quality_monitor_pm25",
+    ],
+    dev_alpstuga_bryggers: [
+      "sensor.alpstuga_air_quality_monitor_temperatur_3",
+      "sensor.alpstuga_air_quality_monitor_luftfugtighed_3",
+      "sensor.alpstuga_air_quality_monitor_carbon_dioxide_3",
+      "sensor.alpstuga_air_quality_monitor_pm25_3",
+    ],
+    dev_alpstuga_kokken: [
+      "sensor.kokken_hidden_temperature",
+      "sensor.kokken_disabled_temperature",
+    ],
+    dev_timmerflotte_sovevaerelse: [
+      "sensor.timmerflotte_temp_hmd_sensor_temperatur_2",
+      "sensor.timmerflotte_temp_hmd_sensor_luftfugtighed_2",
+      "sensor.timmerflotte_temp_hmd_sensor_batteri_2",
+    ],
+    dev_timmerflotte_skur: [
+      "sensor.timmerflotte_temp_hmd_sensor_temperatur",
+      "sensor.timmerflotte_temp_hmd_sensor_luftfugtighed",
+      "sensor.timmerflotte_temp_hmd_sensor_batteri",
+    ],
+    dev_myggbett_stue_dor: [
+      "binary_sensor.myggbett_door_window_sensor_dor_7",
+      "sensor.myggbett_door_window_sensor_batteri_7",
+      "sensor.myggbett_door_window_sensor_dor_7_batteri",
+    ],
+    dev_myggbett_stue_vindue: [
+      "binary_sensor.myggbett_door_window_sensor_dor_8",
+      "sensor.myggbett_door_window_sensor_batteri_8",
+    ],
+    dev_myggbett_kontor: [
+      "binary_sensor.myggbett_door_window_sensor_dor",
+      "sensor.myggbett_door_window_sensor_batteri",
+    ],
+    dev_myggbett_kokken: [
+      "binary_sensor.myggbett_door_window_sensor_dor_3",
+      "sensor.myggbett_door_window_sensor_batteri_3",
+    ],
+    dev_myggbett_sovevaerelse: [
+      "binary_sensor.myggbett_door_window_sensor_dor_6",
+      "sensor.myggbett_door_window_sensor_batteri_6",
+    ],
+    dev_myggbett_badevaerelse: [
+      "binary_sensor.myggbett_door_window_sensor_dor_5",
+      "sensor.myggbett_door_window_sensor_batteri_5",
+    ],
+    dev_myggbett_lille_badevaerelse: [
+      "binary_sensor.myggbett_door_window_sensor_dor_2",
+      "sensor.myggbett_door_window_sensor_batteri_2",
+    ],
+    dev_myggbett_spisestue: [
+      "binary_sensor.myggbett_door_window_sensor_dor_4",
+      "sensor.myggbett_door_window_sensor_batteri_4",
+    ],
+    dev_myggspray_entre: [
+      "binary_sensor.myggspray_wrlss_mtn_sensor_tilstedevaerelse",
+      "sensor.myggspray_wrlss_mtn_sensor_belysningsstyrke",
+      "sensor.myggspray_wrlss_mtn_sensor_batteri",
+    ],
+    dev_klippbok_kokken: [
+      "binary_sensor.klippbok_water_leak_sensor_water_leak",
+      "sensor.klippbok_water_leak_sensor_batteri",
+    ],
+    dev_klippbok_bryggers: [
+      "binary_sensor.klippbok_water_leak_sensor_water_leak_2",
+      "sensor.klippbok_water_leak_sensor_batteri_2",
+    ],
+    dev_wavin_stue: ["climate.wavin_stue", "binary_sensor.gulvvarme_stue_abninger"],
+    dev_wavin_kokken: ["climate.wavin_kokken", "binary_sensor.gulvvarme_kokken_abninger"],
+    dev_wavin_sovevaerelse: ["climate.wavin_sovevaerelse", "binary_sensor.gulvvarme_sovevaerelse_abninger"],
+    dev_wavin_kontor: ["climate.wavin_kontor", "binary_sensor.gulvvarme_kontor_abninger"],
+    dev_wavin_bryggers: ["climate.wavin_bryggers", "binary_sensor.gulvvarme_bryggers_abninger"],
+    dev_wavin_lille_badevaerelse: [
+      "climate.wavin_lille_badevaerelse",
+      "binary_sensor.gulvvarme_lille_badevaerelse_abninger",
+    ],
+    dev_wavin_badevaerelse: [
+      "climate.wavin_stor_badevaerelse",
+      "binary_sensor.gulvvarme_stor_badevaerelse_abninger",
+    ],
+    dev_wavin_entre: ["climate.wavin_entre"],
+    dev_wavin_reserve: [
+      "climate.wavin_kanal_6",
+      "climate.wavin_kanal_10",
+      "climate.wavin_kanal_11",
+    ],
+    dev_nilan: [
+      "climate.nilan602_nilan",
+      "sensor.nilan602_actual_room_temperature",
+      "sensor.nilan602_humidity",
+      "sensor.nilan602_actual_fan_step",
+      "sensor.nilan602_outdoor_temperature",
+      "sensor.nilan602_outlet_temperature",
+      "sensor.nilan602_exhaust_temperature",
+      "sensor.nilan602_inlet_after_heater_temperature",
+      "sensor.nilan602_heat_exchange_efficiency",
+      "sensor.nilan602_exhaust_fan_speed",
+      "sensor.nilan602_inlet_fan_speed",
+      "sensor.nilan602_air_filter_alarm_status",
+      "sensor.nilan602_days_since_last_filter_change_alarm",
+      "sensor.nilan602_days_to_next_filter_change_alarm",
+      "sensor.nilan602_operation_mode",
+      "sensor.nilan602_software_version",
+      "sensor.nilan602_aggregate_type",
+      "select.nilan602_set_user_function",
+      "select.nilan602_set_user_function_2",
+      "number.nilan602_user_time_set_minutes",
+      "number.nilan602_user_ventilation_speed_set",
+      "button.nilan602_reset_alarm",
+    ],
+    dev_thermex: [
+      "fan.192_168_110_242_emhaette",
+      "sensor.192_168_110_242_filter_driftstimer_siden_sidste_nulstilling",
+      "binary_sensor.192_168_110_242_kraever_filterrensning",
+      "light.192_168_110_242_enhaettelys",
+    ],
+    dev_bilresa_sovevaerelse: ["sensor.bilresa_dual_button_batteri"],
+    dev_bilresa_kokken: ["sensor.bilresa_dual_button_batteri_2"],
+    dev_lg_soundbar: ["media_player.lg_speaker_sp8ya_2"],
+    dev_fryser: [
+      "sensor.grillplats_plug_effekt",
+      "sensor.grillplats_plug_energi",
+      "switch.grillplats_plug",
+    ],
+    dev_server: [
+      "sensor.grillplats_plug_effekt_2",
+      "sensor.grillplats_plug_energi_2",
+      "switch.grillplats_plug_2",
+    ],
+    dev_pc: [
+      "sensor.kontor_grillplats_pc_elektrisk_effekt",
+      "sensor.kontor_grillplats_pc_energi",
+      "switch.kontor_grillplats_pc",
+    ],
+    dev_sunmate: [
+      "sensor.sunmate_io_pulse_ee40a0_pulse_pv_totalpower",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_load_w_totalpower",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_battery_soc",
+      "sensor.pulse_batteri_effekt",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_daily_energy_sold",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_daily_energy_bought",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_daily_production",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_daily_energy_houseload",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_total_production",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_grid_out_total_power",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_grid_current_a_l1",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_grid_current_a_l2",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_grid_current_a_l3",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_pv3_power",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_pv4_power",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_pv3_voltage",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_pv4_voltage",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_pv3_current",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_pv4_current",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_battery_temperature",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_battery_voltage",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_battery_output_a",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_temperature",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_daily_battery_charge",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_daily_battery_discharge",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_wifi_signal",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_uptime",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_temperature",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_frequency",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_serial",
+      "sensor.sunmate_io_pulse_ee40a0_datalogger_pulse_ip",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_model_fw",
+      "sensor.sunmate_io_pulse_ee40a0_pulse_datalogger_version",
+      "number.sunmate_io_pulse_ee40a0_pulse_battery_min_soc",
+      "number.sunmate_io_pulse_ee40a0_pulse_battery_max_soc",
+    ],
+    dev_bwt: [
+      "sensor.bwt_perla_state",
+      "sensor.bwt_perla_current_flow",
+      "sensor.bwt_perla_day_output",
+      "sensor.bwt_perla_month_output",
+      "sensor.bwt_perla_year_output",
+      "sensor.bwt_perla_total_output",
+      "sensor.bwt_vand_m3",
+      "sensor.vandudgift_total",
+      "sensor.bwt_perla_regenerativ_level",
+      "sensor.bwt_perla_regenerativ_days",
+      "sensor.bwt_perla_capacity_1",
+      "input_boolean.bwt_holiday_mode",
+    ],
+    dev_router: [
+      "binary_sensor.192_168_110_1",
+      "sensor.192_168_110_1_round_trip_time_average",
+      "sensor.192_168_110_1_packet_loss",
+      "sensor.192_168_110_1_router_packet_loss",
+      "sensor.192_168_110_1_router_packet_loss_168h",
+      "sensor.192_168_110_1_router_rtt_mean_24h",
+      "sensor.192_168_110_1_router_rtt_mean_168h",
+      "sensor.192_168_110_1_jitter",
+    ],
+    dev_internet: [
+      "binary_sensor.8_8_8_8",
+      "sensor.8_8_8_8_round_trip_time_average",
+      "sensor.8_8_8_8_packet_loss",
+      "sensor.8_8_8_8_jitter",
+      "binary_sensor.1_1_1_1",
+      "sensor.1_1_1_1_round_trip_time_average",
+      "sensor.1_1_1_1_packet_loss",
+      "sensor.1_1_1_1_jitter",
+    ],
+    dev_tesla: [
+      "binary_sensor.tesla_wall_connector_koretoj_tilsluttet",
+      "sensor.tesla_wall_connector_total_power",
+      "sensor.tesla_wall_connector_energi_til_sessionen",
+      "sensor.tesla_wall_connector_energi",
+    ],
+    dev_forecast: [
+      "sensor.hjem_energy_production_today",
+      "sensor.hjem_energy_production_today_remaining",
+      "sensor.hjem_power_production_now",
+      "sensor.hjem_energy_current_hour",
+      "sensor.hjem_energy_next_hour",
+      "sensor.hjem_power_production_next_24hours",
+      "sensor.hjem_energy_production_tomorrow",
+      "sensor.hjem_energy_production_d2",
+      "sensor.hjem_energy_production_d3",
+    ],
+    dev_prayer: [
+      "sensor.islamic_prayer_times_fajr_prayer",
+      "sensor.islamic_prayer_times_dhuhr_prayer",
+      "sensor.islamic_prayer_times_asr_prayer",
+      "sensor.islamic_prayer_times_maghrib_prayer",
+      "sensor.islamic_prayer_times_isha_prayer",
+      "sensor.islamic_prayer_times_sunrise_time",
+    ],
+    dev_energy_price: [
+      "sensor.electricity_total_price",
+      "sensor.electricity_sell_price",
+      "sensor.nord_pool_dk2_current_price",
+      "sensor.nord_pool_dk2_lowest_price",
+      "sensor.nord_pool_dk2_highest_price",
+      "sensor.nord_pool_dk2_next_price",
+      "sensor.nord_pool_dk2_previous_price",
+      "binary_sensor.nord_pool_dk2_tomorrow_price_available",
+      "sensor.energi_data_service",
+    ],
+    dev_economy: [
+      "sensor.40ndasdro56_kurs",
+      "sensor.40ndasdro56_aendring",
+      "sensor.40ndasdro56_effektiv_rente",
+      "sensor.40ndasdro56_varighed",
+    ],
+    dev_savings: [
+      "sensor.sparet_total",
+      "sensor.sparet_solceller",
+      "sensor.sparet_batteri",
+      "sensor.besparelse_rate_total",
+      "sensor.besparelse_rate_batteri_ac",
+      "sensor.tilbagebetalt_total",
+      "sensor.tilbagebetalt_solceller",
+      "sensor.tilbagebetalt_batteri",
+      "input_number.investering_solceller",
+      "input_number.investering_batteri",
+      "input_datetime.anlaeg_installeret",
+    ],
+    dev_kajplats_unassigned: [
+      "light.kajplats_gu10_cws_470lm_1",
+      "light.kajplats_gu10_cws_470lm_17",
+      "light.kajplats_gu10_cws_470lm_18",
+      "light.kajplats_gu10_cws_470lm_19",
+      "light.kajplats_gu10_cws_470lm_20",
+    ],
+  };
+
+  const areaEntities = {
+    kokken: [
+      "light.kokken",
+      "light.kajplats_gu10_cws_470lm_7",
+      "light.kajplats_gu10_cws_470lm_8",
+      "light.kajplats_gu10_cws_470lm",
+      "light.kajplats_gu10_cws_470lm_2",
+      "light.kajplats_gu10_cws_470lm_3",
+      "light.kajplats_gu10_cws_470lm_5",
+      "light.kajplats_gu10_cws_470lm_4",
+      "light.kajplats_gu10_cws_470lm_6",
+      "light.kajplats_gu10_cws_470lm_9",
+    ],
+    bryggers: [
+      "light.bryggers",
+      "light.kajplats_gu10_cws_470lm_14",
+      "light.kajplats_gu10_cws_470lm_16",
+      "light.kajplats_gu10_cws_470lm_15",
+    ],
+    entre: [
+      "light.entre",
+      "light.kajplats_gu10_cws_470lm_12",
+      "light.kajplats_gu10_cws_470lm_13",
+    ],
+    lille_gang: [
+      "light.lille_gang",
+      "light.kajplats_gu10_cws_470lm_10",
+      "light.kajplats_gu10_cws_470lm_11",
+    ],
+  };
+
+  // Badeværelsets dør hører til soveværelset i den nuværende visning.
+  const entityAreaOverrides = {
+    "binary_sensor.myggbett_door_window_sensor_dor_5": "sovevaerelse",
+    "sensor.myggbett_door_window_sensor_batteri_5": "sovevaerelse",
+    "sensor.kokken_hidden_temperature": "kokken",
+    "sensor.kokken_disabled_temperature": "kokken",
+  };
+  const entityFlags = {
+    "sensor.kokken_hidden_temperature": { hidden_by: "user" },
+    "sensor.kokken_disabled_temperature": { disabled_by: "user" },
+  };
+
+  const deviceOf = {};
+  for (const [deviceId, ids] of Object.entries(deviceEntities)) {
+    for (const id of ids) deviceOf[id] = deviceId;
+  }
+  const areaOf = {};
+  for (const [areaId, ids] of Object.entries(areaEntities)) {
+    for (const id of ids) areaOf[id] = areaId;
+  }
+  for (const [id, areaId] of Object.entries(entityAreaOverrides)) areaOf[id] = areaId;
+
+  const entities = {};
+  for (const [id, s] of Object.entries(st)) {
+    entities[id] = {
+      entity_id: id,
+      area_id: areaOf[id] ?? null,
+      device_id: deviceOf[id] ?? null,
+      name: null,
+      original_name: s.attributes.friendly_name ?? null,
+      platform: "mock",
+      unique_id: id,
+      disabled_by: null,
+      hidden_by: null,
+      entity_category: null,
+      icon: null,
+      original_icon: null,
+      ...(entityFlags[id] || {}),
+    };
+  }
+  // Findes kun i registret, ikke i states — skal ignoreres af discovery.
+  entities["sensor.kokken_missing_state_temperature"] = {
+    entity_id: "sensor.kokken_missing_state_temperature",
+    area_id: "kokken",
+    device_id: "dev_alpstuga_kokken",
+    name: null,
+    original_name: "Køkken temperatur uden tilstand",
+    platform: "mock",
+    unique_id: "sensor.kokken_missing_state_temperature",
+    disabled_by: null,
+    hidden_by: null,
+    entity_category: null,
+    icon: null,
+    original_icon: null,
+  };
+
   const hass = {
     states: st,
+    areas,
+    devices,
+    entities,
+    floors: {},
+    config: {
+      latitude: 55.6761,
+      longitude: 12.5683,
+      elevation: 30,
+      time_zone: "Europe/Copenhagen",
+      currency: "DKK",
+      country: "DK",
+      language: "da",
+      unit_system: { length: "km", mass: "g", temperature: "°C", volume: "L" },
+    },
     user: { name: "liltoto", is_admin: true },
     themes: { darkMode: true },
     language: "da",
-    callService: async (domain, service, data, target) => {
-      console.log("service", domain, service, data, target);
+    callService: async (domain, service, data = {}, target = {}) => {
       const ids = [];
-      if (target?.entity_id) ids.push(...(Array.isArray(target.entity_id) ? target.entity_id : [target.entity_id]));
-      if (target?.area_id) return;
-      ids.forEach((id) => {
-        if (!st[id]) return;
-        if (service === "toggle") st[id].state = st[id].state === "on" ? "off" : "on";
-        if (service === "turn_on") st[id].state = "on";
-        if (service === "turn_off") st[id].state = "off";
-        if (service === "set_temperature") st[id].attributes.temperature = data.temperature;
-        if (service === "set_hvac_mode") st[id].state = data.hvac_mode;
-        if (service === "set_fan_mode") st[id].attributes.fan_mode = data.fan_mode;
-      });
+      for (const ref of [target?.entity_id, data?.entity_id]) {
+        if (!ref) continue;
+        ids.push(...(Array.isArray(ref) ? ref : [ref]));
+      }
+      if (target?.area_id || target?.device_id) return {};
+      for (const id of ids) {
+        const s = st[id];
+        if (!s) continue;
+        if (service === "toggle") s.state = s.state === "on" ? "off" : "on";
+        else if (service === "turn_on") {
+          s.state = "on";
+          if (data?.brightness !== undefined) s.attributes.brightness = data.brightness;
+        } else if (service === "turn_off") {
+          s.state = "off";
+        } else if (service === "set_temperature" && data?.temperature !== undefined) {
+          s.attributes.temperature = data.temperature;
+        } else if (service === "set_hvac_mode" && data?.hvac_mode !== undefined) {
+          s.state = data.hvac_mode;
+        } else if (service === "set_fan_mode" && data?.fan_mode !== undefined) {
+          s.attributes.fan_mode = data.fan_mode;
+        }
+      }
       return {};
     },
     callWS: async (msg) => {
@@ -382,7 +935,7 @@ export function makeHass() {
       return {};
     },
   };
-  return hass;
+  return Object.assign(hass, overrides);
 }
 
 export function makeHistory(ids, start, end) {
