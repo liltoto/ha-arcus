@@ -1,18 +1,25 @@
 import type { SheetRoute } from "../types";
+import { renderAlertsSheet } from "./layers/alerts";
+import { renderAllSheet } from "./layers/all";
+import { renderEconomySheet } from "./layers/economy";
+import { renderEnergySheet } from "./layers/energy";
 import { renderHeatingSheet } from "./layers/heating";
 import { renderLightsSheet } from "./layers/lights";
+import { renderPrayersSheet } from "./layers/prayers";
 import { renderRoomSheet } from "./layers/room";
+import { renderSecuritySheet } from "./layers/security";
+import { renderSolarSheet } from "./layers/solar";
+import { renderTechSheet } from "./layers/tech";
 import type { LayerContext, SheetApp } from "./layers/types";
 import { renderVentSheet } from "./layers/ventilation";
+import { renderWaterSheet } from "./layers/water";
 
 /**
  * Render the body of one sheet route.
  *
  * The card owns the sheet frame (scrim, grab handle, close button) and passes
  * its own app object so the layers can read live entity values and issue
- * service calls through the card's delegation. The layers that are not ported
- * yet return a calm placeholder; the integration owner replaces the branches
- * in a later task without changing this signature.
+ * service calls through the card's delegation.
  */
 export function renderSheet(route: SheetRoute, ctx: LayerContext): string {
   switch (route.base) {
@@ -24,6 +31,26 @@ export function renderSheet(route: SheetRoute, ctx: LayerContext): string {
       return renderHeatingSheet(ctx);
     case "ventilation":
       return renderVentSheet(ctx);
+    case "energi":
+      return renderEnergySheet(ctx);
+    case "sol":
+      return renderSolarSheet(ctx, route.sub);
+    case "vand":
+      return renderWaterSheet(ctx);
+    case "sikkerhed":
+      return renderSecuritySheet(ctx);
+    case "teknik":
+      return renderTechSheet(ctx);
+    case "oekonomi":
+      return renderEconomySheet(ctx);
+    case "bon":
+      return renderPrayersSheet(ctx);
+    case "alarmer":
+      return renderAlertsSheet(ctx);
+    case "alle":
+      return renderAllSheet(ctx);
+    case "skur":
+      return renderRoomSheet(ctx, "skur");
     default:
       return `<div class="sheet-scroll"><div class="empty">${ctx.t(
         "empty.dataYet",

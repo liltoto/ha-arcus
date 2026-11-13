@@ -1,0 +1,245 @@
+{
+  "strategy": {
+    "type": "custom:arcus",
+    "dashboard_title": "Hjem",
+    "view_title": "Hjem",
+    "card": {
+      "type": "custom:arcus-card",
+      "title": "Hjem",
+      "subtitle": "",
+      "language": "da",
+      "appearance": "auto",
+      "atmosphere": "auto",
+      "density": "comfortable",
+      "areas": {
+        "include": [
+          "stue",
+          "kokken",
+          "sovevaerelse",
+          "kontor",
+          "bryggers",
+          "entre",
+          "skur"
+        ],
+        "exclude": [],
+        "order": [
+          "stue",
+          "kokken",
+          "sovevaerelse",
+          "kontor",
+          "bryggers",
+          "entre",
+          "skur"
+        ]
+      },
+      "weather": "weather.forecast_hjem",
+      "price": {
+        "current": "sensor.electricity_total_price",
+        "sell": "sensor.electricity_sell_price",
+        "forecast": "sensor.energi_data_service",
+        "spot": "sensor.nord_pool_dk2_current_price",
+        "lowest": "sensor.nord_pool_dk2_lowest_price",
+        "highest": "sensor.nord_pool_dk2_highest_price",
+        "next": "sensor.nord_pool_dk2_next_price",
+        "previous": "sensor.nord_pool_dk2_previous_price",
+        "tomorrow": "binary_sensor.nord_pool_dk2_tomorrow_price_available"
+      },
+      "solar": {
+        "power": "sensor.sunmate_io_pulse_ee40a0_pulse_pv_totalpower",
+        "today": "sensor.sunmate_io_pulse_ee40a0_pulse_daily_production",
+        "forecastToday": "sensor.hjem_energy_production_today",
+        "forecastTomorrow": "sensor.hjem_energy_production_tomorrow",
+        "batterySoc": "sensor.sunmate_io_pulse_ee40a0_pulse_battery_soc",
+        "load": "sensor.sunmate_io_pulse_ee40a0_pulse_load_w_totalpower",
+        "grid": "sensor.sunmate_io_pulse_ee40a0_pulse_grid_out_total_power",
+        "batteryPower": "sensor.pulse_batteri_effekt",
+        "pv3": "sensor.sunmate_io_pulse_ee40a0_pulse_pv3_power",
+        "pv4": "sensor.sunmate_io_pulse_ee40a0_pulse_pv4_power",
+        "totalProduction": "sensor.sunmate_io_pulse_ee40a0_pulse_total_production",
+        "month": "sensor.sol_denne_maned",
+        "year": "sensor.sol_i_ar",
+        "batteryTemperature": "sensor.sunmate_io_pulse_ee40a0_pulse_battery_temperature",
+        "batteryVoltage": "sensor.sunmate_io_pulse_ee40a0_pulse_battery_voltage",
+        "batteryCurrent": "sensor.sunmate_io_pulse_ee40a0_pulse_battery_output_a",
+        "batteryCharge": "sensor.sunmate_io_pulse_ee40a0_pulse_daily_battery_charge",
+        "batteryDischarge": "sensor.sunmate_io_pulse_ee40a0_pulse_daily_battery_discharge",
+        "batteryMinSoc": "number.sunmate_io_pulse_ee40a0_pulse_battery_min_soc",
+        "batteryMaxSoc": "number.sunmate_io_pulse_ee40a0_pulse_battery_max_soc",
+        "inverterTemperature": "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_temperature",
+        "inverterFrequency": "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_frequency",
+        "inverterModel": "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_model_fw",
+        "dataloggerVersion": "sensor.sunmate_io_pulse_ee40a0_pulse_datalogger_version",
+        "wifiSignal": "sensor.sunmate_io_pulse_ee40a0_pulse_wifi_signal",
+        "uptime": "sensor.sunmate_io_pulse_ee40a0_pulse_uptime",
+        "gridL1": "sensor.sunmate_io_pulse_ee40a0_pulse_grid_current_a_l1",
+        "gridL2": "sensor.sunmate_io_pulse_ee40a0_pulse_grid_current_a_l2",
+        "gridL3": "sensor.sunmate_io_pulse_ee40a0_pulse_grid_current_a_l3",
+        "pv3Voltage": "sensor.sunmate_io_pulse_ee40a0_pulse_pv3_voltage",
+        "pv3Current": "sensor.sunmate_io_pulse_ee40a0_pulse_pv3_current",
+        "pv4Voltage": "sensor.sunmate_io_pulse_ee40a0_pulse_pv4_voltage",
+        "pv4Current": "sensor.sunmate_io_pulse_ee40a0_pulse_pv4_current",
+        "forecastRemaining": "sensor.hjem_energy_production_today_remaining",
+        "forecastNow": "sensor.hjem_power_production_now",
+        "forecastCurrentHour": "sensor.hjem_energy_current_hour",
+        "forecastNextHour": "sensor.hjem_energy_next_hour",
+        "forecastNext24h": "sensor.hjem_power_production_next_24hours",
+        "forecastD2": "sensor.hjem_energy_production_d2",
+        "forecastD3": "sensor.hjem_energy_production_d3",
+        "savingsTotal": "sensor.sparet_total",
+        "savingsSolar": "sensor.sparet_solceller",
+        "savingsBattery": "sensor.sparet_batteri",
+        "savingsRate": "sensor.besparelse_rate_total",
+        "investmentSolar": "input_number.investering_solceller",
+        "investmentBattery": "input_number.investering_batteri",
+        "installedAt": "input_datetime.anlaeg_installeret",
+        "paybackPercent": "sensor.tilbagebetalt_total",
+        "heliosPath": "/nyt-overblik/solceller-helios"
+      },
+      "prayers": {
+        "fajr": "sensor.islamic_prayer_times_fajr_prayer",
+        "dhuhr": "sensor.islamic_prayer_times_dhuhr_prayer",
+        "asr": "sensor.islamic_prayer_times_asr_prayer",
+        "maghrib": "sensor.islamic_prayer_times_maghrib_prayer",
+        "isha": "sensor.islamic_prayer_times_isha_prayer",
+        "sunrise": "sensor.islamic_prayer_times_sunrise_time"
+      },
+      "water": {
+        "state": "sensor.bwt_perla_state",
+        "flow": "sensor.bwt_perla_current_flow",
+        "day": "sensor.bwt_perla_day_output",
+        "month": "sensor.bwt_perla_month_output",
+        "year": "sensor.bwt_perla_year_output",
+        "total": "sensor.bwt_perla_total_output",
+        "cost": "sensor.vandudgift_total",
+        "salt": "sensor.bwt_perla_regenerativ_level",
+        "saltDays": "sensor.bwt_perla_regenerativ_days",
+        "capacity": "sensor.bwt_perla_capacity_1",
+        "holiday": "input_boolean.bwt_holiday_mode"
+      },
+      "network": {
+        "router": "sensor.192_168_110_1_round_trip_time_average",
+        "routerState": "binary_sensor.192_168_110_1",
+        "google": "sensor.8_8_8_8_round_trip_time_average",
+        "cloudflare": "sensor.1_1_1_1_round_trip_time_average",
+        "packetLoss": "sensor.192_168_110_1_packet_loss",
+        "packetLoss7d": "sensor.192_168_110_1_router_packet_loss_168h",
+        "jitter": "sensor.192_168_110_1_jitter",
+        "wifiSignal": "sensor.sunmate_io_pulse_ee40a0_pulse_wifi_signal",
+        "uptime": "sensor.sunmate_io_pulse_ee40a0_pulse_uptime",
+        "temperature": "sensor.sunmate_io_pulse_ee40a0_pulse_temperature",
+        "frequency": "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_frequency",
+        "inverterModel": "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_model_fw",
+        "dataloggerVersion": "sensor.sunmate_io_pulse_ee40a0_pulse_datalogger_version"
+      },
+      "economy": {
+        "bond": "sensor.40ndasdro56_kurs",
+        "change": "sensor.40ndasdro56_aendring",
+        "yield": "sensor.40ndasdro56_effektiv_rente",
+        "duration": "sensor.40ndasdro56_varighed"
+      },
+      "ventilation": {
+        "temperature": "sensor.nilan602_actual_room_temperature",
+        "humidity": "sensor.nilan602_humidity",
+        "step": "sensor.nilan602_actual_fan_step",
+        "filter": "sensor.nilan602_air_filter_alarm_status",
+        "climate": "climate.nilan602_nilan",
+        "outdoor": "sensor.nilan602_outdoor_temperature",
+        "inlet": "sensor.nilan602_inlet_after_heater_temperature",
+        "exhaust": "sensor.nilan602_exhaust_temperature",
+        "outlet": "sensor.nilan602_outlet_temperature",
+        "efficiency": "sensor.nilan602_heat_exchange_efficiency",
+        "daysSinceFilter": "sensor.nilan602_days_since_last_filter_change_alarm",
+        "daysToFilter": "sensor.nilan602_days_to_next_filter_change_alarm",
+        "inletFan": "sensor.nilan602_inlet_fan_speed",
+        "exhaustFan": "sensor.nilan602_exhaust_fan_speed",
+        "aggregateType": "sensor.nilan602_aggregate_type",
+        "operationMode": "sensor.nilan602_operation_mode",
+        "software": "sensor.nilan602_software_version",
+        "userFunction": "select.nilan602_set_user_function",
+        "userFunction2": "select.nilan602_set_user_function_2",
+        "userTime": "number.nilan602_user_time_set_minutes",
+        "userSpeed": "number.nilan602_user_ventilation_speed_set",
+        "resetButton": "button.nilan602_reset_alarm"
+      },
+      "security": {
+        "windowAlert": "input_boolean.window_alert_notification",
+        "windows": "sensor.windows",
+        "leaks": [
+          "binary_sensor.klippbok_water_leak_sensor_water_leak",
+          "binary_sensor.klippbok_water_leak_sensor_water_leak_2"
+        ],
+        "batteries": [
+          "sensor.myggbett_door_window_sensor_batteri_7",
+          "sensor.myggbett_door_window_sensor_batteri_8",
+          "sensor.myggbett_door_window_sensor_batteri_4",
+          "sensor.myggbett_door_window_sensor_batteri_6",
+          "sensor.myggbett_door_window_sensor_batteri",
+          "sensor.myggbett_door_window_sensor_batteri_2",
+          "sensor.myggbett_door_window_sensor_batteri_5",
+          "sensor.myggbett_door_window_sensor_batteri_3",
+          "sensor.klippbok_water_leak_sensor_batteri",
+          "sensor.klippbok_water_leak_sensor_batteri_2",
+          "sensor.myggspray_wrlss_mtn_sensor_batteri",
+          "sensor.bilresa_dual_button_batteri"
+        ]
+      },
+      "quick_actions": [
+        {
+          "label": "Sengetid",
+          "icon": "moon",
+          "entity": "input_button.bedtime",
+          "action": {
+            "action": "perform-action",
+            "perform_action": "input_button.press",
+            "target": {
+              "entity_id": "input_button.bedtime"
+            }
+          }
+        },
+        {
+          "label": "Ferietilstand",
+          "icon": "car",
+          "entity": "input_boolean.vacation_mode",
+          "action": {
+            "action": "perform-action",
+            "perform_action": "input_boolean.toggle",
+            "target": {
+              "entity_id": "input_boolean.vacation_mode"
+            }
+          }
+        },
+        {
+          "label": "Vindue-alarm",
+          "icon": "wind",
+          "entity": "input_boolean.window_alert_notification",
+          "action": {
+            "action": "perform-action",
+            "perform_action": "input_boolean.toggle",
+            "target": {
+              "entity_id": "input_boolean.window_alert_notification"
+            }
+          }
+        },
+        {
+          "label": "Lys",
+          "icon": "light",
+          "action": {
+            "action": "navigate",
+            "navigation_path": "lys"
+          }
+        },
+        {
+          "label": "Kort",
+          "icon": "map",
+          "action": {
+            "action": "navigate",
+            "navigation_path": "/map"
+          }
+        }
+      ],
+      "rooms": {},
+      "chapters": {},
+      "show_weather_forecast": true
+    }
+  }
+}

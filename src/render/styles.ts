@@ -279,7 +279,6 @@ input:focus-visible {
   font-size: 11px;
   letter-spacing: 0.08em;
   color: var(--muted);
-  text-transform: capitalize;
 }
 
 .topbar-right {
@@ -390,7 +389,6 @@ button.eyebrow:hover { color: var(--text-2); }
   font-size: 12px;
   color: var(--muted);
   letter-spacing: 0.02em;
-  text-transform: capitalize;
 }
 
 .weather {

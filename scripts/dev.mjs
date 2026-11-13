@@ -1,4 +1,14 @@
-import { context } from "esbuild";
+import { build, context } from "esbuild";
+
+await build({
+  entryPoints: ["tests/fixtures/home.ts"],
+  bundle: true,
+  format: "esm",
+  platform: "browser",
+  target: "es2022",
+  outfile: "dev/fixture.js",
+  logLevel: "info",
+});
 
 const ctx = await context({
   entryPoints: ["src/main.ts"],

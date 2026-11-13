@@ -13,13 +13,19 @@
 <body>
   <div class="pending" id="pending">Arcus dev harness — waiting for the card module…</div>
   <script type="module">
-    import { makeHass } from "./mock.js";
+    import { makeConfig, makeHass } from "./fixture.js";
     await import("../dist/arcus.js");
     const el = document.createElement("arcus-card");
     document.body.appendChild(el);
-    el.setConfig({ type: "custom:arcus-card" });
+    el.setConfig(makeConfig());
     setTimeout(() => el.hass = makeHass(), 40);
     document.getElementById("pending").remove();
+
+    if (new URLSearchParams(location.search).get("full") === "1") {
+      const style = document.createElement("style");
+      style.textContent = `:host{height:auto!important;min-height:0!important}.app{height:auto!important;min-height:0!important;overflow:visible!important}.scroll{position:relative!important;inset:auto!important;height:auto!important;overflow:visible!important}`;
+      setTimeout(() => el.shadowRoot.appendChild(style), 100);
+    }
   </script>
 </body>
 </html>

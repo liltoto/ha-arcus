@@ -1,4 +1,32 @@
+import "./card";
+import "./views/sheet";
+import "./editor";
+import "./strategy";
+
 import { ARCUS_VERSION } from "./version";
+
+interface CustomCardEntry {
+  type: string;
+  name: string;
+  description: string;
+  preview?: boolean;
+  documentationURL?: string;
+}
+
+declare global {
+  interface Window {
+    customCards?: CustomCardEntry[];
+  }
+}
+
+window.customCards = window.customCards || [];
+window.customCards.push({
+  type: "arcus-card",
+  name: "Arcus",
+  description: "A calm, day-arc dashboard for Home Assistant.",
+  preview: true,
+  documentationURL: "https://github.com/liltoto/ha-arcus",
+});
 
 console.info(
   `%c ARCUS %c v${ARCUS_VERSION} `,

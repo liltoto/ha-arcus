@@ -161,7 +161,7 @@ describe("sheet layers", () => {
     expect(html.match(/class="flow-val"/g)).toHaveLength(5);
   });
 
-  test("unported layers render a calm placeholder", () => {
+  test("all sheet routes render a body", () => {
     const { ctx } = fixture();
     const bases: Array<Exclude<SheetRoute["base"], "rum">> = [
       "energi",
@@ -179,7 +179,7 @@ describe("sheet layers", () => {
     for (const base of bases) {
       const html = renderSheet({ base }, ctx);
       expect(html).toContain("sheet-scroll");
-      expect(html).toContain("empty");
+      expect(html.length).toBeGreaterThan(100);
     }
   });
 });

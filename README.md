@@ -8,7 +8,7 @@ Arcus is a Dashboard plugin for the Home Assistant Marketplace. It installs as o
 - a dashboard strategy, `custom:arcus`
 - a visual editor for the card and the strategy
 
-![Arcus home](docs/screenshots/home-1440.png)
+![Arcus home](docs/screenshots/arcus-1440.png)
 
 ## Installation
 
@@ -55,14 +55,14 @@ The development harness runs at `http://localhost:5173/dev/index.html`.
 ## Roadmap
 
 - [x] Repository scaffold, build, Marketplace manifest
-- [ ] Config, localization, formatting
-- [ ] Design system with embedded fonts
-- [ ] Area/entity discovery and dynamic model
-- [ ] Card and sheet views
-- [ ] Visual editor
-- [ ] Dashboard strategy
-- [ ] Visual regression and responsive QA
-- [ ] Marketplace release
+- [x] Config, localization, formatting
+- [x] Design system with embedded fonts
+- [x] Area/entity discovery and dynamic model
+- [x] Card and sheet views
+- [x] Visual editor
+- [x] Dashboard strategy
+- [ ] Automated visual regression (manual 1440/390 screenshots are in `docs/screenshots/`)
+- [ ] Marketplace release and catalog submission
 - [ ] Migration of the current `hjem-dognet` dashboard
 
 The full implementation plan lives in the project plan; the current `hjem-dognet` dashboard is untouched until the Arcus dashboard is verified.
