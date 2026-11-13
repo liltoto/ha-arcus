@@ -18,7 +18,11 @@
     const el = document.createElement("arcus-card");
     document.body.appendChild(el);
     el.setConfig(makeConfig());
-    setTimeout(() => el.hass = makeHass(), 40);
+    const hass = makeHass();
+    if (new URLSearchParams(location.search).get("light") === "1") {
+      hass.themes.darkMode = false;
+    }
+    setTimeout(() => el.hass = hass, 40);
     document.getElementById("pending").remove();
 
     if (new URLSearchParams(location.search).get("full") === "1") {
