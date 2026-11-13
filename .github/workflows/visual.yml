@@ -29,12 +29,14 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      # Manual runs with `update_snapshots` rewrite the committed baselines and
-      # upload them for a human to review and commit. Normal PR runs never
-      # write snapshots, so they stay the source of truth for visual diffs.
+      # Manual runs with `update_snapshots` rewrite every committed baseline and
+      # upload them for a human to review and commit. `=all` is deliberate:
+      # without it Playwright leaves snapshots that still pass the pixel
+      # tolerance on their old rendering. Normal PR runs never write snapshots,
+      # so they stay the source of truth for visual diffs.
       - name: Update baselines
         if: ${{ inputs.update_snapshots }}
-        run: npx playwright test --update-snapshots
+        run: npx playwright test --update-snapshots=all
 
       - name: Upload updated baselines
         if: ${{ inputs.update_snapshots }}
