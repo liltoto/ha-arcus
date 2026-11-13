@@ -2,6 +2,7 @@ import "./card";
 import "./views/sheet";
 import "./editor";
 import "./strategy";
+import "./strategy-editor";
 
 import { ARCUS_VERSION } from "./version";
 
