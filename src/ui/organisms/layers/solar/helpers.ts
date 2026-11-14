@@ -150,7 +150,7 @@ export function historySeries(
   history: HistoryCache,
   id: string | undefined,
   days: number,
-  fill: number | null = null,
+  fill: number | "hold" | null = "hold",
 ): Array<number | null> {
   if (!id) return [];
   try {
@@ -405,7 +405,7 @@ export function historyDaySeries(
   history: HistoryCache,
   id: string | undefined,
   now: Date,
-  fill: number | null = null,
+  fill: number | "hold" | null = "hold",
 ): Array<number | null> {
   if (!id) return [];
   const { start, end } = dayWindow(now);

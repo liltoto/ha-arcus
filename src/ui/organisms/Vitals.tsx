@@ -62,6 +62,7 @@ export function Vitals() {
 
   const indoor = history.series(config.ventilation?.temperature ?? "", {
     buckets: 96,
+    fill: "hold",
   });
   const price = model.price?.values ?? [];
   const solarActual = history.series(config.solar?.power ?? "", {

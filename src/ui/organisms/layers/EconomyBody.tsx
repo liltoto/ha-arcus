@@ -56,7 +56,7 @@ function windowOf(
 ): Array<number | null> {
   if (!entityId) return [];
   return typeof history.window === "function"
-    ? history.window(entityId, days)
+    ? history.window(entityId, days, { fill: "hold" })
     : [];
 }
 

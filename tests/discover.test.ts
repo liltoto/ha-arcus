@@ -80,6 +80,46 @@ describe("discoverRooms", () => {
     expect(kokken.humidity).toBeNull();
   });
 
+  test("uses an unassigned temperature sensor on the thermostat device", () => {
+    const hass = makeHass();
+    delete hass.entities["sensor.alpstuga_air_quality_monitor_temperatur_3"];
+    delete hass.states["sensor.alpstuga_air_quality_monitor_temperatur_3"];
+
+    const deviceId = hass.entities["climate.wavin_bryggers"].device_id;
+    const id = "sensor.wavin_bryggers_temperatur";
+    hass.states[id] = {
+      entity_id: id,
+      state: "25.0",
+      attributes: {
+        friendly_name: "Wavin Bryggers Temperatur",
+        device_class: "temperature",
+        unit_of_measurement: "°C",
+      },
+      last_changed: "2026-11-13T00:00:00+01:00",
+      last_updated: "2026-11-13T00:00:00+01:00",
+    };
+    hass.entities[id] = {
+      entity_id: id,
+      area_id: null,
+      device_id: deviceId ?? null,
+      name: null,
+      original_name: "Bryggers Temperatur",
+      platform: "esphome",
+      unique_id: id,
+      disabled_by: null,
+      hidden_by: null,
+      entity_category: null,
+    };
+
+    const bryggers = discoverRooms(hass, makeConfig()).find(
+      (room) => room.areaId === "bryggers",
+    )!;
+
+    expect(bryggers.temp?.entityId).toBe(id);
+    expect(bryggers.temp?.state).toBe("25.0");
+    expect(bryggers.tempFallback?.entityId).toBe("climate.wavin_bryggers");
+  });
+
   test("prefers an available temperature and skips diagnostic/config entities", () => {
     const hass = makeHass();
     hass.entities[

@@ -80,7 +80,7 @@ type: custom:arcus-card
 
 1. Download `arcus.js` from the [latest release](https://github.com/liltoto/ha-arcus/releases/latest).
 2. Copy it to `config/www/community/ha-arcus/arcus.js`.
-3. Open **Settings → Dashboards → Resources** and add `/local/community/ha-arcus/arcus.js?v=0.2.4` as a **JavaScript module**.
+3. Open **Settings → Dashboards → Resources** and add `/local/community/ha-arcus/arcus.js?v=0.2.5` as a **JavaScript module**.
 4. Reload the browser.
 
 [![Open your Home Assistant instance and open a repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=liltoto&repository=ha-arcus&category=plugin)
@@ -307,7 +307,7 @@ The card editor exposes the title, subtitle, language, appearance, atmosphere, d
 
 **The card or strategy does not appear after an update.** Hard refresh the browser. The Marketplace adds the resource with a version query such as `?v=...`; a cached module can survive a normal reload. Check **Settings → Dashboards → Resources** for one Arcus entry and remove duplicates. If the `www` folder did not exist when Home Assistant started, restart Home Assistant once so the Marketplace can create it.
 
-**The strategy is not in the picker.** Reload the browser and check the browser console for `Arcus v0.2.4`. If the module did not load, verify the resource URL and that its type is **JavaScript module**. You can always paste the strategy YAML into the raw dashboard editor.
+**The strategy is not in the picker.** Reload the browser and check the browser console for `Arcus v0.2.5`. If the module did not load, verify the resource URL and that its type is **JavaScript module**. You can always paste the strategy YAML into the raw dashboard editor.
 
 **A configuration error appears.** Arcus reports the field that failed, for example `areas.include must be an array of strings`. Check that lists are lists, booleans are `true` or `false`, and enum values are spelled as shown above.
 

@@ -64,6 +64,7 @@ export function RoomGrid() {
         {displayRooms.map((room) => {
           const spark = history.series(room.temp?.entityId ?? "", {
             buckets: 48,
+            fill: "hold",
           });
           return (
             <RoomCard
@@ -79,7 +80,10 @@ export function RoomGrid() {
         })}
         {model.systemCards.map((card) => {
           const view = systemCardView(card, language, t);
-          const spark = history.series(view.tempEntity, { buckets: 48 });
+          const spark = history.series(view.tempEntity, {
+            buckets: 48,
+            fill: "hold",
+          });
           return (
             <SystemCard
               key={`system:${card.id}`}
@@ -104,9 +108,13 @@ export function RoomGrid() {
             openLabel={t("room.openRoom")}
             spark={history.series(skurRoom.temp?.entityId ?? "", {
               buckets: 48,
+              fill: "hold",
             })}
             sparkGraph={sparkGraph(
-              history.series(skurRoom.temp?.entityId ?? "", { buckets: 48 }),
+              history.series(skurRoom.temp?.entityId ?? "", {
+                buckets: 48,
+                fill: "hold",
+              }),
             )}
             onOpen={() => actions.navigate(`rum/${skurRoom.id}`)}
           />
