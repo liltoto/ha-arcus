@@ -13,9 +13,11 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.0`.
   `npx vitest run tests/<name>.test.tsx`.
 - `npm run typecheck` — `tsc --noEmit`, strict.
 - `npm run build` — production Panda CSS (minified and hashed) plus minified
-  `dist/arcus.js` without sourcemap. `dist/` is gitignored; `npm run dev`
-  overwrites it with a development build, so run `npm run build` before
-  release/asset checks.
+  `dist/arcus.js` without sourcemap. `dist/` is gitignored; stop `npm run dev`
+  first and run `npm run build` before release/asset checks, or the watcher can
+  overwrite `dist/arcus.js` with the development build.
+- If `styled-system/` is missing after a clean checkout, run
+  `npx panda codegen`; `npm ci` normally does this via `prepare`.
 - `npm run size` — asserts `dist/arcus.js` is within the 400 KB gzip budget.
 - `npm run storybook` — Storybook on `:6006`.
 - `npm run build-storybook` — static Storybook build; CI runs this as a gate.
@@ -67,6 +69,16 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.0`.
   `styled-system/styles.css` for it. `src/ui/styles/index.ts` injects
   `FONT_FACE_CSS + panda.css?inline` into the card's shadow root. Do not add a
   second global stylesheet or edit `dist/arcus.js` by hand.
+- In `css()` objects, conditions use underscore keys (`_phone`, `_compact`,
+  `_light`). `globalCss` is the base layer and loses to utility classes, so
+  keep component responsive/density overrides in `css()`.
+- Keep the semantic class tokens. `c("room-card")` returns
+  `room-card <panda>`; tests and Playwright select the semantic token. Never
+  replace it with only the generated Panda class.
+- When generating HTML strings, put `c()` on the element that owns a standalone
+  style (`wday`, `price-bars`, …); child classes can rely on nested selectors.
+- A chart that sets `pointer-events: none` must restore `pointer-events: auto`
+  on its `[data-graph]` SVG, or the hover/touch readout stops receiving events.
 - `src/editor.ts` keeps its small `EDITOR_STYLES` string for the two config
   editors. They run in separate shadow roots and use HA's native theme
   variables; do not inject the dashboard stylesheet there.
@@ -89,9 +101,14 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.0`.
   (`renderWithArcus`) wires the provider for home organisms and
   `tests/ui/layer-test-utils.tsx` (`renderLayer`) does the same for sheet
   bodies. Prefer role/text queries over asserting rendered HTML strings.
+- Class assertions must be token-based (`toHaveClass("sheet", "open")`), not
+  exact `className`. In Playwright use whitespace-bounded regexes
+  (`/(^|\s)open(\s|$)/`); Panda utility names contain state words such as
+  `[&.open]` and will false-positive a plain `/open/`.
 - Visual baselines in `tests/visual/__screenshots__` are CI-native for
-  `ubuntu-26.04`. Local WSL runs can differ by font metrics; do not run
-  `--update-snapshots` locally. The Visual workflow is the source of truth.
+  `ubuntu-26.04`. Local WSL runs can differ by font metrics (typically the
+  home/energy baselines); do not run `--update-snapshots` locally. The Visual
+  workflow is the source of truth.
 - To refresh baselines, dispatch the Visual workflow with
   `update_snapshots=true` (`gh workflow run Visual -f update_snapshots=true`),
   download the `playwright-baselines` artifact, copy it over
@@ -101,8 +118,11 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.0`.
 
 - `hacs.json` requires the release asset to be named `arcus.js`;
   `.github/workflows/release.yml` runs on `v*` and attaches `dist/arcus.js`.
-- To release: bump `package.json` and `src/version.ts` together, commit, tag
-  `vX.Y.Z`, push the tag. A plain push is not a release.
+- To release: update `README.md`, `AGENTS.md`, `CHANGELOG.md`, `package.json`,
+  and `src/version.ts` together, commit, tag `vX.Y.Z`, push the tag. A plain
+  push is not a release.
+- `main` is protected. This single-maintainer repo merges with
+  `gh pr merge --squash --admin`.
 - CI: typecheck -> test -> build -> size -> HACS validation, plus a Storybook
   build job. Visual is pinned to `ubuntu-26.04`.
 - The live HA dashboard `hjem-dognet` uses `custom:arcus` and the
