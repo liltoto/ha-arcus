@@ -1,4 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
+import type { ChartValues } from "../../render/charts";
+import type { GraphInput } from "../../render/graph";
 import { Sparkline } from "../atoms/Sparkline";
 
 export interface VitalStatProps {
@@ -6,9 +8,8 @@ export interface VitalStatProps {
   value: ReactNode;
   unit?: string;
   sub?: ReactNode;
-  spark?: number[];
-  /** Legacy `data-spark` key for the card's history patcher. */
-  sparkKey?: string;
+  spark?: ChartValues;
+  sparkGraph?: GraphInput | null;
   sparkRange?: { min: number; max: number } | null;
   ring?: ReactNode;
   onClick?: () => void;
@@ -25,7 +26,7 @@ export function VitalStat({
   unit,
   sub,
   spark,
-  sparkKey,
+  sparkGraph = null,
   sparkRange = null,
   ring,
   onClick,
@@ -39,27 +40,12 @@ export function VitalStat({
         {unit ? <small>{unit}</small> : null}
       </div>
       {sub ? <div className="vital-sub">{sub}</div> : null}
-      {sparkKey ? (
-        <svg
-          className="vital-spark"
-          viewBox="0 0 100 28"
-          preserveAspectRatio="none"
-          style={{ color: sparkColor } as CSSProperties}
-        >
-          <path
-            data-spark={sparkKey}
-            d=""
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1}
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-      ) : spark?.length ? (
+      {spark ? (
         <Sparkline
           className="vital-spark"
           values={spark}
           range={sparkRange}
+          graph={sparkGraph}
           style={{ color: sparkColor } as CSSProperties}
         />
       ) : null}

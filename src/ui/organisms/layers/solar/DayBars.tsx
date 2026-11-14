@@ -13,9 +13,8 @@ export interface DayBarsProps {
 /**
  * The seven-day production bars.
  *
- * The bars are written imperatively because the card's `_refreshBars()` also
- * owns this node after a Home Assistant state push; keeping React out of the
- * children means that patch cannot fight the virtual DOM.
+ * The bars are written imperatively so the `applyGraph` dataset can be rebuilt
+ * from the same day buckets on every history refresh.
  */
 export function DayBars({ days, empty, language }: DayBarsProps) {
   const hostRef = useRef<HTMLDivElement>(null);

@@ -1,18 +1,23 @@
 import type { CSSProperties } from "react";
 import { formatNumber } from "../../format";
+import type { ChartValues } from "../../render/charts";
+import type { GraphInput } from "../../render/graph";
+import { Sparkline } from "../atoms/Sparkline";
 import { Icon } from "../atoms/Icon";
 import type { SystemCardView } from "../home-view";
 
 export interface SystemCardProps {
   card: SystemCardView;
   onOpen?: () => void;
+  spark?: ChartValues;
+  sparkGraph?: GraphInput | null;
 }
 
 /**
  * Ventilation/outdoor tile. Mirrors legacy `systemCard()` markup, including
- * the `data-sys-dot` and `data-spark` hooks the card's live patchers use.
+ * the `data-sys-dot` hook and a React-owned history sparkline.
  */
-export function SystemCard({ card, onOpen }: SystemCardProps) {
+export function SystemCard({ card, onOpen, spark, sparkGraph = null }: SystemCardProps) {
   const temp =
     card.temp === null ? "–" : formatNumber(card.temp, 1, card.language);
   const style = { "--room": card.tint } as CSSProperties;
@@ -47,21 +52,13 @@ export function SystemCard({ card, onOpen }: SystemCardProps) {
           </span>
         </div>
       </div>
-      <svg
+      <Sparkline
         className="room-spark"
-        viewBox="0 0 100 40"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-      >
-        <path
-          data-spark={card.tempEntity}
-          d=""
-          fill="none"
-          stroke="var(--room)"
-          strokeWidth={1.1}
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
+        values={spark ?? []}
+        height={40}
+        graph={sparkGraph}
+        style={{ color: card.tint }}
+      />
       <span className="room-open">{card.openLabel}</span>
     </button>
   );

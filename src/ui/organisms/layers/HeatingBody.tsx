@@ -14,6 +14,7 @@ import {
   useConfig,
   useHass,
   useHistory,
+  useHistoryVersion,
   useModel,
   useNow,
   useTranslator,
@@ -172,6 +173,7 @@ export function HeatingBody(_props: LayerBodyProps) {
   const config = useConfig();
   const t = useTranslator();
   const history = useHistory();
+  useHistoryVersion();
   const now = useNow();
   const actions = useActions();
   const gradientId = `heat-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
@@ -464,7 +466,6 @@ export function HeatingBody(_props: LayerBodyProps) {
               ))}
               <path fill={`url(#${gradientId})`} d={area} />
               <path
-                data-spark={source?.roomId ? `roomTemp:${source.roomId}` : ""}
                 fill="none"
                 stroke="var(--amber)"
                 strokeWidth="1.5"

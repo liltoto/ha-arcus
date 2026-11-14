@@ -14,6 +14,7 @@ import {
   useConfig,
   useHass,
   useHistory,
+  useHistoryVersion,
   useModel,
   useNow,
   useTranslator,
@@ -1018,6 +1019,7 @@ export function SolarBody({ route }: LayerBodyProps) {
   const config = useConfig();
   const t = useTranslator();
   const history = useHistory();
+  useHistoryVersion();
   const now = useNow()();
   const actions = useActions();
   const language = languageOf(model, config, t);

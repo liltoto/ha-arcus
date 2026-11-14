@@ -25,6 +25,7 @@ export interface ArcusRenderOptions {
   model?: HomeModel;
   route?: ArcusRoute;
   now?: () => Date;
+  history?: HistoryCache;
   /**
    * Card-level bindings that are not part of `buildBindings` (the hero copy,
    * date, person, clock, and version). They are merged over the generated map.
@@ -73,7 +74,7 @@ export function makeArcusProps(options: ArcusRenderOptions = {}) {
     bindings,
     route: options.route ?? { base: "hjem", sub: null },
     actions: makeActions(),
-    history: historyStub(),
+    history: options.history ?? historyStub(),
     now,
   };
 }

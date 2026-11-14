@@ -1,4 +1,5 @@
-import type { CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
+import { applyGraph, type GraphInput } from "../../render/graph";
 import {
   areaPath,
   sparkPath,
@@ -15,6 +16,8 @@ export interface SparklineProps {
   area?: boolean;
   className?: string;
   style?: CSSProperties;
+  /** Hover-readout metadata; `applyGraph` writes the `data-g*` hooks. */
+  graph?: GraphInput | null;
 }
 
 export function Sparkline({
@@ -26,13 +29,21 @@ export function Sparkline({
   area = false,
   className,
   style,
+  graph = null,
 }: SparklineProps) {
+  const ref = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    if (ref.current) applyGraph(ref.current, graph);
+  });
+
   const d = area
     ? areaPath(values, width, height, pad, range)
     : sparkPath(values, width, height, pad, range);
 
   return (
     <svg
+      ref={ref}
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none"
       aria-hidden="true"

@@ -220,9 +220,8 @@ describe("heating sheet", () => {
     expect(graph).toHaveAttribute("data-graph", "line");
     expect(graph).toHaveAttribute("data-gv", "21.1;21.3;21.6;21.4");
 
-    const spark = container.querySelector('[data-spark="roomTemp:stue"]');
-    expect(spark).not.toBeNull();
-    expect(spark?.getAttribute("d")).not.toBe("");
+    expect(container.querySelector("[data-spark]")).toBeNull();
+    expect(graph?.querySelector("path")?.getAttribute("d")).not.toBe("");
     expect(container.querySelector(".chart-box")).not.toHaveClass("no-data");
   });
 });

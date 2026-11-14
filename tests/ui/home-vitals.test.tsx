@@ -49,11 +49,11 @@ describe("Vitals", () => {
       within(solar).getByText(props.bindings.solarSub),
     ).toBeInTheDocument();
 
-    expect(container.querySelector('[data-spark="indoor"]')).not.toBeNull();
-    expect(container.querySelector('[data-spark="price"]')).not.toBeNull();
+    expect(container.querySelectorAll(".vital-spark")).toHaveLength(3);
     expect(
-      container.querySelector('[data-spark="solarActual"]'),
+      container.querySelector("svg.vital-spark[data-graph]"),
     ).not.toBeNull();
+    expect(container.querySelector("[data-spark]")).toBeNull();
 
     const soc = props.model.solar?.batterySoc ?? 0;
     const ring = container.querySelector("[data-battery-ring]");
