@@ -2,6 +2,26 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.0 - 2026-11-14
+
+React and Storybook migration. The visual design and the Home Assistant contract are unchanged.
+
+### Changed
+
+- The dashboard is rendered by a React 19 tree mounted inside the card's shadow DOM; `custom:arcus-card`, `custom:arcus`, `setConfig`, `set hass`, `getCardSize`, and the visual editors keep their existing contracts.
+- The UI is organized by atomic design under `src/ui/` (`atoms`, `molecules`, `organisms`, `templates`, `pages`), with a provider for `hass`, model, config, language, routing, history, and actions.
+- The sheet frame is React-owned: scrim, focus trap, Escape, drag-to-dismiss, scroll reset, and tab edge fades no longer depend on imperative DOM patching.
+- Every sheet body is a React component (`src/ui/organisms/layers/`); the legacy string renderers and the `<arcus-sheets>` element are gone.
+- CSS moved from one generated string to `src/ui/styles/*.css`, imported with `?inline` by both esbuild and Vite.
+- Storybook 10 documents the component library; CI builds it as a gate.
+- Tests moved to Testing Library for UI behavior while the model, discovery, config, localization, and chart logic tests stay unchanged.
+- Bundle budget is enforced at 400 KB gzip (`npm run size`); `dist/arcus.js` is 356.6 KB gzip at this release.
+
+### Removed
+
+- `src/views/**` and the `arcus-sheets` custom element.
+- The card's legacy `data-act` / `data-bind` event delegation and its confirm-bar DOM patching.
+
 ## 0.1.1 - 2026-11-14
 
 Chart readouts, larger labels, and sheet polish.

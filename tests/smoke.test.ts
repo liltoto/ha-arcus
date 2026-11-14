@@ -3,13 +3,12 @@ import "../src/main";
 import { ARCUS_VERSION } from "../src/version";
 
 test("version is the Marketplace version", () => {
-  expect(ARCUS_VERSION).toBe("0.1.1");
+  expect(ARCUS_VERSION).toBe("0.2.0");
 });
 
 test("the bundle registers every Arcus custom element", () => {
   for (const tag of [
     "arcus-card",
-    "arcus-sheets",
     "arcus-config-editor",
     "arcus-strategy-editor",
     "ll-strategy-dashboard-arcus",

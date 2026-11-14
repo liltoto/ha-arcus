@@ -199,7 +199,6 @@ export function resolveEntityRef(
 ): EntityRef | null {
   if (!entityId) return null;
   const state = hass.states?.[entityId];
-  const registry = hass.entities?.[entityId];
   const name = displayName(hass, entityId);
   return {
     entityId,

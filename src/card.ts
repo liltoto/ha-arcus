@@ -1,3 +1,7 @@
+import { createElement } from "react";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
+import type { Root } from "react-dom/client";
 import { performAction } from "./actions";
 import { configSignature, normalizeConfig } from "./config";
 import { HistoryCache } from "./data/history";
@@ -15,9 +19,8 @@ import { buildBindings } from "./model/bindings";
 import { arcPoint, areaPath, priceColor, sparkPath } from "./render/charts";
 import { applyGraph, mountGraphTips } from "./render/graph";
 import { icon } from "./render/icons";
-import { STYLES } from "./render/styles";
+import { STYLES } from "./ui/styles";
 import type {
-  ActionConfig,
   ArcusConfig,
   ArcusHass,
   AtmosphereSetting,
@@ -26,27 +29,21 @@ import type {
   Language,
   PrayerTimeModel,
   PriceModel,
-  SheetRoute,
   SolarPoint,
   Translator,
   WeatherForecastDay,
 } from "./types";
+import { ArcusApp } from "./ui/ArcusApp";
+import type { ArcusActions } from "./ui/types";
 import { ARCUS_VERSION } from "./version";
-import type { SheetApp } from "./views/layers/types";
-import { escapeHtml, renderChapterArt, renderHome } from "./views/home";
+import { escapeHtml } from "./format";
+import { renderChapterArt } from "./render/chapter-art";
 
 declare global {
   interface Window {
     /** The dev harness and visual tests pin the clock through this. */
     __HJEM_NOW?: Date;
   }
-}
-
-interface ArcusSheetsElement extends HTMLElement {
-  app: SheetApp;
-  route: SheetRoute;
-  update?(): void;
-  binds?(): Record<string, string>;
 }
 
 interface RoomStats {
@@ -99,16 +96,6 @@ function refNumber(value: unknown): number | null {
   return Number.isFinite(number) ? number : null;
 }
 
-function firstEntityId(value: unknown): string | undefined {
-  if (typeof value === "string" && value.trim()) return value.trim();
-  if (Array.isArray(value)) {
-    const first = value.find(
-      (item): item is string => typeof item === "string" && !!item.trim(),
-    );
-    if (first) return first.trim();
-  }
-  return undefined;
-}
 
 /**
  * The Arcus custom card. It owns the shadow root, the dynamic home model,
@@ -121,28 +108,48 @@ export class ArcusCard extends HTMLElement {
   _model!: HomeModel;
   _t: Translator;
   _history: HistoryCache;
-  _confirm: { text: string; act: string } | null = null;
   readonly updateComplete: Promise<void>;
+
+  /**
+   * Stable bridge for the React tree. Every method reads the current
+   * `_hass`/`_config` at call time, so a state push never leaves a stale
+   * object behind.
+   */
+  private readonly _actions: ArcusActions = {
+    callService: (domain, service, data, target) =>
+      this._call(domain, service, data, target),
+    navigate: (path) => this._navigate(path),
+    openSheet: (route) => this._navigate(route),
+    closeSheet: () => this._closeRoute(),
+    performAction: (action) => {
+      void performAction(this._hass!, action, this._config).catch(
+        (error: Error) => {
+          this._toast(
+            this._t("common.error", {
+              message: error?.message || action.action || "",
+            }),
+          );
+        },
+      );
+    },
+    toast: (text) => this._toast(text),
+    setAtmo: (mode) => this._setAtmo(mode),
+  };
 
   private _resolveUpdate!: () => void;
   private _language: Language;
   private _built = false;
   private _route: Route = { base: "hjem", sub: null };
-  private _scrub: number | null = null;
   private _scrubTimer: ReturnType<typeof setTimeout> | null = null;
-  private _refreshTimer: ReturnType<typeof setTimeout> | null = null;
   private _clockTimer: ReturnType<typeof setInterval> | null = null;
   private _toastTimer: ReturnType<typeof setTimeout> | null = null;
-  private _lastFocus: HTMLElement | null = null;
-  private _sheetBuiltFor = "";
-  private _sheetEl: ArcusSheetsElement | null = null;
   private _graphTips: { destroy(): void } | null = null;
   private _atmoMode: AtmosphereSetting = "auto";
-  private _reduced = false;
   private _listeners = false;
   private _weather: WeatherForecastDay[] | null = null;
-  private _drag: { y: number; sheet: HTMLElement; dy?: number } | null = null;
   private _configSignature: string;
+  private _reactRoot: Root | null = null;
+  private _renderFrame: number | null = null;
 
   constructor() {
     super();
@@ -220,10 +227,13 @@ export class ArcusCard extends HTMLElement {
     }
   }
 
+  /** The imperative action bridge consumed by the React provider. */
+  get actions(): ArcusActions {
+    return this._actions;
+  }
+
   connectedCallback(): void {
-    this._reduced =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches || false;
-    if (this._hass && !this._built) this._build();
+    if (this._hass && (!this._built || !this._reactRoot)) this._build();
     this._addListeners();
     if (this._built) this._startClock();
   }
@@ -231,9 +241,9 @@ export class ArcusCard extends HTMLElement {
   disconnectedCallback(): void {
     this._removeListeners();
     if (this._clockTimer) clearInterval(this._clockTimer);
-    if (this._refreshTimer) clearTimeout(this._refreshTimer);
     if (this._scrubTimer) clearTimeout(this._scrubTimer);
     if (this._toastTimer) clearTimeout(this._toastTimer);
+    this._unmountReact();
   }
 
   getCardSize(): number {
@@ -319,12 +329,12 @@ export class ArcusCard extends HTMLElement {
     return this._solarPhase();
   }
 
-  private _cycleAtmo(): void {
-    const order: AtmosphereSetting[] = ["auto", "night", "day"];
-    const index = order.indexOf(this._atmoMode);
-    this._atmoMode = order[(index + 1) % order.length];
+
+
+  private _setAtmo(mode: AtmosphereSetting): void {
+    this._atmoMode = mode;
     try {
-      localStorage.setItem("arcus-atmo", this._atmoMode);
+      localStorage.setItem("arcus-atmo", mode);
     } catch {
       /* ignore */
     }
@@ -734,29 +744,58 @@ export class ArcusCard extends HTMLElement {
     bindings.weatherStrip = this._weatherStripHTML();
     bindings.version = ARCUS_VERSION;
 
-    if (this._sheetEl?.binds) {
-      Object.assign(bindings, this._sheetEl.binds());
-    }
     return bindings;
   }
 
   _build(): void {
     if (!this._hass) return;
+    this._unmountReact();
     this._built = true;
-    this._sheetEl = null;
-    this._root.innerHTML = `<style>${STYLES}</style>${renderHome(
-      this._model,
-      this._config,
-      this._t,
-      this._hass,
-    )}`;
+    this._root.innerHTML = `<style>${STYLES}</style><div class="arcus-react"></div>`;
+
+    const container = this._root.querySelector<HTMLElement>(".arcus-react");
+    if (!container) return;
+    container.style.display = "contents";
+    this._reactRoot = createRoot(container);
+    this._route = this._parseHash();
+    flushSync(() => this._renderIntoReact());
 
     this._applyAtmo();
-    this._applyRoute(true);
     this._startClock();
     this._refresh();
     void this._loadInitial();
     this._markReady();
+  }
+
+  /** Render the current card state into the mounted React root. */
+  private _renderIntoReact(): void {
+    if (!this._reactRoot || !this._hass) return;
+    this._reactRoot.render(
+      createElement(ArcusApp, {
+        hass: this._hass,
+        model: this._model,
+        config: this._config,
+        t: this._t,
+        bindings: this._binds(),
+        route: this._route,
+        actions: this.actions,
+        history: this._history,
+        now: () => this._now(),
+        atmo: this._atmo(),
+        dark: this._themeDark(),
+      }),
+    );
+  }
+
+  /** Unmount the React root and cancel any pending batched render. */
+  private _unmountReact(): void {
+    if (this._renderFrame !== null) {
+      cancelAnimationFrame(this._renderFrame);
+      this._renderFrame = null;
+    }
+    const root = this._reactRoot;
+    this._reactRoot = null;
+    if (root) root.unmount();
   }
 
   private _applyBindings(bindings: Record<string, string>): void {
@@ -905,7 +944,6 @@ export class ArcusCard extends HTMLElement {
     this._applyBindings(bindings);
     this._applyState();
 
-    this._sheetEl?.update?.();
     // The sheet may have rendered new nodes; apply the same flat bindings once
     // more before drawing charts and sparks.
     this._applyBindings(bindings);
@@ -918,7 +956,6 @@ export class ArcusCard extends HTMLElement {
     this._refreshAlerts();
     this._refreshArt();
     this._refreshClockState();
-    this._refreshConfirm();
   }
 
   private _refreshSparks(): void {
@@ -1183,7 +1220,6 @@ export class ArcusCard extends HTMLElement {
     const rect = arc.getBoundingClientRect();
     if (!rect.width) return;
     const fraction = clamp((clientX - rect.left) / rect.width, 0, 1);
-    this._scrub = fraction;
 
     const price = this._priceToday();
     if (!price.values.length) return;
@@ -1211,7 +1247,6 @@ export class ArcusCard extends HTMLElement {
   }
 
   private _clearScrub(): void {
-    this._scrub = null;
     this._root
       .querySelector<HTMLElement>("[data-arc-readout]")
       ?.classList.remove("show");
@@ -1412,11 +1447,17 @@ export class ArcusCard extends HTMLElement {
   }
 
   private _schedule(): void {
-    if (this._refreshTimer) return;
-    this._refreshTimer = setTimeout(() => {
-      this._refreshTimer = null;
+    if (this._renderFrame !== null || !this._built || !this._hass) return;
+    const commit = () => {
+      this._renderFrame = null;
+      if (!this._built || !this._hass) return;
+      flushSync(() => this._renderIntoReact());
       this._refresh();
-    }, 240);
+    };
+    this._renderFrame =
+      typeof requestAnimationFrame === "function"
+        ? requestAnimationFrame(commit)
+        : (setTimeout(commit, 0) as unknown as number);
   }
 
   private _parseHash(): Route {
@@ -1429,120 +1470,19 @@ export class ArcusCard extends HTMLElement {
     return { base: base || "hjem", sub: sub || null };
   }
 
-  private _routeKey(): string {
-    return `${this._route.base}/${this._route.sub || ""}`;
-  }
-
-  _applyRoute(first = false): void {
-    const route = this._parseHash();
-    const changed =
-      route.base !== this._route.base || route.sub !== this._route.sub;
-    this._route = route;
-
-    if (route.base === "hjem") {
-      this._closeSheet(true);
-      return;
-    }
-
-    if (changed || first || this._sheetBuiltFor !== this._routeKey()) {
-      this._openSheet(route as SheetRoute);
-    }
+  _applyRoute(): void {
+    this._route = this._parseHash();
+    this._schedule();
   }
 
   private _navigate(path: string): void {
     const hash = `#/${path}`;
     if (typeof location === "undefined") return;
     if (location.hash === hash) {
-      this._applyRoute(true);
+      this._applyRoute();
       return;
     }
     location.hash = hash;
-  }
-
-  private _raf(callback: () => void): void {
-    if (typeof requestAnimationFrame === "function") {
-      requestAnimationFrame(callback);
-    } else {
-      setTimeout(callback, 0);
-    }
-  }
-
-  _openSheet(route: SheetRoute): void {
-    const sheet = this._root.querySelector<HTMLElement>("[data-sheet]");
-    const scrim = this._root.querySelector<HTMLElement>("[data-scrim]");
-    if (!sheet || !scrim) return;
-
-    this._lastFocus =
-      (this._root.activeElement as HTMLElement | null) ??
-      (document.activeElement as HTMLElement | null);
-    const key = this._routeKey();
-
-    const mount = () => {
-      if (!sheet.querySelector("[data-sheet-grab]")) {
-        sheet.innerHTML = `<div class="sheet-grab" data-sheet-grab></div>`;
-      }
-      let inner = sheet.querySelector<ArcusSheetsElement>("arcus-sheets");
-      if (!inner) {
-        inner = document.createElement("arcus-sheets") as ArcusSheetsElement;
-        sheet.appendChild(inner);
-      }
-      inner.app = this;
-      inner.route = route;
-      this._sheetEl = inner;
-      sheet.querySelector<HTMLElement>(".sheet-scroll")?.scrollTo(0, 0);
-      this._sheetBuiltFor = key;
-      this._refresh();
-      this._raf(() => {
-        const focus = sheet.querySelector<HTMLElement>("[data-act='close']");
-        if (focus && !this._reduced) focus.focus({ preventScroll: true });
-      });
-    };
-
-    if (customElements.get("arcus-sheets")) {
-      mount();
-    } else if (typeof customElements.whenDefined === "function") {
-      customElements
-        .whenDefined("arcus-sheets")
-        .then(() => {
-          if (this._routeKey() === key) mount();
-        })
-        .catch(() => {
-          /* The sheet element is optional until the sheets bundle lands. */
-        });
-    }
-
-    this._raf(() => {
-      scrim.classList.add("open");
-      sheet.classList.add("open");
-    });
-  }
-
-  _closeSheet(instant = false): void {
-    const sheet = this._root.querySelector<HTMLElement>("[data-sheet]");
-    const scrim = this._root.querySelector<HTMLElement>("[data-scrim]");
-    if (!sheet || !scrim) return;
-
-    if (!sheet.classList.contains("open")) {
-      if (instant) {
-        sheet.classList.remove("open");
-        scrim.classList.remove("open");
-        this._sheetBuiltFor = "";
-        this._sheetEl = null;
-      }
-      return;
-    }
-
-    sheet.classList.remove("open");
-    scrim.classList.remove("open");
-    this._sheetBuiltFor = "";
-    this._sheetEl = null;
-    if (this._lastFocus?.focus) {
-      try {
-        this._lastFocus.focus({ preventScroll: true });
-      } catch {
-        /* ignore */
-      }
-    }
   }
 
   _closeRoute(): void {
@@ -1552,37 +1492,9 @@ export class ArcusCard extends HTMLElement {
       location.hash !== "#/"
     ) {
       location.replace("#/");
-    } else {
-      this._closeSheet();
-      this._route = { base: "hjem", sub: null };
     }
-  }
-
-  _sheetHeader(kicker: string, title: string, sum: string): string {
-    return `<div class="sheet-head">
-      <div class="sheet-kicker">${escapeHtml(kicker)}</div>
-      <h2 class="sheet-title">${escapeHtml(title)}</h2>
-      <div class="sheet-sum" data-bind="sheet_sum">${sum}</div>
-      <button class="sheet-close" data-act="close" aria-label="${escapeHtml(
-        this._t("sheet.close"),
-      )}">${icon("close")}</button>
-    </div>`;
-  }
-
-  _sheetTabs(
-    tabs: Array<{ key: string; label: string; route: string }>,
-    active: string,
-  ): string {
-    return `<div class="sheet-tabs">${tabs
-      .map(
-        (tab) =>
-          `<button class="tab${
-            tab.key === active ? " active" : ""
-          }" data-nav="${escapeHtml(tab.route)}">${escapeHtml(
-            tab.label,
-          )}</button>`,
-      )
-      .join("")}</div>`;
+    this._route = { base: "hjem", sub: null };
+    this._schedule();
   }
 
   private _historyIds(): string[] {
@@ -1673,22 +1585,6 @@ export class ArcusCard extends HTMLElement {
     this._onHash = () => this._applyRoute();
     window.addEventListener("hashchange", this._onHash);
 
-    this._onKey = (event: Event) => {
-      const key = (event as KeyboardEvent).key;
-      if (key === "Escape") this._closeRoute();
-      if (key === "Tab") this._trapFocus(event as KeyboardEvent);
-    };
-    this._root.addEventListener("keydown", this._onKey);
-
-    this._onClick = (event: Event) => this._click(event);
-    this._root.addEventListener("click", this._onClick);
-
-    this._onInput = (event: Event) => this._input(event);
-    this._root.addEventListener("input", this._onInput);
-
-    this._onChange = (event: Event) => this._change(event);
-    this._root.addEventListener("change", this._onChange);
-
     this._onPointerMove = (event: Event) => {
       const pointer = event as PointerEvent;
       const target = event.target as Element | null;
@@ -1703,14 +1599,8 @@ export class ArcusCard extends HTMLElement {
       const pointer = event as PointerEvent;
       const target = event.target as Element | null;
       if (target?.closest?.("[data-arc]")) this._scrubAt(pointer.clientX);
-      if (target?.closest?.("[data-sheet-grab]")) this._dragStart(pointer);
     };
     this._root.addEventListener("pointerdown", this._onPointerDown);
-
-    this._onPointerUp = () => {
-      if (this._drag) this._dragEnd();
-    };
-    window.addEventListener("pointerup", this._onPointerUp);
 
     this._graphTips = mountGraphTips(this._root, () => this._language);
   }
@@ -1719,434 +1609,15 @@ export class ArcusCard extends HTMLElement {
     if (!this._listeners) return;
     this._listeners = false;
     window.removeEventListener("hashchange", this._onHash);
-    this._root.removeEventListener("keydown", this._onKey);
-    this._root.removeEventListener("click", this._onClick);
-    this._root.removeEventListener("input", this._onInput);
-    this._root.removeEventListener("change", this._onChange);
     this._root.removeEventListener("pointermove", this._onPointerMove);
     this._root.removeEventListener("pointerdown", this._onPointerDown);
-    window.removeEventListener("pointerup", this._onPointerUp);
     this._graphTips?.destroy();
     this._graphTips = null;
   }
 
   private _onHash!: () => void;
-  private _onKey!: (event: Event) => void;
-  private _onClick!: (event: Event) => void;
-  private _onInput!: (event: Event) => void;
-  private _onChange!: (event: Event) => void;
   private _onPointerMove!: (event: Event) => void;
   private _onPointerDown!: (event: Event) => void;
-  private _onPointerUp!: () => void;
-
-  private _trapFocus(event: KeyboardEvent): void {
-    const sheet = this._root.querySelector<HTMLElement>("[data-sheet].open");
-    if (!sheet) return;
-    const focusables = [
-      ...sheet.querySelectorAll<HTMLElement>(
-        "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])",
-      ),
-    ].filter(
-      (element) =>
-        !element.hasAttribute("disabled") && element.offsetParent !== null,
-    );
-    if (!focusables.length) return;
-
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (event.shiftKey && this._root.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && this._root.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
-
-  private _click(event: Event): void {
-    const target = event.target as Element | null;
-
-    if (target?.closest?.("[data-scrim]")) {
-      event.preventDefault();
-      this._closeRoute();
-      return;
-    }
-
-    const nav = target?.closest?.("[data-nav]") as HTMLElement | null;
-    if (nav && this._root.contains(nav)) {
-      event.preventDefault();
-      this._navigate(nav.dataset.nav ?? "hjem");
-      return;
-    }
-
-    const action = target?.closest?.("[data-act]") as HTMLElement | null;
-    if (action && this._root.contains(action)) {
-      event.preventDefault();
-      this._action(action.dataset.act ?? "", action.dataset, action);
-    }
-  }
-
-  private _input(event: Event): void {
-    const target = event.target as Element | null;
-
-    const range = target?.closest?.(
-      "input[data-range-entity]",
-    ) as HTMLInputElement | null;
-    if (range) {
-      const pct = Number(range.value);
-      range.style.setProperty("--p", `${pct}%`);
-      const label = range
-        .closest(".slider-wrap")
-        ?.querySelector<HTMLElement>(".pct");
-      if (label) label.textContent = `${pct} %`;
-      return;
-    }
-
-    const temperature = target?.closest?.(
-      "input[data-temp-range]",
-    ) as HTMLInputElement | null;
-    if (temperature) {
-      const label = temperature
-        .closest(".slider-wrap")
-        ?.querySelector<HTMLElement>(".pct");
-      if (label) label.textContent = `${temperature.value}°`;
-      temperature.style.setProperty(
-        "--p",
-        `${((Number(temperature.value) - 5) / 30) * 100}%`,
-      );
-    }
-  }
-
-  private _change(event: Event): void {
-    const target = event.target as Element | null;
-
-    const range = target?.closest?.(
-      "input[data-range-entity]",
-    ) as HTMLInputElement | null;
-    if (range) {
-      const entityId = range.dataset.rangeEntity;
-      const pct = Number(range.value);
-      if (pct <= 0) {
-        this._call("light", "turn_off", {}, { entity_id: entityId });
-      } else {
-        this._call(
-          "light",
-          "turn_on",
-          { brightness_pct: pct },
-          { entity_id: entityId },
-        );
-      }
-      return;
-    }
-
-    const temperature = target?.closest?.(
-      "input[data-temp-range]",
-    ) as HTMLInputElement | null;
-    if (temperature) {
-      this._call(
-        "climate",
-        "set_temperature",
-        { temperature: Number(temperature.value) },
-        { entity_id: temperature.dataset.tempRange },
-      );
-      return;
-    }
-
-    const select = target?.closest?.(
-      "select[data-select-entity]",
-    ) as HTMLSelectElement | null;
-    if (select) {
-      this._call(
-        "select",
-        "select_option",
-        { option: select.value },
-        { entity_id: select.dataset.selectEntity },
-      );
-    }
-  }
-
-  private _action(
-    act: string,
-    data: DOMStringMap,
-    _element?: HTMLElement,
-  ): void {
-    if (act === "close") return this._closeRoute();
-    if (act === "atmo") return this._cycleAtmo();
-
-    if (act === "toggle-light") {
-      return this._call("light", "toggle", {}, { entity_id: data.entity });
-    }
-    if (act === "toggle-switch") {
-      return this._call("switch", "toggle", {}, { entity_id: data.entity });
-    }
-    if (act === "toggle-bool") {
-      return this._call(
-        "input_boolean",
-        "toggle",
-        {},
-        {
-          entity_id: data.entity,
-        },
-      );
-    }
-    if (act === "press") {
-      return this._call(
-        "input_button",
-        "press",
-        {},
-        {
-          entity_id: data.entity,
-        },
-      );
-    }
-    if (act === "press-button") {
-      return this._call("button", "press", {}, { entity_id: data.entity });
-    }
-
-    if (act === "temp-step" || act === "input-step" || act === "number-step") {
-      const entityId = data.entity;
-      const direction = Number(data.dir || 1);
-      const step = Number(data.step || 0.5);
-      const isClimate = act === "temp-step";
-      const current = isClimate
-        ? refNumber(this._attr(entityId, "temperature"))
-        : this._n(entityId);
-      const min = Number(
-        this._attr(entityId, isClimate ? "min_temp" : "min", 5),
-      );
-      const max = Number(
-        this._attr(entityId, isClimate ? "max_temp" : "max", 35),
-      );
-      if (current === null || !Number.isFinite(current)) return;
-      const next = clamp(current + direction * step, min, max);
-      if (isClimate) {
-        return this._call(
-          "climate",
-          "set_temperature",
-          { temperature: next },
-          { entity_id: entityId },
-        );
-      }
-      if (act === "input-step") {
-        return this._call(
-          "input_number",
-          "set_value",
-          { value: next },
-          { entity_id: entityId },
-        );
-      }
-      return this._call(
-        "number",
-        "set_value",
-        { value: next },
-        { entity_id: entityId },
-      );
-    }
-
-    if (act === "temp-up" || act === "temp-down") {
-      const entityId = data.entity;
-      const current = refNumber(this._attr(entityId, "temperature"));
-      const step = Number(data.step || 0.5);
-      const min = Number(this._attr(entityId, "min_temp", 5));
-      const max = Number(this._attr(entityId, "max_temp", 35));
-      if (current === null || !Number.isFinite(current)) return;
-      const next = clamp(
-        current + (act === "temp-up" ? step : -step),
-        min,
-        max,
-      );
-      return this._call(
-        "climate",
-        "set_temperature",
-        { temperature: next },
-        { entity_id: entityId },
-      );
-    }
-
-    if (act === "hvac-toggle") {
-      const entityId = data.entity;
-      const mode = this._state(entityId) === "off" ? "heat" : "off";
-      return this._call(
-        "climate",
-        "set_hvac_mode",
-        { hvac_mode: mode },
-        { entity_id: entityId },
-      );
-    }
-    if (act === "hvac") {
-      return this._call(
-        "climate",
-        "set_hvac_mode",
-        { hvac_mode: data.mode },
-        { entity_id: data.entity },
-      );
-    }
-    if (act === "fan") {
-      return this._call(
-        "climate",
-        "set_fan_mode",
-        { fan_mode: data.mode },
-        { entity_id: data.entity },
-      );
-    }
-
-    if (act === "sluk-alt") {
-      this._confirm = {
-        text: this._t("confirm.allLights"),
-        act: "sluk-alt-go",
-      };
-      this._refreshConfirm();
-      return;
-    }
-    if (act === "sluk-alt-go") {
-      this._confirm = null;
-      const areas = this._allLightAreas();
-      const ids = this._allLightIds();
-      if (areas.length) {
-        this._call("light", "turn_off", {}, { area_id: areas });
-      } else if (ids.length) {
-        this._call("light", "turn_off", {}, { entity_id: ids });
-      }
-      this._refreshConfirm();
-      return;
-    }
-    if (act === "cancel-confirm") {
-      this._confirm = null;
-      this._refreshConfirm();
-      return;
-    }
-
-    if (act === "set-number" || act === "set-input-number") {
-      const entityId = data.entity;
-      const current = this._n(entityId, 0) ?? 0;
-      const step = Number(data.step || 1);
-      const min = Number(this._attr(entityId, "min", 0));
-      const max = Number(this._attr(entityId, "max", 100));
-      const next = clamp(current + Number(data.dir || 1) * step, min, max);
-      return this._call(
-        act === "set-number" ? "number" : "input_number",
-        "set_value",
-        { value: next },
-        { entity_id: entityId },
-      );
-    }
-
-    if (act === "select") {
-      return this._call(
-        "select",
-        "select_option",
-        { option: data.option },
-        { entity_id: data.entity },
-      );
-    }
-    if (act === "media-toggle") {
-      return this._call(
-        "media_player",
-        "media_play_pause",
-        {},
-        { entity_id: data.entity },
-      );
-    }
-
-    if (act === "map") {
-      try {
-        window.history.pushState(null, "", "/map");
-      } catch {
-        /* ignore */
-      }
-      window.dispatchEvent(
-        new CustomEvent("location-changed", {
-          bubbles: true,
-          composed: true,
-        }),
-      );
-      return;
-    }
-    if (act === "helios") {
-      const path =
-        this._config.solar?.heliosPath ?? "/nyt-overblik/solceller-helios";
-      try {
-        window.history.pushState(null, "", path);
-      } catch {
-        /* ignore */
-      }
-      window.dispatchEvent(
-        new CustomEvent("location-changed", {
-          bubbles: true,
-          composed: true,
-        }),
-      );
-      return;
-    }
-    if (act === "scroll-top") {
-      this._root
-        .querySelector<HTMLElement>(".scroll")
-        ?.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
-    if (act === "quick") {
-      this._quick(Number(data.quick));
-    }
-  }
-
-  private _quick(index: number): void {
-    const quick = this._config.quick_actions[index];
-    if (!quick || !this._hass) return;
-
-    let action: ActionConfig = { ...quick.action };
-    const entityId = firstEntityId(quick.entity) ?? firstEntityId(action);
-    if (entityId) {
-      if (action.action === "toggle" && !action.target && !action.entity_id) {
-        action = { ...action, entity_id: entityId };
-      } else if (
-        (action.action === "perform-action" ||
-          action.action === "call-service") &&
-        !action.target &&
-        !action.entity_id
-      ) {
-        action = { ...action, target: { entity_id: entityId } };
-      }
-    }
-
-    try {
-      void performAction(this._hass, action, this._config).catch(
-        (error: Error) => {
-          this._toast(
-            this._t("common.error", {
-              message: error?.message || quick.label,
-            }),
-          );
-        },
-      );
-    } catch (error) {
-      this._toast(
-        this._t("common.error", {
-          message: error instanceof Error ? error.message : quick.label,
-        }),
-      );
-    }
-  }
-
-  private _allLightAreas(): string[] {
-    const areas = this._model.rooms
-      .filter((room) => room.lights.length > 0)
-      .map((room) => room.areaId);
-    return [...new Set(areas)];
-  }
-
-  private _allLightIds(): string[] {
-    const ids = new Set<string>();
-    for (const group of this._model.lights) {
-      if (group.members.length) {
-        group.members.forEach((id) => ids.add(id));
-      } else {
-        ids.add(group.entityId);
-      }
-      group.extra.forEach((id) => ids.add(id));
-    }
-    return [...ids];
-  }
 
   _call(
     domain: string,
@@ -2175,59 +1646,7 @@ export class ArcusCard extends HTMLElement {
     this._toastTimer = setTimeout(() => element.classList.remove("show"), 3200);
   }
 
-  _refreshConfirm(): void {
-    const element = this._root.querySelector<HTMLElement>("[data-confirm]");
-    if (!element) return;
-    if (!this._confirm) {
-      element.innerHTML = "";
-      return;
-    }
-    element.innerHTML = `<div class="confirm"><span class="txt">${escapeHtml(
-      this._confirm.text,
-    )}</span><button class="btn small" data-act="cancel-confirm">${escapeHtml(
-      this._t("confirm.cancel"),
-    )}</button><button class="btn small danger" data-act="${escapeHtml(
-      this._confirm.act,
-    )}">${escapeHtml(this._t("confirm.yesLightOff"))}</button></div>`;
-  }
 
-  private _dragStart(event: PointerEvent): void {
-    if (
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(min-width: 900px)")?.matches
-    ) {
-      return;
-    }
-    const sheet = this._root.querySelector<HTMLElement>("[data-sheet]");
-    if (!sheet) return;
-
-    this._drag = { y: event.clientY, sheet };
-    sheet.style.transition = "none";
-
-    const move = (moveEvent: PointerEvent) => {
-      if (!this._drag) return;
-      const dy = Math.max(0, moveEvent.clientY - this._drag.y);
-      sheet.style.transform = `translateY(${dy}px)`;
-      this._drag.dy = dy;
-    };
-    const up = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-      sheet.style.transition = "";
-      sheet.style.transform = "";
-      if (this._drag?.dy !== undefined && this._drag.dy > 100) {
-        this._closeRoute();
-      }
-      this._drag = null;
-    };
-
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
-  }
-
-  private _dragEnd(): void {
-    /* The drag lifecycle is owned by the listeners in _dragStart. */
-  }
 }
 
 if (

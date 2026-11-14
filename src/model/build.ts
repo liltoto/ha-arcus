@@ -168,7 +168,7 @@ function lightStats(
   };
 }
 
-function effectiveRoomTemp(hass: ArcusHass, room: RoomModel): number | null {
+function effectiveRoomTemp(room: RoomModel): number | null {
   if (refIsAvailable(room.temp)) {
     const value = refNumber(room.temp?.state);
     if (value !== null) return value;
@@ -182,7 +182,7 @@ function effectiveRoomTemp(hass: ArcusHass, room: RoomModel): number | null {
 function roomStats(hass: ArcusHass, room: RoomModel): RoomStats {
   const lights = lightStats(hass, room.lights);
   return {
-    temp: effectiveRoomTemp(hass, room),
+    temp: effectiveRoomTemp(room),
     humidity: refIsAvailable(room.humidity)
       ? refNumber(room.humidity?.state)
       : null,
