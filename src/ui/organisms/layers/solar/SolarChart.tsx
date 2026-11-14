@@ -4,6 +4,7 @@ import { escapeHtml } from "../../../../format";
 import { applyGraph, type GraphInput } from "../../../../render/graph";
 import { DAY_MS, isFiniteNumber } from "./helpers";
 import { c } from "../../../styles/classes";
+import { ChartScaffold } from "../../../molecules/ChartScaffold";
 
 export interface SolarSeries {
   key: string;
@@ -99,32 +100,12 @@ export function SolarChart({
         data-chart-shared={shared ? "1" : "0"}
         aria-hidden="true"
       >
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop
-              offset="0"
-              stopColor={first?.color ?? "var(--accent)"}
-              stopOpacity=".26"
-            />
-            <stop
-              offset="1"
-              stopColor={first?.color ?? "var(--accent)"}
-              stopOpacity="0"
-            />
-          </linearGradient>
-        </defs>
-        {[0.25, 0.5, 0.75].map((part) => (
-          <line
-            key={part}
-            x1="0"
-            y1={(height * part).toFixed(1)}
-            x2={WIDTH}
-            y2={(height * part).toFixed(1)}
-            stroke="var(--line)"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-          />
-        ))}
+        <ChartScaffold
+          width={WIDTH}
+          height={height}
+          gradientId={gradientId}
+          color={first?.color}
+        />
         {first && area ? (
           <path
             data-chart-area={first.key}

@@ -10,15 +10,14 @@ export interface ChapterArtContext {
   model: HomeModel;
   config: ArcusConfig;
   t: Translator;
-  language?: string;
+  language: string;
   history?: HistoryCache;
   now?: Date;
   isOn?: (entityId: string) => boolean;
 }
 
-/** The context with `language` and `isOn` resolved once up front. */
+/** The context with `isOn` resolved once up front. */
 type ResolvedContext = ChapterArtContext & {
-  language: string;
   isOn: (entityId: string) => boolean;
 };
 
@@ -37,10 +36,9 @@ export function renderChapterArt(
   key: ChapterKey | string,
   context: ChapterArtContext,
 ): string {
-  const language = context.language ?? languageOf(context.config, context.t);
   const isOn = context.isOn ?? (() => false);
   const art = CHAPTER_ART[key as ChapterKey];
-  return art ? art({ ...context, language, isOn }) : "";
+  return art ? art({ ...context, isOn }) : "";
 }
 
 const CHAPTER_ART: Partial<Record<ChapterKey, ChapterArt>> = {
@@ -225,13 +223,6 @@ function alerts({ model }: ResolvedContext): string {
   return `<svg viewBox="0 0 220 52" preserveAspectRatio="none"><path d="M0 30 C 20 30, 24 30, 30 30 S 36 12, 44 30 S 52 42, 60 30 S 68 8, 76 30 S 86 36, 94 30 S 104 18, 112 30 S 122 30, 130 30 S 140 10, 148 30 S 158 40, 166 30 S 176 20, 184 30 S 200 30, 220 30" fill="none" stroke="${
     hasAlerts ? "var(--coral)" : "var(--sage)"
   }" stroke-width="1.1" opacity=".7"/></svg>`;
-}
-
-function languageOf(config: ArcusConfig, t: Translator): string {
-  if (config.language === "da" || config.language === "en") {
-    return config.language;
-  }
-  return t("common.today") === "I dag" ? "da" : "en";
 }
 
 function dayFraction(date: Date): number {

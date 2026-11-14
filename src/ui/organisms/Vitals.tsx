@@ -146,10 +146,7 @@ function roomContext(model: HomeModel, config: ArcusConfig): RoomContext {
   const indoorRooms = model.rooms.filter((room) => !isOutdoorRoom(room));
   const outdoorRoom = model.rooms.find(isOutdoorRoom);
   const displayRoom = indoorRooms[0];
-  const stats = (model.roomStats ?? {}) as Record<
-    string,
-    { humidity?: number | null; co2?: number | null }
-  >;
+  const stats = model.roomStats;
   return {
     indoorRooms,
     outdoorRoom,
@@ -159,9 +156,9 @@ function roomContext(model: HomeModel, config: ArcusConfig): RoomContext {
       indoorRooms.find((room) => room.humidity?.entityId)?.humidity?.entityId,
     co2Entity: indoorRooms.find((room) => room.co2?.entityId)?.co2?.entityId,
     humidity: average(
-      indoorRooms.map((room) => stats[room.id]?.humidity ?? null),
+      indoorRooms.map((room) => stats?.[room.id]?.humidity ?? null),
     ),
-    co2: average(indoorRooms.map((room) => stats[room.id]?.co2 ?? null)),
+    co2: average(indoorRooms.map((room) => stats?.[room.id]?.co2 ?? null)),
   };
 }
 

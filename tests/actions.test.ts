@@ -229,6 +229,42 @@ describe("performAction call-service", () => {
   });
 });
 
+describe("performAction service parsing", () => {
+  test.each(["light. turn_on", " light . turn_on "])(
+    "trims the halves of %s",
+    async (service) => {
+      const hass = makeHass();
+      const callService = callServiceSpy(hass);
+
+      await performAction(hass, {
+        action: "perform-action",
+        perform_action: service,
+      });
+
+      expect(callService).toHaveBeenCalledWith("light", "turn_on", {}, {});
+    },
+  );
+
+  test("trims a call-service value", async () => {
+    const hass = makeHass();
+    const callService = callServiceSpy(hass);
+
+    await performAction(hass, {
+      action: "call-service",
+      service: " climate . set_temperature ",
+      data: { temperature: 21 },
+      target: { entity_id: "climate.stue" },
+    });
+
+    expect(callService).toHaveBeenCalledWith(
+      "climate",
+      "set_temperature",
+      { temperature: 21 },
+      { entity_id: "climate.stue" },
+    );
+  });
+});
+
 describe("performAction toggle", () => {
   test("derives the domain from the entity id", async () => {
     const hass = makeHass();
@@ -261,12 +297,57 @@ describe("performAction toggle", () => {
     expect(callService).toHaveBeenCalledWith("switch", "toggle", {}, target);
   });
 
+  test("toggles an area when no entity is present", async () => {
+    const hass = makeHass();
+    const callService = callServiceSpy(hass);
+
+    await performAction(hass, {
+      action: "toggle",
+      target: { area_id: "stue" },
+    });
+
+    expect(callService).toHaveBeenCalledWith(
+      "homeassistant",
+      "toggle",
+      {},
+      { area_id: "stue" },
+    );
+  });
+
+  test("toggles a device and forwards data", async () => {
+    const hass = makeHass();
+    const callService = callServiceSpy(hass);
+
+    await performAction(hass, {
+      action: "toggle",
+      data: { transition: 1 },
+      target: { device_id: "device-kokken" },
+    });
+
+    expect(callService).toHaveBeenCalledWith(
+      "homeassistant",
+      "toggle",
+      { transition: 1 },
+      { device_id: "device-kokken" },
+    );
+  });
+
   test("rejects when no entity is present", async () => {
     const hass = makeHass();
     const callService = callServiceSpy(hass);
 
     await expect(
       performAction(hass, { action: "toggle", entity_id: ["", "  "] }),
+    ).rejects.toThrow("A toggle action needs an entity.");
+    expect(callService).not.toHaveBeenCalled();
+  });
+
+  test("rejects a blank area target", async () => {
+    const hass = makeHass();
+    const callService = callServiceSpy(hass);
+
+    await expect(
+      performAction(hass, { action: "toggle", target: { area_id: "  " } }),
     ).rejects.toThrow("A toggle action needs an entity.");
     expect(callService).not.toHaveBeenCalled();
   });

@@ -1,23 +1,24 @@
 import type { ActionConfig, ArcusConfig, ArcusHass, EntityId } from "./types";
 
-function firstEntity(action: ActionConfig): EntityId | undefined {
-  const candidates = [
-    action.target?.entity_id,
-    action.entity_id,
-    action.data?.entity_id,
-  ];
-  for (const candidate of candidates) {
-    if (typeof candidate === "string" && candidate.trim()) {
-      return candidate.trim();
-    }
-    if (Array.isArray(candidate)) {
-      const first = candidate.find(
-        (item): item is string => typeof item === "string" && !!item.trim(),
-      );
-      if (first) return first.trim();
+function firstString(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed || undefined;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (typeof item === "string" && item.trim()) return item.trim();
     }
   }
   return undefined;
+}
+
+function firstEntity(action: ActionConfig): EntityId | undefined {
+  return (
+    firstString(action.target?.entity_id) ??
+    firstString(action.entity_id) ??
+    firstString(action.data?.entity_id)
+  );
 }
 
 function targetOf(action: ActionConfig): Record<string, unknown> {
@@ -28,13 +29,28 @@ function targetOf(action: ActionConfig): Record<string, unknown> {
   return entityId ? { entity_id: entityId } : {};
 }
 
+function hasScopedTarget(action: ActionConfig): boolean {
+  return !!(
+    firstString(action.target?.area_id) ?? firstString(action.target?.device_id)
+  );
+}
+
 function splitService(value: string | undefined): [string, string] {
   const raw = String(value ?? "").trim();
   const dot = raw.indexOf(".");
   if (dot <= 0 || dot === raw.length - 1) {
     throw new Error(`Invalid service: ${raw || "(missing)"}`);
   }
-  return [raw.slice(0, dot), raw.slice(dot + 1)];
+  return [raw.slice(0, dot).trim(), raw.slice(dot + 1).trim()];
+}
+
+async function callServiceAction(
+  hass: ArcusHass,
+  action: ActionConfig,
+  serviceValue?: string,
+): Promise<void> {
+  const [domain, service] = splitService(serviceValue);
+  await hass.callService(domain, service, action.data ?? {}, targetOf(action));
 }
 
 /**
@@ -111,38 +127,30 @@ export async function performAction(
 
   switch (kind) {
     case "perform-action": {
-      const [domain, service] = splitService(
+      await callServiceAction(
+        hass,
+        action,
         action.perform_action ?? action.service,
-      );
-      await hass.callService(
-        domain,
-        service,
-        action.data ?? {},
-        targetOf(action),
       );
       return;
     }
 
     case "call-service": {
-      const [domain, service] = splitService(action.service);
-      await hass.callService(
-        domain,
-        service,
-        action.data ?? {},
-        targetOf(action),
-      );
+      await callServiceAction(hass, action, action.service);
       return;
     }
 
     case "toggle": {
       const entityId = firstEntity(action);
-      if (!entityId) throw new Error("A toggle action needs an entity.");
-      const domain = entityId.split(".")[0];
-      const target =
-        action.target && typeof action.target === "object"
-          ? action.target
-          : { entity_id: entityId };
-      await hass.callService(domain, "toggle", action.data ?? {}, target);
+      if (entityId) {
+        const domain = entityId.split(".")[0];
+        await callServiceAction(hass, action, `${domain}.toggle`);
+        return;
+      }
+      if (!hasScopedTarget(action)) {
+        throw new Error("A toggle action needs an entity.");
+      }
+      await callServiceAction(hass, action, "homeassistant.toggle");
       return;
     }
 
@@ -158,13 +166,7 @@ export async function performAction(
 
     default: {
       if (action.service) {
-        const [domain, service] = splitService(action.service);
-        await hass.callService(
-          domain,
-          service,
-          action.data ?? {},
-          targetOf(action),
-        );
+        await callServiceAction(hass, action, action.service);
         return;
       }
       throw new Error(`Unsupported action: ${kind || "unknown"}`);

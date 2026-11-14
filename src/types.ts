@@ -829,6 +829,23 @@ export interface AlertModel {
   route: string;
 }
 
+/** Computed per-room card stats, keyed by room id on the home model. */
+export interface RoomStats {
+  temp: number | null;
+  humidity: number | null;
+  co2: number | null;
+  lightsOn: number;
+  lightsTotal: number;
+  open: number;
+  leak: boolean;
+}
+
+/** House-wide light counts computed once per model build. */
+export interface LightStats {
+  on: number;
+  total: number;
+}
+
 export interface HomeModel {
   rooms: RoomModel[];
   /** All light groups across the discovered rooms, in room order. */
@@ -854,6 +871,12 @@ export interface HomeModel {
   ventilation?: VentilationModel;
   alerts: AlertModel[];
   chapters: Record<ChapterKey, boolean>;
+  /** Resolved dashboard language; every sheet reads this instead of guessing. */
+  language: Language;
+  /** Per-room card stats, filled by `buildModel`. */
+  roomStats?: Record<string, RoomStats>;
+  /** House-wide light counts, filled by `buildModel`. */
+  lightStats?: LightStats;
   [key: string]: any;
 }
 

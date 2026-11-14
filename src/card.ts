@@ -43,16 +43,6 @@ declare global {
   }
 }
 
-interface RoomStats {
-  temp: number | null;
-  humidity: number | null;
-  co2: number | null;
-  lightsOn: number;
-  lightsTotal: number;
-  open: number;
-  leak: boolean;
-}
-
 interface Route {
   base: string;
   sub: string | null;
@@ -531,15 +521,12 @@ export class ArcusCard extends HTMLElement {
     const person = this._personState();
     const language = this._language;
     const displayRooms = this._model.rooms.filter((room) => room.id !== "skur");
-    const stats = (this._model.roomStats ?? {}) as Record<string, RoomStats>;
+    const stats = this._model.roomStats;
     const open = displayRooms.reduce(
-      (total, room) => total + (stats[room.id]?.open ?? 0),
+      (total, room) => total + (stats?.[room.id]?.open ?? 0),
       0,
     );
-    const lights = (this._model.lightStats ?? { on: 0, total: 0 }) as {
-      on: number;
-      total: number;
-    };
+    const lights = this._model.lightStats ?? { on: 0, total: 0 };
     const roomsMeta = this._t("hero.roomsMeta")
       .replace("{rooms}", String(displayRooms.length))
       .replace("{open}", String(open))

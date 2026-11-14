@@ -115,8 +115,7 @@ export function resolveVentilationView(
   ventilation: VentilationModel,
   t: Translator,
 ): VentilationView {
-  const language: SheetLanguage =
-    model.language === "en" || config.language === "en" ? "en" : "da";
+  const language: SheetLanguage = model.language;
   const tempUnit = resolveTempUnit(hass, config);
   const card = model.systemCards.find((entry) => entry.id === "ventilation");
   const filterValue = ventilation.filter ?? card?.filter?.state ?? null;

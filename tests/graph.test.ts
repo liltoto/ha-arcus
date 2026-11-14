@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
+import { formatTime } from "../src/format";
 import {
   applyGraph,
   graphAttrs,
@@ -308,6 +309,37 @@ describe("graph tips", () => {
     expect(parseFloat(tip.style.left)).toBeGreaterThanOrEqual(0);
     expect(parseFloat(tip.style.left)).toBeLessThanOrEqual(200);
     expect(parseFloat(cursor.style.left)).toBeLessThanOrEqual(200);
+
+    dispose();
+  });
+
+  test("multi-series bars use the cursor bucket for every row", () => {
+    const start = Date.UTC(2026, 0, 1, 0, 0);
+    const { root, chart, dispose } = mountChart({
+      mode: "bars",
+      start,
+      end: start + 4 * 60 * 60 * 1000,
+      unit: "kWh",
+      decimals: 0,
+      series: [
+        { label: "Sol", values: [10, 20, 30, 40] },
+        { label: "Hus", values: [1, 2, 3, 4] },
+      ],
+    });
+
+    // 40 of 200 px floors to bucket 0, while nearest-point rounding would
+    // pick bucket 1.
+    pointer(chart, "pointermove", { clientX: 40 });
+
+    const tip = tipOf(root);
+    const values = tip.querySelectorAll<HTMLElement>(".gt-v");
+    expect(values).toHaveLength(2);
+    expect(values[0].textContent).toBe("10 kWh");
+    expect(values[1].textContent).toBe("1 kWh");
+    expect(cursorOf(root).style.left).toBe("25px");
+    expect(tip.querySelector(".gt-t")?.textContent).toBe(
+      formatTime(start, "en"),
+    );
 
     dispose();
   });

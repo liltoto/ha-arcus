@@ -8,7 +8,6 @@ import {
 } from "../../../format";
 import type { HistoryCache } from "../../../data/history";
 import type {
-  ArcusConfig,
   ArcusHass,
   EnergyApplianceConfig,
   EnergyEvConfig,
@@ -17,35 +16,13 @@ import type {
   PriceModel,
   Translator,
 } from "../../../types";
-import {
-  useActions,
-  useConfig,
-  useHass,
-  useHistory,
-  useHistoryVersion,
-  useModel,
-  useNow,
-  useTranslator,
-} from "../../hooks";
+import { useHistoryFrame } from "../../hooks/useLayerFrame";
 import { Icon } from "../../atoms/Icon";
 import { ListRow } from "../../molecules/ListRow";
 import { Readout } from "../../molecules/Readout";
 import { SheetHeader } from "../../molecules/SheetHeader";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { c } from "../../styles/classes";
-
-function languageOf(
-  model: HomeModel,
-  config: ArcusConfig,
-  t: Translator,
-): Language {
-  const modelLanguage = (model as { language?: unknown }).language;
-  if (modelLanguage === "da" || modelLanguage === "en") return modelLanguage;
-  if (config.language === "da" || config.language === "en") {
-    return config.language;
-  }
-  return t("common.today") === "I dag" ? "da" : "en";
-}
 
 function nowOf(now: () => Date): Date {
   try {
@@ -318,16 +295,9 @@ function AppliancesBlock({
  * blocks come from `config.energy` and read their live values from `hass`.
  */
 export function EnergyBody(_props: LayerBodyProps) {
-  const hass = useHass();
-  const model = useModel();
-  const config = useConfig();
-  const t = useTranslator();
-  const history = useHistory();
-  useHistoryVersion();
-  const now = useNow();
-  const actions = useActions();
+  const { hass, model, config, t, history, now, actions } = useHistoryFrame();
 
-  const language = languageOf(model, config, t);
+  const language = model.language;
   const price = priceSection(model);
   const nowDate = nowOf(now);
   const currency = resolveCurrency(hass, config, language);

@@ -1,13 +1,13 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { roomView, type RoomStatsLike } from "../../src/ui/home-view";
+import { roomView } from "../../src/ui/home-view";
 import { RoomGrid } from "../../src/ui/organisms/RoomGrid";
-import type { HomeModel } from "../../src/types";
+import type { HomeModel, RoomStats } from "../../src/types";
 import { renderWithArcus } from "./home-test-utils";
 
-function statsOf(model: HomeModel, roomId: string): RoomStatsLike {
-  const stats = model.roomStats as Record<string, RoomStatsLike>;
+function statsOf(model: HomeModel, roomId: string): RoomStats {
+  const stats = model.roomStats as Record<string, RoomStats>;
   return stats[roomId];
 }
 
@@ -81,7 +81,7 @@ describe("RoomGrid", () => {
     if (!room) return;
 
     const language = "da";
-    const build = (overrides: Partial<RoomStatsLike>) =>
+    const build = (overrides: Partial<RoomStats>) =>
       roomView(
         room,
         {

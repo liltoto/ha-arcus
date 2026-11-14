@@ -10,11 +10,13 @@ import type {
   HeatingReserveModel,
   HomeModel,
   LightGroupModel,
+  LightStats,
   OpeningModel,
   PrayerTimeModel,
   PrayersModel,
   PriceModel,
   RoomModel,
+  RoomStats,
   SecurityBatteryModel,
   SecurityLockModel,
   SecurityModel,
@@ -47,16 +49,6 @@ const PRAYER_DEFINITIONS = [
   { id: "maghrib", key: "prayers.maghrib" },
   { id: "isha", key: "prayers.isha" },
 ] as const;
-
-interface RoomStats {
-  temp: number | null;
-  humidity: number | null;
-  co2: number | null;
-  lightsOn: number;
-  lightsTotal: number;
-  open: number;
-  leak: boolean;
-}
 
 function isRecord(value: unknown): value is Record<string, any> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -145,10 +137,7 @@ function nameOf(
   );
 }
 
-function lightStats(
-  hass: ArcusHass,
-  groups: LightGroupModel[],
-): { on: number; total: number } {
+function lightStats(hass: ArcusHass, groups: LightGroupModel[]): LightStats {
   const ids = lightIdsForGroups(groups);
   return {
     on: ids.filter((id) => isOnState(hass.states?.[id]?.state)).length,
@@ -478,17 +467,13 @@ function parseWattsArray(watts: unknown): SolarPoint[] {
   if (!Array.isArray(watts)) return points;
 
   for (const item of watts) {
-    if (isRecord(item)) {
-      const rawTime = item.t ?? item.time ?? item.datetime;
-      const value = numberFrom(item.v ?? item.value ?? item.watts);
-      if (!rawTime || value === null) continue;
-      const time = new Date(rawTime);
-      if (Number.isNaN(time.getTime())) continue;
-      points.push({ t: time, v: value });
-    } else {
-      const value = numberFrom(item);
-      if (value === null) continue;
-    }
+    if (!isRecord(item)) continue;
+    const rawTime = item.t ?? item.time ?? item.datetime;
+    const value = numberFrom(item.v ?? item.value ?? item.watts);
+    if (!rawTime || value === null) continue;
+    const time = new Date(rawTime);
+    if (Number.isNaN(time.getTime())) continue;
+    points.push({ t: time, v: value });
   }
 
   return points;

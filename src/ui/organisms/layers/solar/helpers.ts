@@ -7,13 +7,11 @@ import { formatNumber } from "../../../../format";
 import type {
   ArcusConfig,
   ArcusHass,
-  HomeModel,
   Language,
   SolarConfig,
   SolarModel,
   SolarPoint,
   SolarTab,
-  Translator,
 } from "../../../../types";
 
 export const DAY_MS = 86_400_000;
@@ -82,20 +80,6 @@ const SOLAR_VALUE_KEYS = [
 
 function localeFor(language: Language): string {
   return language === "da" ? "da-DK" : "en-GB";
-}
-
-/** Mirrors the legacy `languageOf` fallback used by the solar sheet. */
-export function languageOf(
-  model: HomeModel,
-  config: ArcusConfig,
-  t: Translator,
-): Language {
-  const modelLanguage = (model as { language?: unknown }).language;
-  if (modelLanguage === "da" || modelLanguage === "en") return modelLanguage;
-  if (config.language === "da" || config.language === "en") {
-    return config.language;
-  }
-  return t("common.today") === "I dag" ? "da" : "en";
 }
 
 export function isFiniteNumber(value: unknown): value is number {

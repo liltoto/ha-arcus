@@ -44,6 +44,10 @@ const EV_BATTERY_RE =
 const VENTILATION_UNIT_RE =
   /nilan|vallox|dantherm|flexit|duka|komfovent|ventilation|hrv|erv/i;
 
+const POWER_UNIT_RE = /^(W|kW)$/i;
+
+const ENERGY_UNIT_RE = /^(Wh|kWh|MWh)$/i;
+
 function domainOf(entityId: string): string {
   return entityId.includes(".") ? entityId.slice(0, entityId.indexOf(".")) : "";
 }
@@ -111,10 +115,12 @@ function findMatch(
   return pool.find((id) => pattern.test(friendlyNameOf(hass, id)));
 }
 
-function findPowerMatch(
+function findUnitMatch(
   hass: ArcusHass,
   sensors: string[],
   pattern: RegExp,
+  deviceClass: string,
+  unitPattern: RegExp,
   predicate?: (id: string) => boolean,
 ): string | undefined {
   const strict = findMatch(
@@ -122,32 +128,7 @@ function findPowerMatch(
     sensors,
     pattern,
     (id) =>
-      deviceClassOf(hass, id) === "power" && (predicate ? predicate(id) : true),
-  );
-  if (strict) return strict;
-  return findMatch(
-    hass,
-    sensors,
-    pattern,
-    (id) =>
-      !deviceClassOf(hass, id) &&
-      /^(W|kW)$/i.test(unitOf(hass, id)) &&
-      (predicate ? predicate(id) : true),
-  );
-}
-
-function findEnergyMatch(
-  hass: ArcusHass,
-  sensors: string[],
-  pattern: RegExp,
-  predicate?: (id: string) => boolean,
-): string | undefined {
-  const strict = findMatch(
-    hass,
-    sensors,
-    pattern,
-    (id) =>
-      deviceClassOf(hass, id) === "energy" &&
+      deviceClassOf(hass, id) === deviceClass &&
       (predicate ? predicate(id) : true),
   );
   if (strict) return strict;
@@ -157,7 +138,7 @@ function findEnergyMatch(
     pattern,
     (id) =>
       !deviceClassOf(hass, id) &&
-      /^(Wh|kWh|MWh)$/i.test(unitOf(hass, id)) &&
+      unitPattern.test(unitOf(hass, id)) &&
       (predicate ? predicate(id) : true),
   );
 }
@@ -301,30 +282,44 @@ function discoverSolar(hass: ArcusHass): SolarConfig | undefined {
     sensors,
     /energy_production_tomorrow|solcast.*tomorrow|forecast.*solar.*tomorrow/i,
   );
-  const power = findPowerMatch(
+  const power = findUnitMatch(
     hass,
     sensors,
     /pv.*power|solar.*power|inverter.*power/i,
+    "power",
+    POWER_UNIT_RE,
     (id) => !/pv[1-4]|mppt[1-4]/i.test(id),
   );
-  const today = findEnergyMatch(
+  const today = findUnitMatch(
     hass,
     sensors,
     /daily_production|solar.*today|pv.*today|sol.*i_dag/i,
+    "energy",
+    ENERGY_UNIT_RE,
     (id) => !/forecast|solcast/i.test(id),
   );
   const batterySoc = sensors.find((id) => isHomeBatterySensor(hass, id));
-  const batteryPower = findPowerMatch(
+  const batteryPower = findUnitMatch(
     hass,
     sensors,
     /battery.*power|batteri.*effekt/i,
+    "power",
+    POWER_UNIT_RE,
   );
-  const load = findPowerMatch(
+  const load = findUnitMatch(
     hass,
     sensors,
     /load.*power|house.*load|home.*power|huset.*bruger/i,
+    "power",
+    POWER_UNIT_RE,
   );
-  const grid = findPowerMatch(hass, sensors, /grid.*power|net.*power/i);
+  const grid = findUnitMatch(
+    hass,
+    sensors,
+    /grid.*power|net.*power/i,
+    "power",
+    POWER_UNIT_RE,
+  );
   const pv1 = findMatch(hass, sensors, /pv1.*power|mppt1/i);
   const pv2 = findMatch(hass, sensors, /pv2.*power|mppt2/i);
   const pv3 = findMatch(hass, sensors, /pv3.*power|mppt3/i);

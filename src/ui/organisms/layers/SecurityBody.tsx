@@ -1,7 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import { formatNumber } from "../../../format";
 import type {
-  ArcusConfig,
   ArcusHass,
   HomeModel,
   OpeningModel,
@@ -39,10 +38,6 @@ const HOUSE_CELLS = [
   { x: 280, y: 115, w: 125, h: 95, cx: 342, labelY: 139, dotY: 183 },
   { x: 415, y: 115, w: 135, h: 95, cx: 482, labelY: 139, dotY: 183 },
 ] as const;
-
-function languageOf(model: HomeModel, config: ArcusConfig): "da" | "en" {
-  return model.language === "en" || config.language === "en" ? "en" : "da";
-}
 
 function alarmStateLabel(t: Translator, state: string | null): string {
   if (state === "armed_home") return t("security.armedHome");
@@ -146,7 +141,7 @@ export function SecurityBody(_props: LayerBodyProps) {
     );
   }
 
-  const language = languageOf(model, config);
+  const language = model.language;
   const fmt = (value: number | null | undefined, digits = 0) =>
     formatNumber(value, digits, language);
   const locks = security.locks ?? [];

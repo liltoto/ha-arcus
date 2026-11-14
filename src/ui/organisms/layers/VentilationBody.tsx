@@ -623,8 +623,7 @@ export function VentilationBody(_props: LayerBodyProps) {
     );
   }
 
-  const language: SheetLanguage =
-    model.language === "en" || config.language === "en" ? "en" : "da";
+  const language: SheetLanguage = model.language;
   const view = resolveVentilationView(hass, model, config, ventilation, t);
   const {
     tempUnit,

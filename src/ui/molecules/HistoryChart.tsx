@@ -3,6 +3,7 @@ import { areaPath, sparkPath } from "../../render/charts";
 import { applyGraph, type GraphInput } from "../../render/graph";
 import type { Translator } from "../../types";
 import { ChartBox } from "./ChartBox";
+import { ChartScaffold } from "./ChartScaffold";
 
 export interface HistoryChartSeries {
   values: Array<number | null>;
@@ -83,32 +84,12 @@ export function HistoryChart({
         preserveAspectRatio="none"
         aria-hidden="true"
       >
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop
-              offset="0"
-              stopColor={first?.color ?? "var(--accent)"}
-              stopOpacity=".26"
-            />
-            <stop
-              offset="1"
-              stopColor={first?.color ?? "var(--accent)"}
-              stopOpacity="0"
-            />
-          </linearGradient>
-        </defs>
-        {[0.25, 0.5, 0.75].map((part) => (
-          <line
-            key={part}
-            x1="0"
-            y1={CHART_HEIGHT * part}
-            x2={CHART_WIDTH}
-            y2={CHART_HEIGHT * part}
-            stroke="var(--line)"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-          />
-        ))}
+        <ChartScaffold
+          width={CHART_WIDTH}
+          height={CHART_HEIGHT}
+          gradientId={gradientId}
+          color={first?.color}
+        />
         <path fill={`url(#${gradientId})`} d={area} />
         {series.map((entry) => (
           <path

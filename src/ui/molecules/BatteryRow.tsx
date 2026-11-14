@@ -1,14 +1,11 @@
+import { clampPercent } from "../../format";
 import { c } from "../styles/classes";
+
 export interface BatteryRowProps {
   name: string;
   value: number;
   sub?: string;
   entity?: string;
-}
-
-function clampPercent(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.min(100, Math.round(value)));
 }
 
 /**

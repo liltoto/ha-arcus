@@ -105,6 +105,21 @@ describe("useSheetDrag", () => {
     expect(sheet().style.transition).toBe("");
   });
 
+  test("pointercancel resets a long pull without closing", () => {
+    const onClose = vi.fn();
+    render(<Harness onClose={onClose} />);
+
+    down(100);
+    move(220);
+    expect(sheet().style.transform).toBe("translateY(120px)");
+
+    cancel(220);
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(sheet().style.transform).toBe("");
+    expect(sheet().style.transition).toBe("");
+  });
+
   test("a right-button pointerdown is ignored", () => {
     const onClose = vi.fn();
     render(<Harness onClose={onClose} />);

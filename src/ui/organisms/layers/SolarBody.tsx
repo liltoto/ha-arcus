@@ -10,16 +10,7 @@ import type {
 } from "../../../types";
 import type { ArcusActions } from "../../types";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
-import {
-  useActions,
-  useConfig,
-  useHass,
-  useHistory,
-  useHistoryVersion,
-  useModel,
-  useNow,
-  useTranslator,
-} from "../../hooks";
+import { useHistoryFrame } from "../../hooks/useLayerFrame";
 import { EmptyState } from "../../atoms/EmptyState";
 import { Readout } from "../../molecules/Readout";
 import { SegmentedTabs } from "../../molecules/SegmentedTabs";
@@ -42,7 +33,6 @@ import {
   dayWindow,
   installedAtValue,
   isFiniteNumber,
-  languageOf,
   normalizeSub,
   pointsOnDate,
   solarHasData,
@@ -1240,15 +1230,17 @@ function solarHeaderSummary(
  * and the hover readout keep working while the sheet runs on React.
  */
 export function SolarBody({ route }: LayerBodyProps) {
-  const hass = useHass();
-  const model = useModel();
-  const config = useConfig();
-  const t = useTranslator();
-  const history = useHistory();
-  useHistoryVersion();
-  const now = useNow()();
-  const actions = useActions();
-  const language = languageOf(model, config, t);
+  const {
+    hass,
+    model,
+    config,
+    t,
+    history,
+    now: getNow,
+    actions,
+  } = useHistoryFrame();
+  const now = getNow();
+  const language = model.language;
   const solar = model.solar;
   const hasData = solarHasData(solar);
   const active = normalizeSub(route.sub);

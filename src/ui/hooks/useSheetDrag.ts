@@ -47,7 +47,7 @@ export function useSheetDrag(
       const finish = (commit: boolean): void => {
         window.removeEventListener("pointermove", move);
         window.removeEventListener("pointerup", up);
-        window.removeEventListener("pointercancel", up);
+        window.removeEventListener("pointercancel", cancel);
         reset();
         stopDrag = null;
         if (commit && dy > 100) closeRef.current();
@@ -59,11 +59,12 @@ export function useSheetDrag(
       };
 
       const up = (): void => finish(true);
+      const cancel = (): void => finish(false);
 
       sheet.style.transition = "none";
       window.addEventListener("pointermove", move);
       window.addEventListener("pointerup", up);
-      window.addEventListener("pointercancel", up);
+      window.addEventListener("pointercancel", cancel);
       stopDrag = () => finish(false);
     };
 
