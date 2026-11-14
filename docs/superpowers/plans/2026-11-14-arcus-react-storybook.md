@@ -77,15 +77,15 @@ scripts/{build.mjs,dev.mjs,check-size.mjs}
 - Produces: `ButtonProps { children: ReactNode; tone?: "default" | "primary" | "danger"; size?: "sm" | "md"; onClick?: () => void; disabled?: boolean; className?: string }`
 - Produces: `withStoryFrame: Decorator` (shadow-root decorator that injects `STYLES`)
 
-- [ ] Add React 19.3.1, ReactDOM 19.3.1, Storybook 10.6.7 (`storybook`, `@storybook/react`, `@storybook/react-vite`, `@storybook/addon-docs`, `@storybook/addon-a11y`), `@vitejs/plugin-react` 6.3, `vite` 8.3.8, `@testing-library/react` 16.3.3, `@testing-library/user-event` 14.6.10, `@testing-library/jest-dom` 7.0.1, and React types.
-- [ ] Add scripts `storybook` (`storybook dev -p 6006`) and `build-storybook` (`storybook build`).
-- [ ] Configure `tsconfig.json` with `"jsx": "react-jsx"`, `"types": ["vitest/globals", "react", "react-dom"]`, and include `.storybook`.
-- [ ] Configure Vitest with `@vitejs/plugin-react`, `tests/setup.ts`, and `tests/**/*.test.tsx`.
-- [ ] Add `tests/setup.ts` with `@testing-library/jest-dom/vitest`, RTL cleanup, and `IS_REACT_ACT_ENVIRONMENT = true`.
-- [ ] Create the shadow-root `StoryFrame` decorator and a `Button` atom with stories.
-- [ ] Add a `storybook` CI job that runs `npm run build-storybook`.
-- [ ] Run `npm run typecheck && npm test && npm run build-storybook`.
-- [ ] Commit: `chore: add react and storybook tooling`.
+- [x] Add React 19.3.1, ReactDOM 19.3.1, Storybook 10.6.7 (`storybook`, `@storybook/react`, `@storybook/react-vite`, `@storybook/addon-docs`, `@storybook/addon-a11y`), `@vitejs/plugin-react` 6.3, `vite` 8.3.8, `@testing-library/react` 16.3.3, `@testing-library/user-event` 14.6.10, `@testing-library/jest-dom` 7.0.1, and React types.
+- [x] Add scripts `storybook` (`storybook dev -p 6006`) and `build-storybook` (`storybook build`).
+- [x] Configure `tsconfig.json` with `"jsx": "react-jsx"`, `"types": ["vitest/globals", "react", "react-dom"]`, and include `.storybook`.
+- [x] Configure Vitest with `@vitejs/plugin-react`, `tests/setup.ts`, and `tests/**/*.test.tsx`.
+- [x] Add `tests/setup.ts` with `@testing-library/jest-dom/vitest`, RTL cleanup, and `IS_REACT_ACT_ENVIRONMENT = true`.
+- [x] Create the shadow-root `StoryFrame` decorator and a `Button` atom with stories.
+- [x] Add a `storybook` CI job that runs `npm run build-storybook`.
+- [x] Run `npm run typecheck && npm test && npm run build-storybook`.
+- [x] Commit: `chore: add react and storybook tooling`.
 
 ## Task 2: CSS pipeline, zero visual change
 
@@ -97,12 +97,12 @@ scripts/{build.mjs,dev.mjs,check-size.mjs}
 - Produces: `STYLES: string` from `src/ui/styles/index.ts`
 - `src/render/styles.ts` re-exports `STYLES` for compatibility until Task 12.
 
-- [ ] Add an esbuild `?inline` plugin and `jsx: "automatic"` to `scripts/build.mjs` and `scripts/dev.mjs`.
-- [ ] Define `process.env.NODE_ENV` as `"production"` in the build and `"development"` in dev.
-- [ ] Move the CSS from `src/render/styles.ts` into the new files verbatim; no selector changes.
-- [ ] Add `src/types/assets.d.ts` for `*.css?inline`.
-- [ ] Run `npm run build`, `npm test`, and `npm run visual`; expect no baseline diffs.
-- [ ] Commit: `refactor: split shadow styles into css modules`.
+- [x] Add an esbuild `?inline` plugin and `jsx: "automatic"` to `scripts/build.mjs` and `scripts/dev.mjs`.
+- [x] Define `process.env.NODE_ENV` as `"production"` in the build and `"development"` in dev.
+- [x] Move the CSS from `src/render/styles.ts` into the new files verbatim; no selector changes.
+- [x] Add `src/types/assets.d.ts` for `*.css?inline`.
+- [x] Run `npm run build`, `npm test`, and `npm run visual`; expect no baseline diffs.
+- [x] Commit: `refactor: split shadow styles into css modules`.
 
 ## Task 3: Provider and action bridge
 
@@ -149,11 +149,11 @@ export function useNow(): () => Date;
 ```
 - Consumes: `ArcusHass`, `HomeModel`, `ArcusConfig`, `Translator`, `SheetRoute`, `ActionConfig`, `AtmosphereSetting`, `HistoryCache`.
 
-- [ ] Write `tests/ui/provider.test.tsx`: two providers render independent probe components; a state-only `hass` update changes `useHass()` but keeps `useConfig()`/`useActions()` identity stable.
-- [ ] Implement the provider and hooks with small contexts (no global store).
-- [ ] Add the `ArcusActions` implementation in `card.ts`, reading the latest `_hass` through closures.
-- [ ] Run `npx vitest run tests/ui/provider.test.tsx` and `npm run typecheck`.
-- [ ] Commit: `feat: add react provider and action bridge`.
+- [x] Write `tests/ui/provider.test.tsx`: two providers render independent probe components; a state-only `hass` update changes `useHass()` but keeps `useConfig()`/`useActions()` identity stable.
+- [x] Implement the provider and hooks with small contexts (no global store).
+- [x] Add the `ArcusActions` implementation in `card.ts`, reading the latest `_hass` through closures.
+- [x] Run `npx vitest run tests/ui/provider.test.tsx` and `npm run typecheck`.
+- [x] Commit: `feat: add react provider and action bridge`.
 
 ## Task 4: Atoms
 
@@ -170,11 +170,11 @@ export function useNow(): () => Date;
 - `TabProps { active: boolean; children: ReactNode; onClick: () => void }`
 - `EmptyStateProps { icon?: string; title: string; hint?: string }`
 
-- [ ] Write failing atom tests: button variants/aria, icon renders SVG, sparkline emits a path, stepper/tab active state, empty state.
-- [ ] Implement the atoms using the existing `icon()`/`sparkPath()`/`areaPath()` helpers. `Icon` may use `dangerouslySetInnerHTML` with the static internal `ICONS` map only.
-- [ ] Add stories for every atom with controls and a11y.
-- [ ] Run `npx vitest run tests/ui/atoms.test.tsx` and `npm run build-storybook`.
-- [ ] Commit: `feat: add atomic ui primitives and stories`.
+- [x] Write failing atom tests: button variants/aria, icon renders SVG, sparkline emits a path, stepper/tab active state, empty state.
+- [x] Implement the atoms using the existing `icon()`/`sparkPath()`/`areaPath()` helpers. `Icon` may use `dangerouslySetInnerHTML` with the static internal `ICONS` map only.
+- [x] Add stories for every atom with controls and a11y.
+- [x] Run `npx vitest run tests/ui/atoms.test.tsx` and `npm run build-storybook`.
+- [x] Commit: `feat: add atomic ui primitives and stories`.
 
 ## Task 5: Molecules
 
@@ -194,11 +194,11 @@ export function useNow(): () => Date;
 - `ConfirmBarProps { text: string; onConfirm: () => void; onCancel: () => void }`
 - Components are pure props; no context inside molecules.
 
-- [ ] Write failing molecule tests: room/chapter click, light toggle and slider callback, stepper min/max, tab selection, confirm/cancel, opening/battery rows.
-- [ ] Implement the molecules with the existing class names and `data-*` attributes.
-- [ ] Add stories for every molecule with realistic fixture args.
-- [ ] Run `npx vitest run tests/ui/molecules.test.tsx` and `npm run build-storybook`.
-- [ ] Commit: `feat: add dashboard molecules and stories`.
+- [x] Write failing molecule tests: room/chapter click, light toggle and slider callback, stepper min/max, tab selection, confirm/cancel, opening/battery rows.
+- [x] Implement the molecules with the existing class names and `data-*` attributes.
+- [x] Add stories for every molecule with realistic fixture args.
+- [x] Run `npx vitest run tests/ui/molecules.test.tsx` and `npm run build-storybook`.
+- [x] Commit: `feat: add dashboard molecules and stories`.
 
 ## Task 6: Home page and card bridge
 
@@ -212,13 +212,13 @@ export function useNow(): () => Date;
 - `HomePageProps` consumes the provider via hooks.
 - `LegacySheetProps { route: SheetRoute }` renders `<arcus-sheets>` and sets `app`/`route` on the element.
 
-- [ ] Write `tests/ui/home.test.tsx`: renders greeting, room, chapter; clicking a room calls `actions.navigate("rum/stue")`; clicking a chapter calls `actions.navigate("energi")`; a new `hass` with changed areas rebuilds the room list.
-- [ ] Implement `HomeTemplate`, `HomePage`, and the home organisms with the existing class names and copy. Reuse `buildBindings` for hero/vital copy; render `greet`/`weatherStrip` through `dangerouslySetInnerHTML` (internally escaped).
-- [ ] Mount React in `card.ts`: create `<div class="arcus-react">` (CSS `display: contents`) in the shadow root, `createRoot`, initial `flushSync`, later renders batched on `requestAnimationFrame`. `updateComplete` resolves after the latest commit.
-- [ ] Keep the legacy `<arcus-sheets>` element inside the React-rendered sheet frame until Task 7.
-- [ ] Remove home `data-bind`/`data-act` patching from the card; keep action/history/route/model logic.
-- [ ] Run `npx vitest run tests/ui/home.test.tsx tests/card.test.ts` and `npm run visual`; baselines must stay unchanged. Fix React whitespace rather than refresh snapshots.
-- [ ] Commit: `feat: render the home view with react`.
+- [x] Write `tests/ui/home.test.tsx`: renders greeting, room, chapter; clicking a room calls `actions.navigate("rum/stue")`; clicking a chapter calls `actions.navigate("energi")`; a new `hass` with changed areas rebuilds the room list.
+- [x] Implement `HomeTemplate`, `HomePage`, and the home organisms with the existing class names and copy. Reuse `buildBindings` for hero/vital copy; render `greet`/`weatherStrip` through `dangerouslySetInnerHTML` (internally escaped).
+- [x] Mount React in `card.ts`: create `<div class="arcus-react">` (CSS `display: contents`) in the shadow root, `createRoot`, initial `flushSync`, later renders batched on `requestAnimationFrame`. `updateComplete` resolves after the latest commit.
+- [x] Keep the legacy `<arcus-sheets>` element inside the React-rendered sheet frame until Task 7.
+- [x] Remove home `data-bind`/`data-act` patching from the card; keep action/history/route/model logic.
+- [x] Run `npx vitest run tests/ui/home.test.tsx tests/card.test.ts` and `npm run visual`; baselines must stay unchanged. Fix React whitespace rather than refresh snapshots.
+- [x] Commit: `feat: render the home view with react`.
 
 ## Task 7: Sheet frame and Lights layer
 
@@ -232,12 +232,12 @@ export function useNow(): () => Date;
 - `LayerBodyProps { route: SheetRoute }` — every layer body receives the active route and reads the provider.
 - `layerRegistry: Record<string, ComponentType<LayerBodyProps>>` with every layer key pre-created. Unported layers render `<LegacySheet route={route} />` in their stub.
 
-- [ ] Write failing sheet tests: open/close, focus trap, Escape, focus restore, scroll position across a `hass` update, slider not interrupted.
-- [ ] Implement `SheetFrame`, `SheetTemplate`, `SheetPage`, and the focus/drag hooks.
-- [ ] Implement `LightsBody` fully.
-- [ ] Pre-create every other `*Body.tsx` as a legacy-backed stub and register it in `layerRegistry`.
-- [ ] Run `npx vitest run tests/ui/sheet.test.tsx tests/card.test.ts` and `npm run visual`.
-- [ ] Commit: `feat: add react sheet frame and lights layer`.
+- [x] Write failing sheet tests: open/close, focus trap, Escape, focus restore, scroll position across a `hass` update, slider not interrupted.
+- [x] Implement `SheetFrame`, `SheetTemplate`, `SheetPage`, and the focus/drag hooks.
+- [x] Implement `LightsBody` fully.
+- [x] Pre-create every other `*Body.tsx` as a legacy-backed stub and register it in `layerRegistry`.
+- [x] Run `npx vitest run tests/ui/sheet.test.tsx tests/card.test.ts` and `npm run visual`.
+- [x] Commit: `feat: add react sheet frame and lights layer`.
 
 ## Task 8: Room sheet
 
