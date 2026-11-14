@@ -8,8 +8,6 @@ export interface HomePageProps {
   app: SheetApp;
   atmo: AtmosphereSetting;
   dark: boolean;
-  /** Kept for the card bridge API; the route now owns the open state. */
-  sheetOpen: boolean;
 }
 
 /**

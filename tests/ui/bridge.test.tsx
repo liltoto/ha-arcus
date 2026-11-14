@@ -72,14 +72,13 @@ function bridgeProps() {
       version: "0.2.0",
       roomsMeta: "<b>7 rum</b> · 0 åbne · 0 lys tændt",
     },
-    route: { base: "energi", sub: null } as const,
+    route: { base: "hjem", sub: null } as const,
     actions: actionsStub(),
     history: historyStub(),
     now: () => FIXED_NOW,
     app: appStub(),
     atmo: "night" as const,
     dark: true,
-    sheetOpen: false,
   };
 }
 
@@ -113,7 +112,8 @@ describe("ArcusApp home shell", () => {
     const sheet = screen.getByRole("dialog", { name: "Detaljer" });
     expect(sheet).toHaveAttribute("data-sheet");
     expect(sheet.className).toBe("sheet");
-    expect(sheet.childElementCount).toBe(0);
+    expect(sheet.querySelector("[data-sheet-grab]")).not.toBeNull();
+    expect(sheet.querySelector("arcus-sheets")).toBeNull();
 
     expect(app?.querySelector(".topbar-inner")).not.toBeNull();
     expect(app?.querySelector(".hero-top")).not.toBeNull();
@@ -132,8 +132,8 @@ describe("ArcusApp home shell", () => {
     const { container } = render(
       <ArcusApp
         {...bridgeProps()}
+        route={{ base: "energi", sub: null }}
         dark={false}
-        sheetOpen
         atmo="dusk"
         config={makeConfig({ density: "compact" })}
       />,

@@ -817,7 +817,6 @@ export class ArcusCard extends HTMLElement {
         app: this as unknown as SheetApp,
         atmo: this._atmo(),
         dark: this._themeDark(),
-        sheetOpen: this._route.base !== "hjem",
       }),
     );
   }

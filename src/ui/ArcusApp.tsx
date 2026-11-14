@@ -9,7 +9,6 @@ export interface ArcusAppProps extends Omit<ArcusProviderProps, "children"> {
   app: SheetApp;
   atmo: AtmosphereSetting;
   dark: boolean;
-  sheetOpen: boolean;
 }
 
 /**
@@ -20,12 +19,11 @@ export function ArcusApp({
   app,
   atmo,
   dark,
-  sheetOpen,
   ...provider
 }: ArcusAppProps) {
   return (
     <ArcusProvider {...provider}>
-      <HomePage app={app} atmo={atmo} dark={dark} sheetOpen={sheetOpen} />
+      <HomePage app={app} atmo={atmo} dark={dark} />
     </ArcusProvider>
   );
 }
