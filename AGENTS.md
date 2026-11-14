@@ -72,7 +72,7 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
   into it. `src/ui/providers/ArcusProvider.tsx` injects the store and the hooks
   in `src/ui/hooks.ts` subscribe to individual slices. Organisms/pages use the
   hooks; atoms/molecules do not. Never use a module-global store: tests and
-  stories create one with `createArcusStore`/`makeArcusStore`.
+  stories create one with `createArcusStore`.
 - Chart sheets use `useHistoryFrame()` from `src/ui/hooks/useLayerFrame.ts`;
   sheets without charts use the individual hooks so they do not subscribe to
   history updates. `useLightActions` shares the room/lights service calls.
