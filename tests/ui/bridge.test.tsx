@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { ArcusCard } from "../../src/card";
 import type { HistoryCache } from "../../src/data/history";
 import { createTranslator } from "../../src/localize";
+import { buildBindings } from "../../src/model/bindings";
 import { buildModel } from "../../src/model/build";
 import type { ArcusActions } from "../../src/ui/types";
 import { ArcusApp } from "../../src/ui/ArcusApp";
@@ -49,12 +50,28 @@ function bridgeProps() {
   const hass = makeHass();
   const config = makeConfig();
 
+  const model = buildModel(hass, config, FIXED_NOW);
+  const t = createTranslator("da");
+
   return {
     hass,
-    model: buildModel(hass, config, FIXED_NOW),
+    model,
     config,
-    t: createTranslator("da"),
-    bindings: {},
+    t,
+    bindings: {
+      ...buildBindings(model, config, t),
+      date: "13. november 2026",
+      clock: "01:19",
+      heroDate: "Fredag · kl. 01:19",
+      eyebrow: "NÆSTE BØN · Fajr 05:12",
+      greet: "Godnat, <em>Test</em>",
+      person: "hjemme",
+      weatherTemp: "7°",
+      weatherSub: "Let skyet",
+      weatherStrip: "",
+      version: "0.2.0",
+      roomsMeta: "<b>7 rum</b> · 0 åbne · 0 lys tændt",
+    },
     route: { base: "energi", sub: null } as const,
     actions: actionsStub(),
     history: historyStub(),
@@ -72,7 +89,7 @@ afterEach(() => {
 });
 
 describe("ArcusApp home shell", () => {
-  test("renders the card shell slots and placeholder organisms", () => {
+  test("renders the card shell and the real home organisms", () => {
     const { container } = render(<ArcusApp {...bridgeProps()} />);
 
     const app = container.querySelector<HTMLElement>(".app");
@@ -98,19 +115,14 @@ describe("ArcusApp home shell", () => {
     expect(sheet.className).toBe("sheet");
     expect(sheet.childElementCount).toBe(0);
 
-    for (const name of [
-      "topbar",
-      "hero",
-      "vitals",
-      "room-grid",
-      "chapter-grid",
-      "footer",
-    ]) {
-      expect(
-        app?.querySelector(`[data-placeholder="${name}"]`),
-        name,
-      ).not.toBeNull();
-    }
+    expect(app?.querySelector(".topbar-inner")).not.toBeNull();
+    expect(app?.querySelector(".hero-top")).not.toBeNull();
+    expect(app?.querySelector(".arc-wrap[data-arc]")).not.toBeNull();
+    expect(app?.querySelector(".vitals")).not.toBeNull();
+    expect(app?.querySelector(".room-grid")).not.toBeNull();
+    expect(app?.querySelector(".chapter-grid")).not.toBeNull();
+    expect(app?.querySelector(".quick-row")).not.toBeNull();
+    expect(app?.querySelector(".footer .mark")).not.toBeNull();
 
     expect(app?.querySelector(".quick-row")).not.toBeNull();
     expect(app?.querySelectorAll(".quick-row .quick")).toHaveLength(5);
@@ -150,9 +162,7 @@ describe("ArcusCard React bridge", () => {
     expect(shadow.querySelector(".arcus-react > .app")).not.toBeNull();
     expect(shadow.querySelector("[data-sheet]")).not.toBeNull();
     expect(shadow.querySelector("[data-toast]")).not.toBeNull();
-    expect(
-      shadow.querySelector('[data-placeholder="room-grid"]'),
-    ).not.toBeNull();
+    expect(shadow.querySelector(".room-grid [data-room]")).not.toBeNull();
 
     expect(() => card.remove()).not.toThrow();
     expect(
