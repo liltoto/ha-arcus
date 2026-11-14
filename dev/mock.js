@@ -1833,12 +1833,15 @@ function makeHistory(ids, start, end) {
   const step =
     span > 40 * DAY ? 12 * HOUR : span > 3 * DAY ? 2 * HOUR : 15 * 60e3;
   const t0 = start.getTime();
-  const n = Math.max(2, Math.floor(span / step));
+  // Include both ends so a coarse window never leaves a gap before `now`.
+  // Without the final row, the 7-day solar series ends two hours early and
+  // the calendar-day chart is empty just after midnight.
+  const n = Math.max(2, Math.ceil(span / step) + 1);
 
   for (const id of ids) {
     const rows = [];
     for (let i = 0; i < n; i++) {
-      const t = t0 + i * step;
+      const t = Math.min(end.getTime(), t0 + i * step);
       const d = new Date(t);
       const h = d.getHours() + d.getMinutes() / 60;
       const x = d.getTime() / HOUR;
