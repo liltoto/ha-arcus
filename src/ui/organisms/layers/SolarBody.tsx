@@ -506,25 +506,9 @@ function OverviewGrid({ ctx }: { ctx: SolarContext }) {
 }
 
 function OverviewButtons({ ctx }: { ctx: SolarContext }) {
-  const { config, t, actions } = ctx;
-  const heliosPath = config.solar?.heliosPath;
+  const { t, actions } = ctx;
   return (
     <div className={c("btn-row")}>
-      {heliosPath ? (
-        <button
-          type="button"
-          className={c("btn")}
-          data-act="helios"
-          onClick={() =>
-            actions.performAction({
-              action: "navigate",
-              navigation_path: heliosPath,
-            })
-          }
-        >
-          <Icon name="solar" /> {t("solar.helios")}
-        </button>
-      ) : null}
       <button
         type="button"
         className={c("btn small")}

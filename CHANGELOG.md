@@ -2,6 +2,21 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.3 - 2026-11-14
+
+Removed the external Helios 3D shortcut from the solar sheet.
+
+### Removed
+
+- `solar.heliosPath` and the "Open Helios 3D" button. The solar overview now only exposes the in-dashboard tabs (production, battery, forecast, payback).
+- `solar.helios` translation keys from both dictionaries.
+
+Existing dashboards that still contain `solar.heliosPath` keep working: unknown solar keys are ignored by `normalizeConfig`, so the stale line is simply dropped on the next save. No migration is required.
+
+### Verified
+
+- 366 tests, typecheck, Fallow audit, build, size budget, Storybook, and the visual suite.
+
 ## 0.4.2 - 2026-11-14
 
 Editor polish: entity autocomplete now suggests the entities each field can actually use.

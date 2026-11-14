@@ -373,7 +373,6 @@ describe("buildModel", () => {
     expect(model.solar?.load).toBe(665);
     expect(model.solar?.forecastSeries).toHaveLength(96);
     expect(model.solar?.tomorrowSeries).toHaveLength(96);
-    expect(model.solar?.heliosPath).toBe("/nyt-overblik/solceller-helios");
     expect(model.weather?.state).toBe("partlycloudy");
   });
 

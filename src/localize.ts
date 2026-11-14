@@ -274,7 +274,6 @@ const da: Record<string, string> = {
   "solar.voltage4": "Spænding 4",
   "solar.mpptNote":
     "Strøm: {i3} A / {i4} A. Kun MPPT 3 og 4 er tilsluttet i anlægget.",
-  "solar.helios": "Åbn Helios 3D",
   "solar.forecastToday": "Prognose i dag",
   "solar.actualToday": "Faktisk i dag",
   "solar.thisMonth": "Denne måned",
@@ -896,7 +895,6 @@ const en: Record<string, string> = {
   "solar.voltage4": "Voltage 4",
   "solar.mpptNote":
     "Current: {i3} A / {i4} A. Only MPPT 3 and 4 are connected in this system.",
-  "solar.helios": "Open Helios 3D",
   "solar.forecastToday": "Forecast today",
   "solar.actualToday": "Actual today",
   "solar.thisMonth": "This month",

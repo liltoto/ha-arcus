@@ -611,9 +611,6 @@ function buildSolar(hass: ArcusHass, config: ArcusConfig): SolarModel | undefine
     solar.installedAt =
       stringState(hass, solarConfig.installedAt) ?? null;
   }
-  if (solarConfig.heliosPath) {
-    solar.heliosPath = solarConfig.heliosPath;
-  }
 
   const forecastSeries = parseWatts(hass, solarConfig.forecastToday);
   const tomorrowSeries = parseWatts(hass, solarConfig.forecastTomorrow);

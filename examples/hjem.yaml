@@ -94,8 +94,7 @@
         "investmentSolar": "input_number.investering_solceller",
         "investmentBattery": "input_number.investering_batteri",
         "installedAt": "input_datetime.anlaeg_installeret",
-        "paybackPercent": "sensor.tilbagebetalt_total",
-        "heliosPath": "/nyt-overblik/solceller-helios"
+        "paybackPercent": "sensor.tilbagebetalt_total"
       },
       "prayers": {
         "fajr": "sensor.islamic_prayer_times_fajr_prayer",
