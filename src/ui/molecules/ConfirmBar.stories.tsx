@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { ConfirmBar } from "./ConfirmBar";
+import { c } from "../styles/classes";
 
 const meta = {
   title: "Molecules/ConfirmBar",
@@ -12,7 +13,7 @@ const meta = {
     onCancel: () => undefined,
   },
   render: (args) => (
-    <div className="sheet-scroll" style={{ minHeight: 200 }}>
+    <div className={c("sheet-scroll")} style={{ minHeight: 200 }}>
       <ConfirmBar {...args} />
     </div>
   ),

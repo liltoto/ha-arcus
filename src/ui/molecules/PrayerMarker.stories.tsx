@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { PrayerMarker } from "./PrayerMarker";
+import { c } from "../styles/classes";
 
 const meta = {
   title: "Molecules/PrayerMarker",
@@ -10,7 +11,7 @@ const meta = {
     next: true,
   },
   render: (args) => (
-    <div className="prayer-list">
+    <div className={c("prayer-list")}>
       <PrayerMarker {...args} />
     </div>
   ),

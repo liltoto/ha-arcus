@@ -1,5 +1,6 @@
 import type { KeyboardEvent } from "react";
 import { Icon } from "../atoms/Icon";
+import { c } from "../styles/classes";
 
 export interface OpeningRowProps {
   name: string;
@@ -34,7 +35,7 @@ export function OpeningRow({
 
   return (
     <div
-      className={`row${isOpen ? " on open" : ""}`}
+      className={c("row", isOpen && "on open")}
       data-open={isOpen ? "true" : "false"}
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
@@ -42,12 +43,12 @@ export function OpeningRow({
       onKeyDown={interactive ? activate : undefined}
     >
       {icon ? <Icon name={icon} /> : null}
-      <div className="row-main">
-        <div className="row-name">{name}</div>
-        <div className="row-sub">{sub}</div>
+      <div className={c("row-main")}>
+        <div className={c("row-name")}>{name}</div>
+        <div className={c("row-sub")}>{sub}</div>
       </div>
-      <span className="status-line">
-        <i className={`dot${isOpen ? " warn" : ""}`} />
+      <span className={c("status-line")}>
+        <i className={c("dot", isOpen && "warn")} />
         {status ?? (isOpen ? "Open" : "Closed")}
       </span>
     </div>

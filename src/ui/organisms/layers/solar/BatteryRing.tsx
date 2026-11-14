@@ -1,6 +1,7 @@
 import { GaugeArc } from "../../../atoms/GaugeArc";
 import type { Language } from "../../../../types";
 import { fmt } from "./helpers";
+import { c } from "../../../styles/classes";
 
 export interface BatteryRingProps {
   value: number | null;
@@ -21,7 +22,7 @@ export function BatteryRing({
   language,
 }: BatteryRingProps) {
   return (
-    <div className="block" data-battery-ring>
+    <div className={c("block")} data-battery-ring>
       <div
         style={{
           display: "flex",
@@ -47,15 +48,15 @@ export function BatteryRing({
               justifyContent: "center",
             }}
           >
-            <span className="big-read" style={{ fontSize: 38 }}>
+            <span className={c("big-read")} style={{ fontSize: 38 }}>
               {fmt(value, 0, language)}
               <small>%</small>
             </span>
           </div>
         </div>
         <div>
-          <div className="block-label">{label}</div>
-          <div className="block-note" style={{ marginTop: 6 }}>
+          <div className={c("block-label")}>{label}</div>
+          <div className={c("block-note")} style={{ marginTop: 6 }}>
             {note}
           </div>
         </div>

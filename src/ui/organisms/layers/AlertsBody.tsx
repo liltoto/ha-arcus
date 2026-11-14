@@ -4,6 +4,7 @@ import { SheetHeader } from "../../molecules/SheetHeader";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { AlertRow, severityClass } from "./misc/AlertRow";
 import { LayerShell } from "./misc/LayerShell";
+import { c } from "../../styles/classes";
 
 /**
  * Alerts: every model alert, most severe first, with a severity chip and a
@@ -28,9 +29,9 @@ export function AlertsBody(_props: LayerBodyProps) {
         closeLabel={t("sheet.close")}
         onClose={actions.closeSheet}
       />
-      <div className="sheet-scroll">
-        <div className="block">
-          <div className="list">
+      <div className={c("sheet-scroll")}>
+        <div className={c("block")}>
+          <div className={c("list")}>
             {alerts.length ? (
               alerts.map((alert) => {
                 const cls = severityClass(alert);
@@ -58,7 +59,7 @@ export function AlertsBody(_props: LayerBodyProps) {
               />
             )}
           </div>
-          <div className="note">{t("alerts.footer")}</div>
+          <div className={c("note")}>{t("alerts.footer")}</div>
         </div>
       </div>
     </LayerShell>

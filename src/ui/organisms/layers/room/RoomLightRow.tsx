@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Translator } from "../../../../types";
 import { Icon } from "../../../atoms/Icon";
+import { c } from "../../../styles/classes";
 
 export interface RoomLightRowProps {
   entityId: string;
@@ -56,11 +57,11 @@ export function RoomLightRow({
     : t("room.lightOff");
 
   return (
-    <div className="light-row">
-      <div className="row">
+    <div className={c("light-row")}>
+      <div className={c("row")}>
         <button
           type="button"
-          className={`toggle${isOn ? " on" : ""}`}
+          className={c("toggle", isOn && "on")}
           data-act="toggle-light"
           data-entity={entityId}
           data-on={entityId}
@@ -68,19 +69,19 @@ export function RoomLightRow({
           aria-pressed={isOn}
           onClick={onToggle}
         />
-        <div className="row-main">
-          <div className="row-name">{name}</div>
-          <div className="row-sub">{sub}</div>
+        <div className={c("row-main")}>
+          <div className={c("row-name")}>{name}</div>
+          <div className={c("row-sub")}>{sub}</div>
         </div>
-        <span className="row-val">{isOn ? `${displayPct} %` : "–"}</span>
+        <span className={c("row-val")}>{isOn ? `${displayPct} %` : "–"}</span>
       </div>
       {showSlider ? (
-        <div className="slider-wrap">
-          <div className="slider-line">
+        <div className={c("slider-wrap")}>
+          <div className={c("slider-line")}>
             <Icon name="sun" />
             <input
               ref={sliderRef}
-              className="range"
+              className={c("range")}
               type="range"
               min="0"
               max="100"
@@ -97,7 +98,7 @@ export function RoomLightRow({
               }}
             />
           </div>
-          <div className="pct">
+          <div className={c("pct")}>
             {isOn ? `${displayPct} %` : t("lights.sliderOff")}
           </div>
         </div>

@@ -25,7 +25,7 @@ describe("Button", () => {
     );
 
     const button = screen.getByRole("button", { name: "Turn on" });
-    expect(button.className).toBe("btn primary small");
+    expect(button).toHaveClass("btn", "primary", "small");
 
     await user.click(button);
     expect(onClick).toHaveBeenCalledTimes(1);
@@ -89,17 +89,17 @@ describe("IconButton", () => {
 describe("Badge", () => {
   it("renders the pill classes for each tone", () => {
     const { container, rerender } = render(<Badge>Stue</Badge>);
-    expect(screen.getByText("Stue").className).toBe("pill");
+    expect(screen.getByText("Stue")).toHaveClass("pill");
 
     rerender(<Badge tone="warn">Alarm</Badge>);
-    expect(screen.getByText("Alarm").className).toBe("pill warn");
+    expect(screen.getByText("Alarm")).toHaveClass("pill", "warn");
 
     rerender(
       <Badge tone="danger" className="wide">
         Utæthed
       </Badge>,
     );
-    expect(screen.getByText("Utæthed").className).toBe("pill danger wide");
+    expect(screen.getByText("Utæthed")).toHaveClass("pill", "danger", "wide");
     expect(container.querySelector(".pill")).not.toBeNull();
   });
 });
@@ -107,13 +107,13 @@ describe("Badge", () => {
 describe("Dot", () => {
   it("renders the status dot with a tone class", () => {
     const { container, rerender } = render(<Dot />);
-    expect(container.querySelector("i")?.className).toBe("sdot");
+    expect(container.querySelector("i")).toHaveClass("sdot");
 
     rerender(<Dot tone="warn" />);
-    expect(container.querySelector("i")?.className).toBe("sdot warn");
+    expect(container.querySelector("i")).toHaveClass("sdot", "warn");
 
     rerender(<Dot tone="off" className="inline" />);
-    expect(container.querySelector("i")?.className).toBe("sdot off inline");
+    expect(container.querySelector("i")).toHaveClass("sdot", "off", "inline");
   });
 });
 
@@ -130,8 +130,8 @@ describe("Stat", () => {
     );
 
     const root = container.querySelector(".vital");
-    expect(root?.className).toBe("vital warn");
-    expect(screen.getByText("Indoor").className).toBe("vital-label");
+    expect(root).toHaveClass("vital", "warn");
+    expect(screen.getByText("Indoor")).toHaveClass("vital-label");
     expect(screen.getByText("21.4").textContent).toBe("21.4");
 
     const value = container.querySelector(".vital-value");
@@ -196,7 +196,7 @@ describe("SheetGrab", () => {
     const { container } = render(<SheetGrab className="in-sheet" />);
 
     const grab = container.querySelector("[data-sheet-grab]");
-    expect(grab?.className).toBe("sheet-grab in-sheet");
+    expect(grab).toHaveClass("sheet-grab", "in-sheet");
   });
 });
 
@@ -213,7 +213,7 @@ describe("Tab", () => {
 
     const tab = screen.getByRole("button", { name: "Lights" });
     expect(tab.getAttribute("aria-pressed")).toBe("false");
-    expect(tab.className).toBe("tab");
+    expect(tab).toHaveClass("tab");
 
     await user.click(tab);
     expect(onClick).toHaveBeenCalledTimes(1);
@@ -226,7 +226,7 @@ describe("Tab", () => {
 
     const activeTab = screen.getByRole("button", { name: "Lights" });
     expect(activeTab.getAttribute("aria-pressed")).toBe("true");
-    expect(activeTab.className).toBe("tab active");
+    expect(activeTab).toHaveClass("tab", "active");
   });
 });
 

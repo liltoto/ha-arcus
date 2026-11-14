@@ -1,3 +1,4 @@
+import { c } from "../styles/classes";
 export interface ZoneStripProps {
   values: number[];
   warns?: boolean[];
@@ -11,11 +12,11 @@ function clampPercent(value: number): number {
 /** The tiny bar strip used by the heating and ventilation chapter art. */
 export function ZoneStrip({ values, warns }: ZoneStripProps) {
   return (
-    <div className="zone-strip">
+    <div className={c("zone-strip")}>
       {values.map((value, index) => (
         <i
           key={index}
-          className={warns?.[index] ? "warn" : undefined}
+          className={c(warns?.[index] && "warn")}
           style={{ height: `${clampPercent(value)}%` }}
         />
       ))}

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { ForecastDay } from "./ForecastDay";
+import { c } from "../styles/classes";
 
 const meta = {
   title: "Molecules/ForecastDay",
@@ -11,7 +12,7 @@ const meta = {
     low: "8°",
   },
   render: (args) => (
-    <div className="weather-strip">
+    <div className={c("weather-strip")}>
       <ForecastDay {...args} />
     </div>
   ),

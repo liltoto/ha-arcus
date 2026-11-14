@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { AllBody } from "./AllBody";
+import { c } from "../../styles/classes";
 
 const meta = {
   title: "Sheets/All",
@@ -9,7 +10,7 @@ const meta = {
   },
   render: (args) => (
     <div
-      className="sheet open"
+      className={c("sheet open")}
       style={{
         position: "relative",
         height: "90vh",

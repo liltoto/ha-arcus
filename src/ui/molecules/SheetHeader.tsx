@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { IconButton } from "../atoms/IconButton";
+import { c } from "../styles/classes";
 
 export interface SheetHeaderProps {
   kicker: string;
@@ -18,14 +19,14 @@ export function SheetHeader({
   closeLabel = "Close",
 }: SheetHeaderProps) {
   return (
-    <div className="sheet-head">
-      <div className="sheet-kicker">{kicker}</div>
-      <h2 className="sheet-title">{title}</h2>
-      <div className="sheet-sum">{sum}</div>
+    <div className={c("sheet-head")}>
+      <div className={c("sheet-kicker")}>{kicker}</div>
+      <h2 className={c("sheet-title")}>{title}</h2>
+      <div className={c("sheet-sum")}>{sum}</div>
       <IconButton
         icon="close"
         label={closeLabel}
-        className="sheet-close"
+        className={c("sheet-close")}
         dataAct="close"
         onClick={onClose}
       />

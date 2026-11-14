@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { c } from "../styles/classes";
 
 export interface ButtonProps {
   children: ReactNode;
@@ -17,19 +18,15 @@ export function Button({
   disabled,
   className,
 }: ButtonProps) {
-  const classes = [
-    "btn",
-    tone !== "default" ? tone : "",
-    size === "sm" ? "small" : "",
-    className ?? "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
   return (
     <button
       type="button"
-      className={classes}
+      className={c(
+        "btn",
+        tone !== "default" ? tone : "",
+        size === "sm" ? "small" : "",
+        className,
+      )}
       onClick={onClick}
       disabled={disabled}
     >

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { c } from "../styles/classes";
 
 export interface StatProps {
   label: string;
@@ -9,18 +10,14 @@ export interface StatProps {
 }
 
 export function Stat({ label, value, unit, sub, tone = "default" }: StatProps) {
-  const classes = ["vital", tone === "default" ? "" : tone]
-    .filter(Boolean)
-    .join(" ");
-
   return (
-    <div className={classes}>
-      <div className="vital-label">{label}</div>
-      <div className="vital-value">
+    <div className={c("vital", tone === "default" ? "" : tone)}>
+      <div className={c("vital-label")}>{label}</div>
+      <div className={c("vital-value")}>
         <span>{value}</span>
         {unit ? <small>{unit}</small> : null}
       </div>
-      {sub ? <div className="vital-sub">{sub}</div> : null}
+      {sub ? <div className={c("vital-sub")}>{sub}</div> : null}
     </div>
   );
 }

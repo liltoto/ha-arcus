@@ -1,4 +1,5 @@
 import { formatNumber, formatTime } from "../format";
+import { c } from "../ui/styles/classes";
 import type { Language } from "../types";
 
 /**
@@ -289,7 +290,7 @@ function tipElements(root: ShadowRoot): TipElements | null {
   let cursor = root.querySelector<HTMLElement>("[data-graph-cursor]");
   if (!tip) {
     tip = document.createElement("div");
-    tip.className = "graph-tip";
+    tip.className = c("graph-tip");
     tip.setAttribute("data-graph-tip", "");
     tip.setAttribute("aria-hidden", "true");
     const app = root.querySelector(".app") ?? root;
@@ -297,7 +298,7 @@ function tipElements(root: ShadowRoot): TipElements | null {
   }
   if (!cursor) {
     cursor = document.createElement("div");
-    cursor.className = "graph-cursor";
+    cursor.className = c("graph-cursor");
     cursor.setAttribute("data-graph-cursor", "");
     cursor.setAttribute("aria-hidden", "true");
     const app = root.querySelector(".app") ?? root;

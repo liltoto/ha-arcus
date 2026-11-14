@@ -2,6 +2,19 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.0 - 2026-11-14
+
+Panda CSS migration. The visual design, class hooks, and Home Assistant contract are unchanged.
+
+### Changed
+
+- All dashboard styles now live in Panda `css()` objects under `src/ui/styles/`; the old `atoms.css`, `home.css`, `sheet.css`, `responsive.css`, and `tokens.css` files were removed.
+- `panda.config.ts` owns the reset, palette, atmosphere/density/light conditions, responsive conditions, and static design tokens.
+- Components keep their semantic class names (used by tests and Playwright) and append the generated Panda class through `src/ui/styles/classes.ts` `c()`.
+- `src/ui/styles/panda.css` is only the layer declaration. Storybook and Vitest process it with `@pandacss/vite`; esbuild inlines the generated `styled-system/styles.css`.
+- `npm run build` generates production Panda CSS (minified and hashed); `npm run dev` runs `panda cssgen --watch` alongside esbuild.
+- The dashboard, room sheet, and every layer sheet were verified pixel-identical to 0.2.6 at 1440 px and 390 px before release.
+
 ## 0.2.6 - 2026-11-14
 
 ### Added

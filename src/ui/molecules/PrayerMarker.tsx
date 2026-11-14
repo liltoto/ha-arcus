@@ -1,3 +1,4 @@
+import { c } from "../styles/classes";
 export interface PrayerMarkerProps {
   name: string;
   time: string;
@@ -14,14 +15,14 @@ export function PrayerMarker({
 }: PrayerMarkerProps) {
   return (
     <div
-      className={`row${next ? " on next" : ""}`}
+      className={c("row", next && "on next")}
       data-next={next ? "true" : "false"}
     >
-      <span className="row-main">
-        <span className="row-name">{name}</span>
+      <span className={c("row-main")}>
+        <span className={c("row-name")}>{name}</span>
       </span>
-      <span className="row-val">{time}</span>
-      {next ? <span className="chip warn">{nextLabel}</span> : null}
+      <span className={c("row-val")}>{time}</span>
+      {next ? <span className={c("chip warn")}>{nextLabel}</span> : null}
     </div>
   );
 }

@@ -18,6 +18,7 @@ import { buildBindings } from "./model/bindings";
 import { mountGraphTips } from "./render/graph";
 import { icon } from "./render/icons";
 import { STYLES } from "./ui/styles";
+import { c } from "./ui/styles/classes";
 import type {
   ArcusConfig,
   ArcusHass,
@@ -90,7 +91,6 @@ function refNumber(value: unknown): number | null {
   const number = typeof value === "number" ? value : Number(value);
   return Number.isFinite(number) ? number : null;
 }
-
 
 /**
  * The Arcus custom card. It owns the shadow root, the dynamic home model,
@@ -323,8 +323,6 @@ export class ArcusCard extends HTMLElement {
     if (this._atmoMode !== "auto") return this._atmoMode;
     return this._solarPhase();
   }
-
-
 
   private _setAtmo(mode: AtmosphereSetting): void {
     this._atmoMode = mode;
@@ -605,7 +603,7 @@ export class ArcusCard extends HTMLElement {
                 : "–";
         const high = Number(day.temperature);
         const low = Number(day.templow);
-        return `<span class="wday"><span class="wname">${escapeHtml(
+        return `<span class="${c("wday")}"><span class="wname">${escapeHtml(
           name,
         )}</span><span class="wico">${icon(
           WEATHER_ICON(day.condition),
@@ -797,7 +795,7 @@ export class ArcusCard extends HTMLElement {
       this._renderFrame = null;
       if (!this._built || !this._hass) return;
       flushSync(() => this._renderIntoReact());
-      };
+    };
     this._renderFrame =
       typeof requestAnimationFrame === "function"
         ? requestAnimationFrame(commit)
@@ -999,8 +997,6 @@ export class ArcusCard extends HTMLElement {
     if (this._toastTimer) clearTimeout(this._toastTimer);
     this._toastTimer = setTimeout(() => element.classList.remove("show"), 3200);
   }
-
-
 }
 
 if (

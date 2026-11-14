@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { c } from "../styles/classes";
 
 export interface TabProps {
   active: boolean;
@@ -15,14 +16,10 @@ export function Tab({
   className,
   dataTab,
 }: TabProps) {
-  const classes = ["tab", active ? "active" : "", className ?? ""]
-    .filter(Boolean)
-    .join(" ");
-
   return (
     <button
       type="button"
-      className={classes}
+      className={c("tab", active && "active", className)}
       aria-pressed={active}
       data-tab={dataTab}
       onClick={onClick}

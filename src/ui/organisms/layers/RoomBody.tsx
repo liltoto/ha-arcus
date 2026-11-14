@@ -38,6 +38,7 @@ import {
   resolveRoom,
   roomStatFor,
 } from "./room/room-state";
+import { c } from "../../styles/classes";
 
 const LAYER_STYLE: CSSProperties = {
   display: "flex",
@@ -135,7 +136,7 @@ export function RoomBody({ route }: LayerBodyProps) {
           closeLabel={t("sheet.close")}
           onClose={actions.closeSheet}
         />
-        <div className="sheet-scroll">
+        <div className={c("sheet-scroll")}>
           <EmptyState icon="home" title={t("empty.dataYet")} />
         </div>
       </div>
@@ -281,8 +282,8 @@ export function RoomBody({ route }: LayerBodyProps) {
         closeLabel={t("sheet.close")}
         onClose={actions.closeSheet}
       />
-      <div className="sheet-scroll">
-        <div className="readings">
+      <div className={c("sheet-scroll")}>
+        <div className={c("readings")}>
           <Readout
             label={t("room.temperature")}
             value={formatNumber(temp, 1, language)}
@@ -305,14 +306,14 @@ export function RoomBody({ route }: LayerBodyProps) {
           />
         </div>
         {fallbackNote ? (
-          <div className="block-note">{t("room.tempFallbackNote")}</div>
+          <div className={c("block-note")}>{t("room.tempFallbackNote")}</div>
         ) : null}
-        <div className="block">
-          <div className="block-head">
-            <div className="block-label">
+        <div className={c("block")}>
+          <div className={c("block-head")}>
+            <div className={c("block-label")}>
               {t("room.chart24", { label: t("room.temperature") })}
             </div>
-            <div className="block-label">
+            <div className={c("block-label")}>
               <b>{formatNumber(temp, 1, language)}°</b>
             </div>
           </div>
@@ -328,12 +329,12 @@ export function RoomBody({ route }: LayerBodyProps) {
           />
         </div>
         {room.humidity ? (
-          <div className="block">
-            <div className="block-head">
-              <div className="block-label">
+          <div className={c("block")}>
+            <div className={c("block-head")}>
+              <div className={c("block-label")}>
                 {t("room.chart24", { label: t("room.humidity") })}
               </div>
-              <div className="block-label">
+              <div className={c("block-label")}>
                 <b>{humidity === null ? "–" : `${Math.round(humidity)} %`}</b>
               </div>
             </div>
@@ -350,12 +351,12 @@ export function RoomBody({ route }: LayerBodyProps) {
           </div>
         ) : null}
         {room.co2 ? (
-          <div className="block">
-            <div className="block-head">
-              <div className="block-label">
+          <div className={c("block")}>
+            <div className={c("block-head")}>
+              <div className={c("block-label")}>
                 {t("room.chart24", { label: t("room.co2") })}
               </div>
-              <div className="block-label">
+              <div className={c("block-label")}>
                 <b>{co2 === null ? "–" : `${Math.round(co2)} ppm`}</b>
               </div>
             </div>
@@ -372,12 +373,12 @@ export function RoomBody({ route }: LayerBodyProps) {
           </div>
         ) : null}
         {room.pm25 ? (
-          <div className="block">
-            <div className="block-head">
-              <div className="block-label">
+          <div className={c("block")}>
+            <div className={c("block-head")}>
+              <div className={c("block-label")}>
                 {t("room.chart24", { label: t("room.pm25") })}
               </div>
-              <div className="block-label">
+              <div className={c("block-label")}>
                 <b>{pm25 === null ? "–" : formatNumber(pm25, 1, language)}</b>
               </div>
             </div>
@@ -394,10 +395,10 @@ export function RoomBody({ route }: LayerBodyProps) {
           </div>
         ) : null}
         {room.lights.length ? (
-          <div className="block">
-            <div className="block-head">
-              <div className="block-label">{t("room.lights")}</div>
-              <div className="block-label">
+          <div className={c("block")}>
+            <div className={c("block-head")}>
+              <div className={c("block-label")}>{t("room.lights")}</div>
+              <div className={c("block-label")}>
                 <b>
                   {t("room.lightCountOf", {
                     on: stat.lightsOn,
@@ -406,12 +407,12 @@ export function RoomBody({ route }: LayerBodyProps) {
                 </b>
               </div>
             </div>
-            <div className="list">
+            <div className={c("list")}>
               {room.lights.map((group) => (
                 <Fragment key={group.entityId}>
                   {light(group.entityId, group.name, true)}
                   {group.members.length ? (
-                    <details className="light-details">
+                    <details className={c("light-details")}>
                       <summary>
                         {t("room.singleLights", {
                           count: group.members.length,
@@ -431,10 +432,10 @@ export function RoomBody({ route }: LayerBodyProps) {
           </div>
         ) : null}
         {room.openings.length ? (
-          <div className="block">
-            <div className="block-head">
-              <div className="block-label">{t("room.openings")}</div>
-              <div className="block-label">
+          <div className={c("block")}>
+            <div className={c("block-head")}>
+              <div className={c("block-label")}>{t("room.openings")}</div>
+              <div className={c("block-label")}>
                 <b>
                   {stat.open
                     ? t("room.openCount", { count: stat.open })
@@ -442,27 +443,27 @@ export function RoomBody({ route }: LayerBodyProps) {
                 </b>
               </div>
             </div>
-            <div className="list">
+            <div className={c("list")}>
               {room.openings.map((opening) => {
                 const on = isOn(hass, opening.id);
                 const relative = relativeChanged(hass, t, nowMs, opening.id);
                 return (
                   <div
-                    className={`row${on ? " open" : ""}`}
+                    className={c("row", on && "open")}
                     data-open={opening.id}
                     key={opening.id}
                   >
                     <Icon name={openingIcon(opening.kind)} />
-                    <div className="row-main">
-                      <div className="row-name">{opening.name}</div>
-                      <div className="row-sub">
+                    <div className={c("row-main")}>
+                      <div className={c("row-name")}>{opening.name}</div>
+                      <div className={c("row-sub")}>
                         {`${opening.kind} · ${
                           on ? t("common.open") : t("common.closed")
                         } ${relative}`}
                       </div>
                     </div>
-                    <span className="status-line">
-                      <i className={`dot${on ? " warn" : ""}`} />
+                    <span className={c("status-line")}>
+                      <i className={c("dot", on && "warn")} />
                       {on ? t("common.openUpper") : t("common.closedUpper")}
                     </span>
                   </div>
@@ -472,10 +473,10 @@ export function RoomBody({ route }: LayerBodyProps) {
           </div>
         ) : null}
         {climateRef && climate ? (
-          <div className="block">
-            <div className="block-head">
-              <div className="block-label">{t("room.heating")}</div>
-              <div className="block-label">
+          <div className={c("block")}>
+            <div className={c("block-head")}>
+              <div className={c("block-label")}>{t("room.heating")}</div>
+              <div className={c("block-label")}>
                 <b>
                   {climateMode === "off"
                     ? t("room.heatingOff")
@@ -483,10 +484,10 @@ export function RoomBody({ route }: LayerBodyProps) {
                 </b>
               </div>
             </div>
-            <div className="row">
-              <span className="row-main">
-                <div className="row-name">{room.name}</div>
-                <div className="row-sub">
+            <div className={c("row")}>
+              <span className={c("row-main")}>
+                <div className={c("row-name")}>{room.name}</div>
+                <div className={c("row-sub")}>
                   {`${t("room.heatingNow", {
                     temp: currentText,
                   })} · ${
@@ -504,7 +505,7 @@ export function RoomBody({ route }: LayerBodyProps) {
               />
               <button
                 type="button"
-                className={`toggle${climateMode !== "off" ? " on" : ""}`}
+                className={c("toggle", climateMode !== "off" && "on")}
                 data-act="hvac-toggle"
                 data-entity={climateRef.entityId}
                 data-not-off={climateRef.entityId}
@@ -513,16 +514,16 @@ export function RoomBody({ route }: LayerBodyProps) {
                 onClick={() => toggleClimate(climateRef)}
               />
             </div>
-            <div className="block-note">
+            <div className={c("block-note")}>
               {t("room.setpointNote", { temp: targetText })}
             </div>
           </div>
         ) : null}
         {fanRef && fan ? (
-          <div className="block">
-            <div className="block-head">
-              <div className="block-label">{t("room.hood")}</div>
-              <div className="block-label">
+          <div className={c("block")}>
+            <div className={c("block-head")}>
+              <div className={c("block-label")}>{t("room.hood")}</div>
+              <div className={c("block-label")}>
                 <b>
                   {isOn(hass, fanRef.entityId, fanRef)
                     ? t("room.heatingOn")
@@ -530,24 +531,26 @@ export function RoomBody({ route }: LayerBodyProps) {
                 </b>
               </div>
             </div>
-            <div className="row">
+            <div className={c("row")}>
               <Icon name="fan" />
-              <div className="row-main">
-                <div className="row-name">{entityName(fan, "Thermex")}</div>
-                <div className="row-sub">
+              <div className={c("row-main")}>
+                <div className={c("row-name")}>
+                  {entityName(fan, "Thermex")}
+                </div>
+                <div className={c("row-sub")}>
                   {t("room.filterTime", {
                     hours: formatNumber(filterHours, 1, language),
                   })}
                 </div>
               </div>
-              <span className="row-val">
+              <span className={c("row-val")}>
                 {String(fan?.attributes?.preset_mode ?? "–")}
               </span>
             </div>
-            <div className="btn-row">
+            <div className={c("btn-row")}>
               <button
                 type="button"
-                className="btn small"
+                className={c("btn small")}
                 data-act="toggle-switch"
                 data-entity={fanRef.entityId}
                 onClick={() =>
@@ -564,7 +567,7 @@ export function RoomBody({ route }: LayerBodyProps) {
               {resetId ? (
                 <button
                   type="button"
-                  className="btn small"
+                  className={c("btn small")}
                   data-act="press-button"
                   data-entity={resetId}
                   onClick={() =>
@@ -583,11 +586,11 @@ export function RoomBody({ route }: LayerBodyProps) {
           </div>
         ) : null}
         {room.motion ? (
-          <div className="block">
-            <div className="block-head">
-              <div className="block-label">{t("room.motionLight")}</div>
+          <div className={c("block")}>
+            <div className={c("block-head")}>
+              <div className={c("block-label")}>{t("room.motionLight")}</div>
             </div>
-            <div className="readings">
+            <div className={c("readings")}>
               <Readout
                 label={t("room.motion")}
                 value={motionOn ? t("room.active") : t("room.calm")}
@@ -601,19 +604,19 @@ export function RoomBody({ route }: LayerBodyProps) {
           </div>
         ) : null}
         {room.battery ? (
-          <div className="block">
-            <div className="block-head">
-              <div className="block-label">{t("room.battery")}</div>
+          <div className={c("block")}>
+            <div className={c("block-head")}>
+              <div className={c("block-label")}>{t("room.battery")}</div>
             </div>
-            <div className="row">
+            <div className={c("row")}>
               <Icon name="battery" />
-              <div className="row-main">
-                <div className="row-name">
+              <div className={c("row-main")}>
+                <div className={c("row-name")}>
                   {entityName(battery, t("room.battery"))}
                 </div>
-                <div className="row-sub">{room.name}</div>
+                <div className={c("row-sub")}>{room.name}</div>
               </div>
-              <span className="row-val">
+              <span className={c("row-val")}>
                 {batteryLevel === null ? "–" : Math.round(batteryLevel)}
                 <small>%</small>
               </span>
@@ -621,24 +624,24 @@ export function RoomBody({ route }: LayerBodyProps) {
           </div>
         ) : null}
         {mediaRef ? (
-          <div className="block">
-            <div className="block-head">
-              <div className="block-label">{t("room.media")}</div>
-              <div className="block-label">
+          <div className={c("block")}>
+            <div className={c("block-head")}>
+              <div className={c("block-label")}>{t("room.media")}</div>
+              <div className={c("block-label")}>
                 <b>{mediaStateText}</b>
               </div>
             </div>
-            <div className="row">
+            <div className={c("row")}>
               <Icon name="play" />
-              <div className="row-main">
-                <div className="row-name">
+              <div className={c("row-main")}>
+                <div className={c("row-name")}>
                   {entityName(media, t("room.soundbar"))}
                 </div>
-                <div className="row-sub">{room.name}</div>
+                <div className={c("row-sub")}>{room.name}</div>
               </div>
               <button
                 type="button"
-                className="icon-btn"
+                className={c("icon-btn")}
                 data-act="media-toggle"
                 data-entity={mediaRef.entityId}
                 aria-label={t("room.playing")}
@@ -656,7 +659,7 @@ export function RoomBody({ route }: LayerBodyProps) {
             </div>
           </div>
         ) : null}
-        <div className="note">{t("room.liveNote")}</div>
+        <div className={c("note")}>{t("room.liveNote")}</div>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { Icon } from "../atoms/Icon";
 import { useBindings, useTranslator } from "../hooks";
+import { c } from "../styles/classes";
 
 export interface FooterProps {
   className?: string;
@@ -15,7 +16,7 @@ export function Footer({ className }: FooterProps = {}) {
 
   return (
     <>
-      <span className={className ? `mark ${className}` : "mark"}>
+      <span className={c("mark", className)}>
         <Icon name="sun" /> {t("brand.footer")} · <span>{bindings.clock}</span>
       </span>
       <span>

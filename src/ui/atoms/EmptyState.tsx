@@ -1,4 +1,5 @@
 import { Icon } from "./Icon";
+import { c } from "../styles/classes";
 
 export interface EmptyStateProps {
   icon?: string;
@@ -8,7 +9,7 @@ export interface EmptyStateProps {
 
 export function EmptyState({ icon, title, hint }: EmptyStateProps) {
   return (
-    <div className="empty">
+    <div className={c("empty")}>
       {icon ? <Icon name={icon} /> : null}
       <div>
         <b>{title}</b>

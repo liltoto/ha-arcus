@@ -1,4 +1,5 @@
 import { Icon } from "../../../atoms/Icon";
+import { c } from "../../../styles/classes";
 
 export interface MiscTileProps {
   route: string;
@@ -16,18 +17,18 @@ export function MiscTile({ route, icon, title, sub, onOpen }: MiscTileProps) {
   return (
     <button
       type="button"
-      className="mini-stat"
+      className={c("mini-stat")}
       data-nav={route}
       style={{ textAlign: "left", minHeight: 82 }}
       onClick={onOpen}
     >
-      <div className="k">
+      <div className={c("k")}>
         <Icon name={icon} />
       </div>
-      <div className="v" style={{ fontSize: 17, marginTop: 8 }}>
+      <div className={c("v")} style={{ fontSize: 17, marginTop: 8 }}>
         {title}
       </div>
-      <div className="row-sub">{sub}</div>
+      <div className={c("row-sub")}>{sub}</div>
     </button>
   );
 }

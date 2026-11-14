@@ -25,6 +25,7 @@ import { ListRow } from "../../molecules/ListRow";
 import { Readout } from "../../molecules/Readout";
 import { SheetHeader } from "../../molecules/SheetHeader";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
+import { c } from "../../styles/classes";
 
 function languageOf(
   model: HomeModel,
@@ -146,7 +147,7 @@ function PriceBars({ price, now, t }: PriceBarsProps) {
 
   if (!values.length) {
     return (
-      <div className="empty">
+      <div className={c("empty")}>
         <Icon name="chart" />
         <span>{t("empty.chart")}</span>
       </div>
@@ -174,13 +175,13 @@ function PriceBars({ price, now, t }: PriceBarsProps) {
 
   return (
     <>
-      <div className="bar-chart" {...graph}>
+      <div className={c("bar-chart")} {...graph}>
         {values.map((value, index) => {
           const height = Math.max(8, ((value - min) / (max - min || 1)) * 100);
           return (
             <i
               key={index}
-              className={index === nowHour ? "now" : undefined}
+              className={c(index === nowHour && "now")}
               style={{
                 height: `${height.toFixed(1)}%`,
                 background: priceColor(value, min, max),
@@ -189,7 +190,7 @@ function PriceBars({ price, now, t }: PriceBarsProps) {
           );
         })}
       </div>
-      <div className="chart-cap">
+      <div className={c("chart-cap")}>
         <span>00</span>
         <span>06</span>
         <span>12</span>
@@ -239,8 +240,8 @@ export function EnergyBody(_props: LayerBodyProps) {
           closeLabel={t("sheet.close")}
           onClose={actions.closeSheet}
         />
-        <div className="sheet-scroll">
-          <div className="empty">
+        <div className={c("sheet-scroll")}>
+          <div className={c("empty")}>
             <Icon name="bolt" />
             <span>{t("empty.data")}</span>
           </div>
@@ -319,27 +320,27 @@ export function EnergyBody(_props: LayerBodyProps) {
         closeLabel={t("sheet.close")}
         onClose={actions.closeSheet}
       />
-      <div className="sheet-scroll">
-        <div className="block">
-          <div className="big-read">
+      <div className={c("sheet-scroll")}>
+        <div className={c("block")}>
+          <div className={c("big-read")}>
             {buyText}
             <small>{t("common.perKwh")}</small>
           </div>
-          <div className="block-note">
+          <div className={c("block-note")}>
             {t("energy.nowNote", { sell: sellText, spot: spotText })}
           </div>
-          <div className="block" style={{ marginTop: 18 }}>
-            <div className="block-label">{t("energy.dayPrices")}</div>
+          <div className={c("block")} style={{ marginTop: 18 }}>
+            <div className={c("block-label")}>{t("energy.dayPrices")}</div>
             <PriceBars price={price} now={nowDate} t={t} />
           </div>
-          <div className="mini-grid" style={{ marginTop: 12 }}>
-            <div className="mini-stat">
-              <div className="k">{t("energy.cheapest", { count: 3 })}</div>
-              <div className="v">
+          <div className={c("mini-grid")} style={{ marginTop: 12 }}>
+            <div className={c("mini-stat")}>
+              <div className={c("k")}>{t("energy.cheapest", { count: 3 })}</div>
+              <div className={c("v")}>
                 {formatPrice(cheap?.avg ?? null, language)}
                 <small>{t("energy.kr")}</small>
               </div>
-              <div className="row-sub">
+              <div className={c("row-sub")}>
                 {cheap
                   ? t("energy.hourRange", {
                       start: cheapStart,
@@ -348,14 +349,14 @@ export function EnergyBody(_props: LayerBodyProps) {
                   : "–"}
               </div>
             </div>
-            <div className="mini-stat">
-              <div className="k">{t("energy.tomorrow")}</div>
-              <div className="v" style={{ fontSize: 18 }}>
+            <div className={c("mini-stat")}>
+              <div className={c("k")}>{t("energy.tomorrow")}</div>
+              <div className={c("v")} style={{ fontSize: 18 }}>
                 {tomorrow
                   ? t("energy.tomorrowPublished")
                   : t("energy.tomorrowNotYet")}
               </div>
-              <div className="row-sub">
+              <div className={c("row-sub")}>
                 {tomorrow
                   ? t("energy.tomorrowSee")
                   : t("energy.tomorrowTypical")}
@@ -363,9 +364,9 @@ export function EnergyBody(_props: LayerBodyProps) {
             </div>
           </div>
         </div>
-        <div className="block">
-          <div className="block-label">{t("energy.pricesNow")}</div>
-          <div className="readings">
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("energy.pricesNow")}</div>
+          <div className={c("readings")}>
             <Readout
               label={t("energy.buy")}
               value={buyText}
@@ -388,11 +389,11 @@ export function EnergyBody(_props: LayerBodyProps) {
             />
           </div>
         </div>
-        <div className="block">
-          <div className="block-head">
-            <div className="block-label">{t("energy.todayPrices")}</div>
+        <div className={c("block")}>
+          <div className={c("block-head")}>
+            <div className={c("block-label")}>{t("energy.todayPrices")}</div>
           </div>
-          <div className="list">
+          <div className={c("list")}>
             <ListRow
               icon="drop"
               name={t("energy.lowest")}
@@ -415,10 +416,10 @@ export function EnergyBody(_props: LayerBodyProps) {
             />
           </div>
         </div>
-        <div className="btn-row">
+        <div className={c("btn-row")}>
           <button
             type="button"
-            className="btn small"
+            className={c("btn small")}
             data-nav="sol"
             onClick={() => actions.openSheet("sol")}
           >
@@ -426,7 +427,7 @@ export function EnergyBody(_props: LayerBodyProps) {
           </button>
           <button
             type="button"
-            className="btn small"
+            className={c("btn small")}
             data-nav="vand"
             onClick={() => actions.openSheet("vand")}
           >
@@ -434,7 +435,7 @@ export function EnergyBody(_props: LayerBodyProps) {
           </button>
           <button
             type="button"
-            className="btn small"
+            className={c("btn small")}
             data-nav="teknik"
             onClick={() => actions.openSheet("teknik")}
           >

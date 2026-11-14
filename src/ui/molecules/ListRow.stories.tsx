@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { ListRow } from "./ListRow";
+import { c } from "../styles/classes";
 
 const meta = {
   title: "Molecules/ListRow",
@@ -12,7 +13,7 @@ const meta = {
     unit: "ms",
   },
   render: (args) => (
-    <div className="list" style={{ maxWidth: 620 }}>
+    <div className={c("list")} style={{ maxWidth: 620 }}>
       <ListRow {...args} />
     </div>
   ),

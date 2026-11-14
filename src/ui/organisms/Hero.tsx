@@ -1,6 +1,7 @@
 import { Icon } from "../atoms/Icon";
 import { useActions, useBindings, useModel, useTranslator } from "../hooks";
 import { DayArc } from "./DayArc";
+import { c } from "../styles/classes";
 
 /**
  * The greeting, prayer shortcut, date, and current weather. The card owns the
@@ -15,32 +16,32 @@ export function Hero() {
 
   return (
     <>
-      <div className="hero-top">
+      <div className={c("hero-top")}>
         <div>
           <button
-            className="eyebrow"
+            className={c("eyebrow")}
             data-nav="bon"
             aria-label={t("hero.seePrayers")}
             onClick={() => actions.navigate("bon")}
           >
             <span>{bindings.eyebrow}</span>
-            <span className="eyebrow-arrow">
+            <span className={c("eyebrow-arrow")}>
               <Icon name="chevron" />
             </span>
           </button>
           <h1
-            className="greeting"
+            className={c("greeting")}
             dangerouslySetInnerHTML={{ __html: bindings.greet }}
           />
-          <div className="hero-date">{bindings.heroDate}</div>
+          <div className={c("hero-date")}>{bindings.heroDate}</div>
         </div>
-        <div className="weather">
-          <span className="weather-icon">
+        <div className={c("weather")}>
+          <span className={c("weather-icon")}>
             <Icon name={model.weather?.icon ?? "cloud"} />
           </span>
           <div>
-            <div className="weather-temp">{bindings.weatherTemp}</div>
-            <div className="weather-sub">{bindings.weatherSub}</div>
+            <div className={c("weather-temp")}>{bindings.weatherTemp}</div>
+            <div className={c("weather-sub")}>{bindings.weatherSub}</div>
           </div>
         </div>
       </div>

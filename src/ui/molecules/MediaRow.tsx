@@ -1,5 +1,6 @@
 import { Icon } from "../atoms/Icon";
 import { IconButton } from "../atoms/IconButton";
+import { c } from "../styles/classes";
 
 export interface MediaRowProps {
   name: string;
@@ -11,11 +12,11 @@ export interface MediaRowProps {
 /** A speaker/media row with the play/pause round button. */
 export function MediaRow({ name, state, isPlaying, onToggle }: MediaRowProps) {
   return (
-    <div className="row">
+    <div className={c("row")}>
       <Icon name="play" />
-      <div className="row-main">
-        <div className="row-name">{name}</div>
-        <div className="row-sub">{state}</div>
+      <div className={c("row-main")}>
+        <div className={c("row-name")}>{name}</div>
+        <div className={c("row-sub")}>{state}</div>
       </div>
       <IconButton
         icon={isPlaying ? "pause" : "play"}

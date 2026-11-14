@@ -1,4 +1,5 @@
 import { Icon } from "../atoms/Icon";
+import { c } from "../styles/classes";
 
 export interface ToggleRowProps {
   label: string;
@@ -23,15 +24,15 @@ export function ToggleRow({
   dataEntity,
 }: ToggleRowProps) {
   return (
-    <div className={`row${isOn ? " on" : ""}`}>
+    <div className={c("row", isOn && "on")}>
       {icon ? <Icon name={icon} /> : null}
-      <div className="row-main">
-        <div className="row-name">{label}</div>
-        {sub ? <div className="row-sub">{sub}</div> : null}
+      <div className={c("row-main")}>
+        <div className={c("row-name")}>{label}</div>
+        {sub ? <div className={c("row-sub")}>{sub}</div> : null}
       </div>
       <button
         type="button"
-        className={`toggle${isOn ? " on" : ""}`}
+        className={c("toggle", isOn && "on")}
         aria-pressed={isOn}
         aria-label={label}
         data-act={dataAct}

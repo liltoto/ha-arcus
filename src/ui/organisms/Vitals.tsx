@@ -11,6 +11,7 @@ import {
   useTranslator,
 } from "../hooks";
 import { VitalStat } from "../molecules/VitalStat";
+import { c } from "../styles/classes";
 
 const RING_CIRCUMFERENCE = 100.5;
 
@@ -73,7 +74,7 @@ export function Vitals() {
 
   return (
     <>
-      <div className="vitals">
+      <div className={c("vitals")}>
         <VitalStat
           label={t("hero.indoor")}
           value={bindings.indoor}
@@ -138,23 +139,25 @@ export function Vitals() {
         />
       </div>
       <div
-        className="weather-strip"
+        className={c("weather-strip")}
         dangerouslySetInnerHTML={{ __html: bindings.weatherStrip ?? "" }}
       />
       <div data-alert-slot>
         {alert ? (
           <button
             type="button"
-            className="alert-band"
+            className={c("alert-band")}
             data-nav={alert.route}
             onClick={() => actions.navigate(alert.route)}
           >
             <Icon name="alert" />
-            <span className="alert-text">
+            <span className={c("alert-text")}>
               <b>{alert.title}.</b> {alert.text}
             </span>
             {model.alerts.length > 1 ? (
-              <span className="alert-count">+{model.alerts.length - 1}</span>
+              <span className={c("alert-count")}>
+                +{model.alerts.length - 1}
+              </span>
             ) : null}
             <Icon name="arrow" />
           </button>

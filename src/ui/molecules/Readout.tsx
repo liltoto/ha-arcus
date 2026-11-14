@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { c } from "../styles/classes";
 
 export interface ReadoutProps {
   label: string;
@@ -9,12 +10,12 @@ export interface ReadoutProps {
 /** One cell of a `.readings` grid. */
 export function Readout({ label, value, unit }: ReadoutProps) {
   return (
-    <div className="reading">
-      <div className="v">
+    <div className={c("reading")}>
+      <div className={c("v")}>
         <span>{value}</span>
         {unit ? <small>{unit}</small> : null}
       </div>
-      <div className="l">{label}</div>
+      <div className={c("l")}>{label}</div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { OpeningRow } from "./OpeningRow";
+import { c } from "../styles/classes";
 
 const meta = {
   title: "Molecules/OpeningRow",
@@ -13,7 +14,7 @@ const meta = {
     onClick: () => undefined,
   },
   render: (args) => (
-    <div className="list" style={{ maxWidth: 620 }}>
+    <div className={c("list")} style={{ maxWidth: 620 }}>
       <OpeningRow {...args} />
     </div>
   ),

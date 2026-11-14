@@ -3,6 +3,7 @@ import { arcPoint } from "../../../../render/charts";
 import { applyGraph } from "../../../../render/graph";
 import type { SolarPoint } from "../../../../types";
 import { DAY_MS, dayFraction, isFiniteNumber, pointDate } from "./helpers";
+import { c } from "../../../styles/classes";
 
 export interface SolarArcProps {
   points: SolarPoint[];
@@ -71,7 +72,7 @@ export function SolarArc({ points, now, empty }: SolarArcProps) {
     <div data-solar-arc>
       <div
         ref={hostRef}
-        className={`chart-box${noData ? " no-data" : ""}`}
+        className={c("chart-box", noData && "no-data")}
         data-chart="solar-arc"
         data-points={coords.length}
       >
@@ -108,7 +109,7 @@ export function SolarArc({ points, now, empty }: SolarArcProps) {
           ) : null}
           <circle cx={nowPoint.x} cy={nowPoint.y} r="4" fill="var(--amber)" />
         </svg>
-        <span className="chart-empty">{empty}</span>
+        <span className={c("chart-empty")}>{empty}</span>
       </div>
     </div>
   );

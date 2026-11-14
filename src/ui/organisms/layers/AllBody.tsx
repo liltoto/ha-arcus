@@ -6,6 +6,7 @@ import { SheetHeader } from "../../molecules/SheetHeader";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { LayerShell } from "./misc/LayerShell";
 import { MiscTile } from "./misc/MiscTile";
+import { c } from "../../styles/classes";
 
 interface RoomStatsView {
   temp?: number | null;
@@ -90,7 +91,7 @@ export function AllBody(_props: LayerBodyProps) {
   const operationsChapters = chapters.slice(8);
 
   const chapterGrid = (items: ChapterLink[]) => (
-    <div className="mini-grid">
+    <div className={c("mini-grid")}>
       {items.map((chapter) => (
         <MiscTile
           key={chapter.route}
@@ -113,21 +114,21 @@ export function AllBody(_props: LayerBodyProps) {
         closeLabel={t("sheet.close")}
         onClose={actions.closeSheet}
       />
-      <div className="sheet-scroll">
-        <div className="block">
-          <div className="block-label">{t("section.roomsTitle")}</div>
+      <div className={c("sheet-scroll")}>
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("section.roomsTitle")}</div>
           {roomTiles.length ? (
-            <div className="mini-grid">{roomTiles}</div>
+            <div className={c("mini-grid")}>{roomTiles}</div>
           ) : (
             <EmptyState icon="home" title={t("empty.rooms")} />
           )}
         </div>
-        <div className="block">
-          <div className="block-label">{t("sheet.navHome")}</div>
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("sheet.navHome")}</div>
           {chapterGrid(homeChapters)}
         </div>
-        <div className="block">
-          <div className="block-label">{t("sheet.navOperations")}</div>
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("sheet.navOperations")}</div>
           {chapterGrid(operationsChapters)}
         </div>
       </div>

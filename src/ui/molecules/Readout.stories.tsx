@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Readout } from "./Readout";
+import { c } from "../styles/classes";
 
 const meta = {
   title: "Molecules/Readout",
@@ -10,7 +11,7 @@ const meta = {
     unit: "°C",
   },
   render: (args) => (
-    <div className="readings" style={{ maxWidth: 320 }}>
+    <div className={c("readings")} style={{ maxWidth: 320 }}>
       <Readout {...args} />
     </div>
   ),

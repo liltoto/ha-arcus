@@ -1,5 +1,6 @@
 import type { Language, SolarModel, Translator } from "../../../../types";
 import { fmt } from "./helpers";
+import { c } from "../../../styles/classes";
 
 export interface EnergyFlowProps {
   solar: SolarModel;
@@ -15,7 +16,7 @@ export function EnergyFlow({ solar, language, t }: EnergyFlowProps) {
     grid !== null && grid < 0 ? t("solar.flowBuy") : t("solar.flowSell");
 
   return (
-    <div className="flow-wrap solar-flow">
+    <div className={c("flow-wrap solar-flow")}>
       <svg viewBox="0 0 560 132" aria-hidden="true">
         <defs>
           <marker
@@ -86,64 +87,64 @@ export function EnergyFlow({ solar, language, t }: EnergyFlowProps) {
           stroke="var(--sage)"
           strokeWidth="1"
         />
-        <text x="70" y="28" className="flow-label" textAnchor="middle">
+        <text x="70" y="28" className={c("flow-label")} textAnchor="middle">
           {t("solar.flowSolar")}
         </text>
         <text
           x="70"
           y="64"
-          className="flow-val"
+          className={c("flow-val")}
           textAnchor="middle"
           data-flow="pv"
         >
           {fmt(solar.power, 0, language)}
         </text>
-        <text x="70" y="78" className="flow-unit" textAnchor="middle">
+        <text x="70" y="78" className={c("flow-unit")} textAnchor="middle">
           {t("solar.flowWatt")}
         </text>
-        <text x="210" y="20" className="flow-label" textAnchor="middle">
+        <text x="210" y="20" className={c("flow-label")} textAnchor="middle">
           {t("solar.flowBattery")}
         </text>
         <text
           x="210"
           y="66"
-          className="flow-val"
+          className={c("flow-val")}
           textAnchor="middle"
           data-flow="soc"
         >
           {fmt(solar.batterySoc, 0, language)}
         </text>
-        <text x="210" y="80" className="flow-unit" textAnchor="middle">
+        <text x="210" y="80" className={c("flow-unit")} textAnchor="middle">
           {t("solar.flowPercent")}
         </text>
-        <text x="350" y="28" className="flow-label" textAnchor="middle">
+        <text x="350" y="28" className={c("flow-label")} textAnchor="middle">
           {t("solar.flowHouse")}
         </text>
         <text
           x="350"
           y="64"
-          className="flow-val"
+          className={c("flow-val")}
           textAnchor="middle"
           data-flow="load"
         >
           {fmt(solar.load, 0, language)}
         </text>
-        <text x="350" y="78" className="flow-unit" textAnchor="middle">
+        <text x="350" y="78" className={c("flow-unit")} textAnchor="middle">
           {t("solar.flowWatt")}
         </text>
-        <text x="490" y="28" className="flow-label" textAnchor="middle">
+        <text x="490" y="28" className={c("flow-label")} textAnchor="middle">
           {t("solar.flowGrid")}
         </text>
         <text
           x="490"
           y="64"
-          className="flow-val"
+          className={c("flow-val")}
           textAnchor="middle"
           data-flow="grid"
         >
           {gridValue}
         </text>
-        <text x="490" y="78" className="flow-unit" textAnchor="middle">
+        <text x="490" y="78" className={c("flow-unit")} textAnchor="middle">
           {gridUnit}
         </text>
       </svg>

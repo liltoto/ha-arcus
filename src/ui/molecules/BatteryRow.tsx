@@ -1,3 +1,4 @@
+import { c } from "../styles/classes";
 export interface BatteryRowProps {
   name: string;
   value: number;
@@ -19,15 +20,15 @@ export function BatteryRow({ name, value, sub, entity }: BatteryRowProps) {
   const tone = level < 20 ? "warn" : level < 40 ? "mid" : "";
 
   return (
-    <div className="row">
-      <span className="row-main">
-        <div className="row-name">{name}</div>
-        {sub ? <div className="row-sub">{sub}</div> : null}
+    <div className={c("row")}>
+      <span className={c("row-main")}>
+        <div className={c("row-name")}>{name}</div>
+        {sub ? <div className={c("row-sub")}>{sub}</div> : null}
       </span>
-      <div className="bar" data-batt={entity}>
-        <i className={tone} style={{ width: `${level}%` }} />
+      <div className={c("bar")} data-batt={entity}>
+        <i className={c(tone)} style={{ width: `${level}%` }} />
       </div>
-      <span className="row-val">
+      <span className={c("row-val")}>
         {level}
         <small>%</small>
       </span>

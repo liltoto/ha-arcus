@@ -2,18 +2,20 @@
 
 Arcus is a Home Assistant Marketplace Dashboard plugin: one self-contained
 frontend bundle, a dashboard strategy, and visual editors. Single package,
-no monorepo. Published at `liltoto/ha-arcus`; current release `v0.2.6`.
+no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.0`.
 
 ## Commands
 
-- `npm run dev` — esbuild watch on `:5173`; builds `dist/arcus.js` and
-  `dev/fixture.js`. Harness: `/dev/index.html` (`?full=1`, `?light=1`).
+- `npm run dev` — esbuild watch on `:5173` plus Panda `cssgen --watch`;
+  builds `dist/arcus.js` and `dev/fixture.js`. Harness: `/dev/index.html`
+  (`?full=1`, `?light=1`).
 - `npm test` — Vitest + happy-dom. One file:
   `npx vitest run tests/<name>.test.tsx`.
 - `npm run typecheck` — `tsc --noEmit`, strict.
-- `npm run build` — minified `dist/arcus.js` without sourcemap. `dist/` is
-  gitignored; `npm run dev` overwrites it with a sourcemap build, so run
-  `npm run build` before release/asset checks.
+- `npm run build` — production Panda CSS (minified and hashed) plus minified
+  `dist/arcus.js` without sourcemap. `dist/` is gitignored; `npm run dev`
+  overwrites it with a development build, so run `npm run build` before
+  release/asset checks.
 - `npm run size` — asserts `dist/arcus.js` is within the 400 KB gzip budget.
 - `npm run storybook` — Storybook on `:6006`.
 - `npm run build-storybook` — static Storybook build; CI runs this as a gate.
@@ -53,10 +55,18 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.2.6`.
   or the card receives empty registries.
 - `src/config.ts` `normalizeConfig` is the single config normalizer; `areas`
   normalizes to `{ include, exclude, order }`.
-- `src/ui/styles/*.css` is the visual source of truth. Import CSS with
-  `?inline` through `src/ui/styles/index.ts`; esbuild and Vite/Storybook both
-  handle the suffix. Do not add a second global stylesheet or edit
-  `dist/arcus.js` by hand.
+- `panda.config.ts` owns the global reset, palette variables, conditions, and
+  static tokens. `src/ui/styles/*.ts` define component styles with Panda
+  `css()`; `src/ui/styles/classes.ts` exports `c()`, which keeps the semantic
+  class name (tests/Playwright hook) and appends the generated Panda class.
+  Import `css` directly from `styled-system/css` in a style module so Panda's
+  extractor sees it. `styled-system/` is generated and gitignored; `prepare`
+  runs `panda codegen`.
+- `src/ui/styles/panda.css` is only the Panda layer declaration. Storybook and
+  Vitest run it through `@pandacss/vite`; esbuild serves the generated
+  `styled-system/styles.css` for it. `src/ui/styles/index.ts` injects
+  `FONT_FACE_CSS + panda.css?inline` into the card's shadow root. Do not add a
+  second global stylesheet or edit `dist/arcus.js` by hand.
 - Storybook uses `.storybook/main.ts` and `.storybook/preview.tsx`, a real
   shadow-root decorator, and a global fixture provider. Stories are the
   component docs and the `build-storybook` gate; Playwright remains the visual

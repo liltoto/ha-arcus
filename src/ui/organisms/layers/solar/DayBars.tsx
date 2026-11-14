@@ -3,6 +3,7 @@ import { applyGraph } from "../../../../render/graph";
 import { formatNumber } from "../../../../format";
 import type { Language } from "../../../../types";
 import { DAY_MS, escapeHtml, type DayBarDatum } from "./helpers";
+import { c } from "../../../styles/classes";
 
 export interface DayBarsProps {
   days: DayBarDatum[];
@@ -62,7 +63,7 @@ export function DayBars({ days, empty, language }: DayBarsProps) {
   return (
     <div
       ref={hostRef}
-      className="day-bars"
+      className={c("day-bars")}
       data-bars="solarWeek"
       data-days={days.length}
     />

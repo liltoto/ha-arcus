@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Dot } from "./Dot";
+import { c } from "../styles/classes";
 
 const meta = {
   title: "Atoms/Dot",
@@ -7,7 +8,7 @@ const meta = {
   args: { tone: "ok" },
   decorators: [
     (Story) => (
-      <span className="room-status">
+      <span className={c("room-status")}>
         <Story />
       </span>
     ),

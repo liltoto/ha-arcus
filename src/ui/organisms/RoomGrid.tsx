@@ -14,6 +14,7 @@ import {
 import { roomView, systemCardView } from "../home-view";
 import { RoomCard } from "../molecules/RoomCard";
 import { SystemCard } from "./SystemCard";
+import { c } from "../styles/classes";
 
 /**
  * The discovered room grid. Rooms come first in discovery order, then the
@@ -49,79 +50,79 @@ export function RoomGrid() {
 
   return (
     <>
-      <div className="section-head">
+      <div className={c("section-head")}>
         <div>
-          <div className="kicker">{t("section.homeKicker")}</div>
+          <div className={c("kicker")}>{t("section.homeKicker")}</div>
           <h2>{t("section.roomsTitle")}</h2>
         </div>
         <div
-          className="meta"
+          className={c("meta")}
           dangerouslySetInnerHTML={{ __html: bindings.roomsMeta }}
         />
       </div>
       {hasRooms ? (
-      <div className="room-grid">
-        {displayRooms.map((room) => {
-          const spark = history.series(room.temp?.entityId ?? "", {
-            buckets: 48,
-            fill: "hold",
-          });
-          return (
-            <RoomCard
-              key={room.id}
-              room={roomView(room, model, language, t)}
-              language={language}
-              openLabel={t("room.openRoom")}
-              spark={spark}
-              sparkGraph={sparkGraph(spark)}
-              onOpen={() => actions.navigate(`rum/${room.id}`)}
-            />
-          );
-        })}
-        {model.systemCards.map((card) => {
-          const view = systemCardView(card, language, t);
-          const spark = history.series(view.tempEntity, {
-            buckets: 48,
-            fill: "hold",
-          });
-          return (
-            <SystemCard
-              key={`system:${card.id}`}
-              card={view}
-              spark={spark}
-              sparkGraph={sparkGraph(spark)}
-              onOpen={() => actions.navigate(view.route)}
-            />
-          );
-        })}
-        {skurRoom ? (
-          <RoomCard
-            key={skurRoom.id}
-            room={roomView(
-              skurRoom,
-              model,
-              language,
-              t,
-              `${t("sheet.kickerOutside")} · ${t("room.kind")}`,
-            )}
-            language={language}
-            openLabel={t("room.openRoom")}
-            spark={history.series(skurRoom.temp?.entityId ?? "", {
+        <div className={c("room-grid")}>
+          {displayRooms.map((room) => {
+            const spark = history.series(room.temp?.entityId ?? "", {
               buckets: 48,
               fill: "hold",
-            })}
-            sparkGraph={sparkGraph(
-              history.series(skurRoom.temp?.entityId ?? "", {
+            });
+            return (
+              <RoomCard
+                key={room.id}
+                room={roomView(room, model, language, t)}
+                language={language}
+                openLabel={t("room.openRoom")}
+                spark={spark}
+                sparkGraph={sparkGraph(spark)}
+                onOpen={() => actions.navigate(`rum/${room.id}`)}
+              />
+            );
+          })}
+          {model.systemCards.map((card) => {
+            const view = systemCardView(card, language, t);
+            const spark = history.series(view.tempEntity, {
+              buckets: 48,
+              fill: "hold",
+            });
+            return (
+              <SystemCard
+                key={`system:${card.id}`}
+                card={view}
+                spark={spark}
+                sparkGraph={sparkGraph(spark)}
+                onOpen={() => actions.navigate(view.route)}
+              />
+            );
+          })}
+          {skurRoom ? (
+            <RoomCard
+              key={skurRoom.id}
+              room={roomView(
+                skurRoom,
+                model,
+                language,
+                t,
+                `${t("sheet.kickerOutside")} · ${t("room.kind")}`,
+              )}
+              language={language}
+              openLabel={t("room.openRoom")}
+              spark={history.series(skurRoom.temp?.entityId ?? "", {
                 buckets: 48,
                 fill: "hold",
-              }),
-            )}
-            onOpen={() => actions.navigate(`rum/${skurRoom.id}`)}
-          />
-        ) : null}
-      </div>
+              })}
+              sparkGraph={sparkGraph(
+                history.series(skurRoom.temp?.entityId ?? "", {
+                  buckets: 48,
+                  fill: "hold",
+                }),
+              )}
+              onOpen={() => actions.navigate(`rum/${skurRoom.id}`)}
+            />
+          ) : null}
+        </div>
       ) : (
-        <div className="empty">
+        <div className={c("empty")}>
           <Icon name="home" />
           <div>
             <b>{t("empty.areas")}</b>

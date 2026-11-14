@@ -2,6 +2,7 @@ import type { ChapterKey } from "../../types";
 import { Icon } from "../atoms/Icon";
 import { useActions, useBindings, useModel, useTranslator } from "../hooks";
 import { ChapterArt } from "./ChapterArt";
+import { c } from "../styles/classes";
 
 interface ChapterDefinition {
   key: ChapterKey;
@@ -90,18 +91,18 @@ export function ChapterGrid({ className }: ChapterGridProps = {}) {
 
   return (
     <>
-      <div className="section-head">
+      <div className={c("section-head")}>
         <div>
-          <div className="kicker">{t("section.chaptersKicker")}</div>
+          <div className={c("kicker")}>{t("section.chaptersKicker")}</div>
           <h2>{t("section.chaptersTitle")}</h2>
         </div>
-        <div className="meta">
+        <div className={c("meta")}>
           {t("section.chaptersMeta")}
           <br />
           <b>{t("section.chaptersMetaSub")}</b>
         </div>
       </div>
-      <div className={className ? `chapter-grid ${className}` : "chapter-grid"}>
+      <div className={c("chapter-grid", className)}>
         {enabled.map(({ chapter, index }) => {
           const number =
             chapter.key === "alarmer"
@@ -113,23 +114,23 @@ export function ChapterGrid({ className }: ChapterGridProps = {}) {
             <button
               key={chapter.key}
               type="button"
-              className={`chapter${chapter.large ? " large" : ""}`}
+              className={c("chapter", chapter.large && "large")}
               data-nav={chapter.route}
               data-chapter={chapter.key}
               onClick={() => actions.navigate(chapter.route)}
             >
-              <div className="ch-top">
-                <span className="num">{number}</span>
-                <span className="ch-icon">
+              <div className={c("ch-top")}>
+                <span className={c("num")}>{number}</span>
+                <span className={c("ch-icon")}>
                   <Icon name={chapter.icon} />
                 </span>
               </div>
               <h3>{t(chapter.titleKey)}</h3>
               <div
-                className="sum"
+                className={c("sum")}
                 dangerouslySetInnerHTML={{ __html: sum }}
               />
-              <div className="ch-art" data-art={chapter.key}>
+              <div className={c("ch-art")} data-art={chapter.key}>
                 <ChapterArt chKey={chapter.key} />
               </div>
             </button>
