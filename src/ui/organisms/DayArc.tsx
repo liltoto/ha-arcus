@@ -47,7 +47,7 @@ export function DayArc() {
 
   const solar = model.solar?.forecastSeries ?? [];
   const actual = config.solar?.power
-    ? history.series(config.solar.power)
+    ? history.series(config.solar.power, { buckets: 96, fill: 0 })
     : [];
   const max = Math.max(
     3000,

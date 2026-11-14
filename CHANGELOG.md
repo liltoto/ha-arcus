@@ -2,6 +2,15 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.3 - 2026-11-14
+
+### Fixed
+
+- History series are now mapped into equal **time** buckets instead of equal row counts. Home Assistant only records state changes, so a solar sensor that reports 0 at sunset and then nothing until sunrise used to become two adjacent points and drew a diagonal ramp across the night.
+- Solar actual/power series fill empty buckets with 0, so "Sol lige nu" and the solar charts sit at zero overnight. Other sensors keep null gaps instead of inventing values.
+- Sparkline padding is back to 1 px, so the minimum value reaches the chart baseline as it did before the React migration.
+- The same time alignment applies to room, heating, water, tech, economy, solar and day-arc charts; sparse sensors no longer jump across multi-hour gaps.
+
 ## 0.2.2 - 2026-11-14
 
 ### Fixed

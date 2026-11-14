@@ -60,9 +60,14 @@ export function Vitals() {
   const soc = model.solar?.batterySoc ?? 0;
   const batteryOffset = RING_CIRCUMFERENCE - (soc / 100) * RING_CIRCUMFERENCE;
 
-  const indoor = history.series(config.ventilation?.temperature ?? "");
+  const indoor = history.series(config.ventilation?.temperature ?? "", {
+    buckets: 96,
+  });
   const price = model.price?.values ?? [];
-  const solarActual = history.series(config.solar?.power ?? "");
+  const solarActual = history.series(config.solar?.power ?? "", {
+    buckets: 96,
+    fill: 0,
+  });
   const alert = model.alerts[0];
 
   return (

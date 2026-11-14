@@ -44,6 +44,7 @@ export function VitalStat({
         <Sparkline
           className="vital-spark"
           values={spark}
+          pad={1}
           range={sparkRange}
           strokeWidth={1}
           graph={sparkGraph}

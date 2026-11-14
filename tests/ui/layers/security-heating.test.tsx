@@ -215,6 +215,7 @@ describe("heating sheet", () => {
 
     expect(history.series).toHaveBeenCalledWith(
       "sensor.alpstuga_air_quality_monitor_temperatur_2",
+      { buckets: 96 },
     );
     const graph = container.querySelector("svg[data-graph]");
     expect(graph).toHaveAttribute("data-graph", "line");

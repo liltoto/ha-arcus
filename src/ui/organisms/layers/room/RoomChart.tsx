@@ -30,7 +30,7 @@ export function RoomChart({
   now,
 }: RoomChartProps) {
   const boxRef = useRef<HTMLDivElement>(null);
-  const values = entityId ? history.series(entityId) : [];
+  const values = entityId ? history.series(entityId, { buckets: 96 }) : [];
   const hasData = values.some(
     (value) => typeof value === "number" && Number.isFinite(value),
   );
