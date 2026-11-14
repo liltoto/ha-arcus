@@ -1,5 +1,6 @@
 node_modules/
 dist/
+storybook-static/
 dev/bundle.js
 dev/bundle.js.map
 playwright-report/
