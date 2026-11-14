@@ -1,353 +1,17 @@
-import { useId } from "react";
-import { formatNumber, resolveCurrency } from "../../../format";
-import { areaPath, sparkPath } from "../../../render/charts";
-import { graphAttrs, type GraphInput } from "../../../render/graph";
-import type {
-  ArcusHass,
-  SecurityBatteryModel,
-  Translator,
-} from "../../../types";
 import { EmptyState } from "../../atoms/EmptyState";
-import { Icon } from "../../atoms/Icon";
-import { ChartBox } from "../../molecules/ChartBox";
-import { Readout } from "../../molecules/Readout";
 import { SheetHeader } from "../../molecules/SheetHeader";
-import { ToggleRow } from "../../molecules/ToggleRow";
 import { useHistoryFrame } from "../../hooks/useLayerFrame";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { c } from "../../styles/classes";
-
-const CHART_HEIGHT = 110;
-const CHART_WIDTH = 560;
-const DAY_MS = 86_400_000;
-
-type WaterFormat = (
-  value: number | null | undefined,
-  digits?: number,
-) => string;
-
-/**
- * `graphAttrs` produces an HTML attribute string for the legacy string views.
- * React needs the same values as props, so decode the escaped entities that
- * `graphAttrs` adds when it serialises the series JSON.
- */
-function graphProps(input: GraphInput): Record<string, string> {
-  const props: Record<string, string> = {};
-  for (const match of graphAttrs(input).matchAll(
-    /data-([a-z0-9]+)="([^"]*)"/g,
-  )) {
-    props[`data-${match[1]}`] = match[2]
-      .replaceAll("&quot;", '"')
-      .replaceAll("&lt;", "<")
-      .replaceAll("&gt;", ">")
-      .replaceAll("&amp;", "&");
-  }
-  return props;
-}
-
-function entityState(hass: ArcusHass, entityId: string): string | null {
-  const state = hass.states[entityId]?.state;
-  return typeof state === "string" ? state : null;
-}
-
-/** The live on/off state, with a numeric fallback for sensors without "on". */
-function isOn(hass: ArcusHass, entityId: string, fallback = false): boolean {
-  const state = entityState(hass, entityId);
-  if (state === null) return fallback;
-  if (
-    state === "on" ||
-    state === "open" ||
-    state === "home" ||
-    state === "playing" ||
-    state === "heating" ||
-    state === "heat"
-  ) {
-    return true;
-  }
-  if (state !== "") {
-    const value = Number(state);
-    if (Number.isFinite(value)) return value > 0;
-  }
-  return false;
-}
-
-function friendlyNameOf(hass: ArcusHass, entityId: string): string | null {
-  const friendly = hass.states[entityId]?.attributes?.friendly_name;
-  return typeof friendly === "string" && friendly.trim() ? friendly : null;
-}
-
-function entityAreaId(hass: ArcusHass, entityId: string): string | null {
-  const entry = hass.entities?.[entityId];
-  if (entry?.area_id) return entry.area_id;
-  const deviceId = entry?.device_id;
-  return deviceId ? (hass.devices?.[deviceId]?.area_id ?? null) : null;
-}
-
-function areaNameForEntity(hass: ArcusHass, entityId: string): string | null {
-  const areaId = entityAreaId(hass, entityId);
-  if (!areaId) return null;
-  const name = hass.areas?.[areaId]?.name;
-  return typeof name === "string" && name.trim() ? name : null;
-}
-
-function entityName(
-  hass: ArcusHass,
-  entityId: string,
-  index: number,
-  t: Translator,
-): string {
-  const friendly = friendlyNameOf(hass, entityId);
-  if (friendly) return friendly;
-  const registry = hass.entities?.[entityId]?.name;
-  if (typeof registry === "string" && registry.trim()) return registry;
-  const area = areaNameForEntity(hass, entityId);
-  if (area) return area;
-  if (index === 0) return t("water.kitchen");
-  if (index === 1) return t("water.utility");
-  return `${t("water.leak")} ${index + 1}`;
-}
-
-interface LeakRowProps {
-  name: string;
-  on: boolean;
-  t: Translator;
-}
-
-function LeakRow({ name, on, t }: LeakRowProps) {
-  return (
-    <div className={c("row")}>
-      <Icon name="drop" />
-      <div className={c("row-main")}>
-        <div className={c("row-name")}>{name}</div>
-        <div className={c("row-sub")}>
-          {on ? t("water.waterDetected") : t("water.noWater")}
-        </div>
-      </div>
-      <span className={c("status-line")}>
-        <i className={c("dot", on && "warn")} />
-        {on ? t("water.alarm") : t("common.ok")}
-      </span>
-    </div>
-  );
-}
-
-interface WaterFlowChartProps {
-  hasData: boolean;
-  gradientId: string;
-  graph: Record<string, string>;
-  area: string;
-  line: string;
-  t: Translator;
-}
-
-/** The 24-hour flow chart, with the exact legacy graph bindings. */
-function WaterFlowChart({
-  hasData,
-  gradientId,
-  graph,
-  area,
-  line,
-  t,
-}: WaterFlowChartProps) {
-  return (
-    <div className={c("block")}>
-      <div className={c("block-label")}>{t("water.flow24")}</div>
-      <ChartBox noData={!hasData} emptyLabel={t("empty.chart")}>
-        <svg
-          viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-          preserveAspectRatio="none"
-          aria-hidden="true"
-          {...graph}
-        >
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="var(--sky)" stopOpacity=".26" />
-              <stop offset="1" stopColor="var(--sky)" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          {[0.25, 0.5, 0.75].map((part) => (
-            <line
-              key={part}
-              x1="0"
-              y1={CHART_HEIGHT * part}
-              x2={CHART_WIDTH}
-              y2={CHART_HEIGHT * part}
-              stroke="var(--line)"
-              strokeWidth="1"
-              vectorEffect="non-scaling-stroke"
-            />
-          ))}
-          <path fill={`url(#${gradientId})`} d={area} />
-          <path
-            fill="none"
-            stroke="var(--sky)"
-            strokeWidth="1.5"
-            vectorEffect="non-scaling-stroke"
-            d={line}
-          />
-        </svg>
-      </ChartBox>
-    </div>
-  );
-}
-
-interface WaterTodayProps {
-  day: number | null;
-  month: number | null;
-  total: number | null;
-  fmt: WaterFormat;
-  t: Translator;
-}
-
-/** The headline consumption and the monthly/total note. */
-function WaterToday({ day, month, total, fmt, t }: WaterTodayProps) {
-  return (
-    <div className={c("block")}>
-      <div className={c("big-read")}>
-        {fmt(day, 1)}
-        <small>L {t("common.today").toLocaleLowerCase()}</small>
-      </div>
-      <div className={c("block-note")}>
-        {month !== null || total !== null
-          ? t("water.note", {
-              month: fmt(month, 0),
-              total: fmt(total === null ? null : total / 1000, 1),
-            })
-          : t("empty.data")}
-      </div>
-    </div>
-  );
-}
-
-interface WaterSoftenerProps {
-  title: string;
-  state: string;
-  salt: number | null;
-  saltDays: number | null;
-  capacity: number | null;
-  flow: number | null;
-  holidayId: string | undefined;
-  holidayOn: boolean;
-  onToggleHoliday: () => void;
-  fmt: WaterFormat;
-  t: Translator;
-}
-
-/** The BWT salt/capacity readings plus the holiday toggle. */
-function WaterSoftener({
-  title,
-  state,
-  salt,
-  saltDays,
-  capacity,
-  flow,
-  holidayId,
-  holidayOn,
-  onToggleHoliday,
-  fmt,
-  t,
-}: WaterSoftenerProps) {
-  return (
-    <div className={c("block")}>
-      <div className={c("block-head")}>
-        <div className={c("block-label")}>{title}</div>
-        <div className={c("block-label")}>
-          <b>{state}</b>
-        </div>
-      </div>
-      <div className={c("readings")}>
-        <Readout label={t("water.salt")} value={fmt(salt, 0)} unit="%" />
-        <Readout
-          label={t("water.daysLeft")}
-          value={fmt(saltDays, 0)}
-          unit={t("water.days")}
-        />
-        <Readout
-          label={t("water.capacity")}
-          value={fmt(capacity, 0)}
-          unit="L"
-        />
-        <Readout label={t("water.flow")} value={fmt(flow, 2)} unit="m³/h" />
-      </div>
-      {holidayId ? (
-        <ToggleRow
-          label={t("water.holiday")}
-          sub={t("water.holidaySub")}
-          isOn={holidayOn}
-          onChange={onToggleHoliday}
-          dataAct="toggle-bool"
-          dataEntity={holidayId}
-        />
-      ) : null}
-    </div>
-  );
-}
-
-interface WaterLeaksProps {
-  hass: ArcusHass;
-  leakIds: string[];
-  leak: boolean;
-  leakBattery: SecurityBatteryModel | undefined;
-  fmt: WaterFormat;
-  t: Translator;
-}
-
-/** The leak sensors and, when present, the leak sensor battery. */
-function WaterLeaks({
-  hass,
-  leakIds,
-  leak,
-  leakBattery,
-  fmt,
-  t,
-}: WaterLeaksProps) {
-  return (
-    <div className={c("block")}>
-      <div className={c("block-head")}>
-        <div className={c("block-label")}>{t("water.leak")}</div>
-        <div className={c("block-label")}>
-          <b>{leak ? t("water.alarm") : t("water.allDry")}</b>
-        </div>
-      </div>
-      {leakIds.length ? (
-        leakIds.map((entityId, index) => (
-          <LeakRow
-            key={entityId}
-            name={entityName(hass, entityId, index, t)}
-            on={isOn(hass, entityId, leak)}
-            t={t}
-          />
-        ))
-      ) : (
-        <div className={c("block-note")}>{t("empty.data")}</div>
-      )}
-      {leakBattery ? (
-        <div className={c("row")}>
-          <Icon name="battery" />
-          <div className={c("row-main")}>
-            <div className={c("row-name")}>{t("water.battery")}</div>
-            <div className={c("row-sub")}>
-              {!leakBattery.name ||
-              leakBattery.name === leakBattery.entityId ||
-              /klippbok/i.test(leakBattery.entityId)
-                ? t("water.leakBattery")
-                : leakBattery.name}
-            </div>
-          </div>
-          <span className={c("row-val")}>
-            {leakBattery.level === null ? "–" : fmt(leakBattery.level, 0)}
-            <small>%</small>
-          </span>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-/** The sheet's closing explanatory note. */
-function WaterNote({ t }: { t: Translator }) {
-  return <div className={c("note")}>{t("water.footer")}</div>;
-}
+import { LayerShell } from "./misc/LayerShell";
+import { WaterFlow } from "./water/WaterFlow";
+import { WaterLeaks } from "./water/WaterLeaks";
+import {
+  WaterReadings,
+  WaterSoftener,
+  WaterToday,
+} from "./water/WaterSoftener";
+import { resolveWaterView } from "./water/water-view";
 
 /**
  * Water: the BWT softener, consumption, leak sensors, and the 24-hour flow
@@ -356,21 +20,11 @@ function WaterNote({ t }: { t: Translator }) {
  */
 export function WaterBody(_props: LayerBodyProps) {
   const { hass, model, config, t, history, now, actions } = useHistoryFrame();
-  const gradientId = `water-chart-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
-
   const water = model.water;
 
   if (!water) {
     return (
-      <div
-        data-react-layer
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          flex: "1 1 auto",
-          minHeight: 0,
-        }}
-      >
+      <LayerShell>
         <SheetHeader
           kicker={t("sheet.kickerWater")}
           title={t("sheet.titleWater")}
@@ -381,62 +35,15 @@ export function WaterBody(_props: LayerBodyProps) {
         <div className={c("sheet-scroll")}>
           <EmptyState icon="drop" title={t("empty.data")} />
         </div>
-      </div>
+      </LayerShell>
     );
   }
 
-  const language = model.language;
-  const fmt = (value: number | null | undefined, digits = 1) =>
-    formatNumber(value, digits, language);
-  const currency = resolveCurrency(hass, config, language);
-
-  const day = water.day ?? null;
-  const month = water.month ?? null;
-  const total = water.total ?? null;
-  const cost = water.cost ?? null;
-  const flow = water.flow ?? null;
-  const salt = water.salt ?? null;
-  const saltDays = water.saltDays ?? null;
-  const capacity = water.capacity ?? null;
-  const state = water.state || "–";
-  const holidayId = config.water?.holiday;
-  const customSoftenerName =
-    water.softenerName || config.water?.softenerName || null;
-  const softenerTitle = customSoftenerName || t("water.bwt");
-  const hasSoftener = Boolean(
-    water.state ||
-    salt !== null ||
-    saltDays !== null ||
-    capacity !== null ||
-    holidayId ||
-    customSoftenerName,
-  );
-  const holidayOn = holidayId
-    ? isOn(hass, holidayId, Boolean(water.holiday))
-    : Boolean(water.holiday);
-
-  const leakIds = config.security?.leaks ?? [];
-  const leakBattery = model.security?.batteries?.find((battery) =>
-    /klippbok|water|leak/i.test(battery.entityId),
-  );
-
+  const view = resolveWaterView(hass, model, config, water, t);
   const flowId = config.water?.flow;
   const flowSeries = flowId ? history.series(flowId, { fill: "hold" }) : [];
-  const hasData = flowSeries.some(
-    (value) => typeof value === "number" && Number.isFinite(value),
-  );
-  const area = areaPath(flowSeries, CHART_WIDTH, CHART_HEIGHT, 2);
-  const line = sparkPath(flowSeries, CHART_WIDTH, CHART_HEIGHT, 2);
   const end = now().getTime();
-  const graph = hasData
-    ? graphProps({
-        start: end - DAY_MS,
-        end,
-        unit: "L/min",
-        decimals: 1,
-        series: [{ values: flowSeries, color: "var(--sky)" }],
-      })
-    : {};
+  const holidayId = view.holidayId;
 
   const toggleHoliday = (): void => {
     if (!holidayId) return;
@@ -448,99 +55,31 @@ export function WaterBody(_props: LayerBodyProps) {
     );
   };
 
-  const baseSummary = t("water.summary", {
-    day: fmt(day, 1),
-    state,
-    salt: fmt(salt, 0),
-  });
-  const summary = hasSoftener
-    ? customSoftenerName
-      ? baseSummary.replace("BWT", customSoftenerName)
-      : baseSummary
-    : t("water.meterSummary", {
-        day: fmt(day, 1),
-        month: fmt(month, 0),
-      });
-
   return (
-    <div
-      data-react-layer
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        flex: "1 1 auto",
-        minHeight: 0,
-      }}
-    >
+    <LayerShell>
       <SheetHeader
         kicker={t("sheet.kickerWater")}
         title={t("sheet.titleWater")}
-        sum={summary}
+        sum={view.summary}
         closeLabel={t("sheet.close")}
         onClose={actions.closeSheet}
       />
       <div className={c("sheet-scroll")}>
-        <WaterToday day={day} month={month} total={total} fmt={fmt} t={t} />
+        <WaterToday view={view} t={t} />
+        <WaterReadings view={view} t={t} />
 
-        <div className={c("readings")}>
-          <Readout
-            label={t("water.thisMonth")}
-            value={fmt(month, 0)}
-            unit="L"
-          />
-          <Readout
-            label={t("water.total")}
-            value={fmt(total === null ? null : total / 1000, 1)}
-            unit="m³"
-          />
-          <Readout
-            label={t("water.cost")}
-            value={fmt(cost, 0)}
-            unit={currency}
-          />
-          <Readout
-            label={t("water.flowNow")}
-            value={fmt(flow, 2)}
-            unit="m³/h"
-          />
-        </div>
-
-        {hasSoftener ? (
-          <WaterSoftener
-            title={softenerTitle}
-            state={state}
-            salt={salt}
-            saltDays={saltDays}
-            capacity={capacity}
-            flow={flow}
-            holidayId={holidayId}
-            holidayOn={holidayOn}
-            onToggleHoliday={toggleHoliday}
-            fmt={fmt}
-            t={t}
-          />
+        {view.hasSoftener ? (
+          <WaterSoftener view={view} onToggleHoliday={toggleHoliday} t={t} />
         ) : null}
 
-        <WaterLeaks
-          hass={hass}
-          leakIds={leakIds}
-          leak={Boolean(model.security?.leak)}
-          leakBattery={leakBattery}
-          fmt={fmt}
-          t={t}
-        />
+        <WaterLeaks view={view} t={t} />
 
-        <WaterFlowChart
-          hasData={hasData}
-          gradientId={gradientId}
-          graph={graph}
-          area={area}
-          line={line}
-          t={t}
-        />
+        <WaterFlow values={flowSeries} end={end} t={t} />
 
-        {hasSoftener ? <WaterNote t={t} /> : null}
+        {view.hasSoftener ? (
+          <div className={c("note")}>{t("water.footer")}</div>
+        ) : null}
       </div>
-    </div>
+    </LayerShell>
   );
 }

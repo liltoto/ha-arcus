@@ -22,7 +22,7 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
   print width 80.
 - `pnpm run build` — production Panda CSS + minified `dist/arcus.js` (no
   sourcemap). Stop `pnpm run dev` first: the watcher can overwrite the build.
-- `pnpm run size` — fails above 400 KB gzip. Current bundle is ~391 KB.
+- `pnpm run size` — fails above 400 KB gzip. Current bundle is ~393 KB.
 - `pnpm run storybook` / `pnpm run build-storybook` — Storybook on `:6006`; CI
   gates the static build.
 - `pnpm run visual` — Playwright against `pnpm run dev`.
@@ -70,6 +70,11 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
 - `src/ui/providers/ArcusProvider.tsx` exposes `hass`, `model`, `config`, `t`,
   `bindings`, `route`, `actions`, `history`, and `now` through
   `src/ui/hooks.ts`. Organisms/pages use the hooks; atoms/molecules do not.
+- Chart sheets use `useHistoryFrame()` from `src/ui/hooks/useLayerFrame.ts`;
+  sheets without charts use the individual hooks so they do not subscribe to
+  history updates. `useLightActions` shares the room/lights service calls.
+- `HomeModel` declares `language`, `roomStats`, and `lightStats`; read those
+  typed fields instead of re-declaring local stats shapes or language helpers.
 - `src/ui/pages/SheetFrame.tsx` owns the scrim, focus trap, Escape,
   drag-to-dismiss, and scroll reset. `HomePage` passes it to `HomeTemplate` as
   the `sheet` slot. `src/ui/pages/SheetPage.tsx` resolves routes through

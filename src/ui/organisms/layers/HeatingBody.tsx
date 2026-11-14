@@ -1,159 +1,28 @@
-import { useEffect, useId } from "react";
-import { formatNumber, numberFrom, resolveTempUnit } from "../../../format";
+import { useEffect } from "react";
+import { resolveTempUnit } from "../../../format";
 import { areaPath, sparkPath } from "../../../render/charts";
-import type {
-  ArcusHass,
-  EntityRef,
-  HeatingModel,
-  HeatingReserveModel,
-  HomeModel,
-  TemperatureUnit,
-} from "../../../types";
+import type { HeatingModel } from "../../../types";
 import { useHistoryFrame } from "../../hooks/useLayerFrame";
-import { EmptyState } from "../../atoms/EmptyState";
-import { ChartBox } from "../../molecules/ChartBox";
 import { SheetHeader } from "../../molecules/SheetHeader";
-import { Stepper } from "../../molecules/Stepper";
-import { ZoneStrip } from "../../molecules/ZoneStrip";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { c } from "../../styles/classes";
+import { HeatingChart } from "./heating/HeatingChart";
+import { liveState } from "./heating/heating-state";
+import { HeatingLimits } from "./heating/HeatingLimits";
+import { HeatingReserve } from "./heating/HeatingReserve";
+import { HeatingZones } from "./heating/HeatingZones";
 import {
-  heatingReading,
-  liveAttributes,
-  liveState,
-} from "./heating/heating-state";
-
-interface HeatingLimits {
-  standard?: EntityRef;
-  reduced?: EntityRef;
-}
-
-interface ChartSource {
-  entityId: string;
-  roomId: string;
-  label: string;
-}
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-const CHART_HEIGHT = 120;
-
-function temperature(
-  value: number | null,
-  language: "da" | "en",
-  unit: TemperatureUnit = "°C",
-): string {
-  return value === null
-    ? "–"
-    : `${formatNumber(value, 1, language)}${unit === "°F" ? "°F" : "°"}`;
-}
-
-function isOpeningOn(hass: ArcusHass, opening: EntityRef | null): boolean {
-  if (!opening) return false;
-  const state = liveState(hass, opening);
-  return state === "on" || state === "open";
-}
-
-function refNumber(hass: ArcusHass, entity: EntityRef): number | null {
-  return (
-    numberFrom(hass.states?.[entity.entityId]?.state) ??
-    numberFrom(entity.state)
-  );
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-/**
- * The heating sheet's temperature history. The climate entity itself reports
- * an hvac mode rather than a number, so the chart follows the room temperature
- * sensor of the first zone (the same sensor the card already loads for the
- * home view).
- */
-function chartSource(model: HomeModel): ChartSource | null {
-  for (const zone of model.heating) {
-    const room = zone.areaId
-      ? model.rooms.find(
-          (candidate) =>
-            candidate.id === zone.areaId || candidate.areaId === zone.areaId,
-        )
-      : undefined;
-    if (room?.temp?.entityId) {
-      return {
-        entityId: room.temp.entityId,
-        roomId: room.id,
-        label: room.name,
-      };
-    }
-  }
-
-  const room = model.rooms.find((candidate) => candidate.temp?.entityId);
-  if (room?.temp?.entityId) {
-    return { entityId: room.temp.entityId, roomId: room.id, label: room.name };
-  }
-  return null;
-}
-
-function encodeValues(values: Array<number | null>): string {
-  return values
-    .map((value) =>
-      value === null || !Number.isFinite(value)
-        ? ""
-        : String(Math.round(value * 10000) / 10000),
-    )
-    .join(";");
-}
-
-interface SetpointProps {
-  entityId: string;
-  value: number | null;
-  min: number;
-  max: number;
-  label: string;
-  language: "da" | "en";
-  unit: TemperatureUnit;
-  dataAct: string;
-  onChange: (value: number) => void;
-}
-
-/** One setpoint stepper carrying the legacy temp-step/input-step hooks. */
-function Setpoint({
-  entityId,
-  value,
-  min,
-  max,
-  label,
-  language,
-  unit,
-  dataAct,
-  onChange,
-}: SetpointProps) {
-  if (value === null) return <span className={c("row-val")}>–</span>;
-  return (
-    <span
-      data-act={dataAct}
-      data-entity={entityId}
-      data-step={0.5}
-      style={{ display: "contents" }}
-    >
-      <Stepper
-        value={value}
-        min={min}
-        max={max}
-        step={0.5}
-        unit={unit === "°F" ? "°F" : "°"}
-        label={label}
-        formatValue={(next) => formatNumber(next, 1, language)}
-        onChange={onChange}
-      />
-    </span>
-  );
-}
+  chartSource,
+  CHART_HEIGHT,
+  DAY_MS,
+  heatingLimits,
+  heatingStrip,
+  isOpeningOn,
+} from "./heating/helpers";
 
 /** Underfloor heating: the discovered climate zones plus reserve channels. */
 export function HeatingBody(_props: LayerBodyProps) {
   const { hass, model, config, t, history, now, actions } = useHistoryFrame();
-  const gradientId = `heat-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   const language = model.language;
   const tempUnit = resolveTempUnit(hass, config);
@@ -175,6 +44,8 @@ export function HeatingBody(_props: LayerBodyProps) {
   const start = end - DAY_MS;
   const line = hasData ? sparkPath(values, 560, CHART_HEIGHT, 2) : "";
   const area = hasData ? areaPath(values, 560, CHART_HEIGHT, 2) : "";
+  const strip = heatingStrip(hass, zones, reserve);
+  const limits = heatingLimits(model);
 
   useEffect(() => {
     if (!sourceEntityId) return;
@@ -210,133 +81,6 @@ export function HeatingBody(_props: LayerBodyProps) {
     );
   };
 
-  const zoneRow = (zone: HeatingModel) => {
-    const entityId = zone.entity.entityId;
-    const reading = heatingReading(hass, zone.entity);
-    const activity =
-      reading.mode === "cool" || reading.hvacAction === "cooling"
-        ? t("room.cooling")
-        : reading.hvacAction === "heating"
-          ? t("room.heatingActive")
-          : t("room.heatingHolding");
-    const opening = isOpeningOn(hass, zone.opening ?? null);
-
-    return (
-      <div className={c("row")} key={entityId}>
-        <div className={c("row-main")}>
-          <div className={c("row-name")}>
-            {zone.name}
-            {opening ? (
-              <span
-                className={c("status-line")}
-                style={{ display: "inline-flex", marginLeft: 6 }}
-              >
-                <i className={c("dot warn")} />
-              </span>
-            ) : null}
-          </div>
-          <div className={c("row-sub")}>
-            {t("room.heatingNow", {
-              temp: temperature(reading.current, language, tempUnit),
-            })}{" "}
-            · {activity}
-            {opening ? ` · ${t("heating.windowOpen")}` : ""}
-          </div>
-        </div>
-        <Setpoint
-          entityId={entityId}
-          value={reading.target}
-          min={reading.min}
-          max={reading.max}
-          label={zone.name}
-          language={language}
-          unit={tempUnit}
-          dataAct="temp-step"
-          onChange={(next) => setTemperature(entityId, next)}
-        />
-        <button
-          type="button"
-          className={c("toggle", reading.on && "on")}
-          data-act="hvac-toggle"
-          data-entity={entityId}
-          data-on={entityId}
-          aria-label={`${t("common.toggle")} ${zone.name}`}
-          aria-pressed={reading.on}
-          onClick={() => toggleZone(zone)}
-        />
-      </div>
-    );
-  };
-
-  const reserveRow = (zone: HeatingReserveModel) => {
-    const entityId = zone.entity.entityId;
-    const reading = heatingReading(hass, zone.entity);
-
-    return (
-      <div className={c("row")} key={entityId}>
-        <div className={c("row-main")}>
-          <div className={c("row-name")}>{zone.name}</div>
-          <div className={c("row-sub")}>
-            {t("room.heatingNow", {
-              temp: temperature(reading.current, language, tempUnit),
-            })}
-          </div>
-        </div>
-        <Setpoint
-          entityId={entityId}
-          value={reading.target}
-          min={reading.min}
-          max={reading.max}
-          label={zone.name}
-          language={language}
-          unit={tempUnit}
-          dataAct="temp-step"
-          onChange={(next) => setTemperature(entityId, next)}
-        />
-      </div>
-    );
-  };
-
-  const limits = (model as HomeModel & { heatingLimits?: HeatingLimits })
-    .heatingLimits;
-  const limitRow = (entity: EntityRef, label: string, sub: string) => {
-    const attributes = liveAttributes(hass, entity);
-    const value = refNumber(hass, entity);
-    const min = numberFrom(attributes.min) ?? 5;
-    const max = numberFrom(attributes.max) ?? 35;
-    return (
-      <div className={c("row")} key={entity.entityId}>
-        <div className={c("row-main")}>
-          <div className={c("row-name")}>{label}</div>
-          <div className={c("row-sub")}>{sub}</div>
-        </div>
-        <Setpoint
-          entityId={entity.entityId}
-          value={value}
-          min={min}
-          max={max}
-          label={label}
-          language={language}
-          unit={tempUnit}
-          dataAct="input-step"
-          onChange={(next) => setLimit(entity.entityId, next)}
-        />
-      </div>
-    );
-  };
-
-  const stripValues = [...zones, ...reserve].map((zone) => {
-    const attributes = liveAttributes(hass, zone.entity);
-    const current = numberFrom(attributes.current_temperature) ?? 21;
-    return clamp(40 + (current - 19) * 14, 20, 96);
-  });
-  const stripWarns = [...zones, ...reserve].map((zone) => {
-    const attributes = liveAttributes(hass, zone.entity);
-    const current = numberFrom(attributes.current_temperature);
-    const target = numberFrom(attributes.temperature);
-    return current !== null && target !== null && current < target - 0.5;
-  });
-
   return (
     <div
       data-react-layer
@@ -358,101 +102,44 @@ export function HeatingBody(_props: LayerBodyProps) {
         onClose={actions.closeSheet}
       />
       <div className={c("sheet-scroll")}>
-        <div className={c("block")}>
-          <div className={c("block-head")}>
-            <div className={c("block-label")}>{t("heating.zones")}</div>
-            <div style={{ width: 120, height: 26 }}>
-              <ZoneStrip values={stripValues} warns={stripWarns} />
-            </div>
-          </div>
-          <div className={c("list")}>
-            {zones.length ? (
-              zones.map(zoneRow)
-            ) : (
-              <EmptyState icon="heat" title={t("empty.dataYet")} />
-            )}
-          </div>
-        </div>
-
-        {reserve.length ? (
-          <div className={c("block")}>
-            <div className={c("block-label")}>{t("heating.reserve")}</div>
-            <div className={c("list")}>{reserve.map(reserveRow)}</div>
-          </div>
-        ) : null}
-
-        {limits && (limits.standard || limits.reduced) ? (
-          <div className={c("block")}>
-            <div className={c("block-label")}>{t("heating.limits")}</div>
-            <div className={c("list")}>
-              {limits.standard
-                ? limitRow(
-                    limits.standard,
-                    t("heating.standard"),
-                    t("heating.standardSub"),
-                  )
-                : null}
-              {limits.reduced
-                ? limitRow(
-                    limits.reduced,
-                    t("heating.reduced"),
-                    t("heating.reducedSub"),
-                  )
-                : null}
-            </div>
-          </div>
-        ) : null}
-
-        <div className={c("block")}>
-          <div className={c("block-label")}>
-            {t("room.chart24", { label: t("room.temperature") })}
-          </div>
-          <ChartBox
-            title={source?.label ?? t("room.temperature")}
-            noData={!hasData}
-            emptyLabel={t("empty.chart")}
-          >
-            <svg
-              viewBox={`0 0 560 ${CHART_HEIGHT}`}
-              preserveAspectRatio="none"
-              aria-hidden="true"
-              data-graph="line"
-              data-gv={hasData ? encodeValues(values) : undefined}
-              data-gu={tempUnit}
-              data-gd="1"
-              data-gt0={String(start)}
-              data-gt1={String(end)}
-            >
-              <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stopColor="var(--amber)" stopOpacity=".26" />
-                  <stop offset="1" stopColor="var(--amber)" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {[0.25, 0.5, 0.75].map((part) => (
-                <line
-                  key={part}
-                  x1="0"
-                  y1={CHART_HEIGHT * part}
-                  x2="560"
-                  y2={CHART_HEIGHT * part}
-                  stroke="var(--line)"
-                  strokeWidth="1"
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
-              <path fill={`url(#${gradientId})`} d={area} />
-              <path
-                fill="none"
-                stroke="var(--amber)"
-                strokeWidth="1.5"
-                vectorEffect="non-scaling-stroke"
-                d={line}
-              />
-            </svg>
-          </ChartBox>
-        </div>
-
+        <HeatingZones
+          zones={zones}
+          strip={strip}
+          hass={hass}
+          language={language}
+          unit={tempUnit}
+          t={t}
+          onSetpoint={setTemperature}
+          onToggle={toggleZone}
+        />
+        <HeatingReserve
+          reserve={reserve}
+          hass={hass}
+          language={language}
+          unit={tempUnit}
+          t={t}
+          onSetpoint={setTemperature}
+        />
+        <HeatingLimits
+          limits={limits}
+          hass={hass}
+          language={language}
+          unit={tempUnit}
+          t={t}
+          onChange={setLimit}
+        />
+        <HeatingChart
+          label={t("room.chart24", { label: t("room.temperature") })}
+          title={source?.label ?? t("room.temperature")}
+          values={values}
+          hasData={hasData}
+          line={line}
+          area={area}
+          unit={tempUnit}
+          start={start}
+          end={end}
+          emptyLabel={t("empty.chart")}
+        />
         <div className={c("note")}>
           {t("heating.footer", {
             zones: zones.length,
