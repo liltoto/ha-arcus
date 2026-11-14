@@ -2,6 +2,15 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.5 - 2026-11-14
+
+### Fixed
+
+- Room temperature, humidity, CO2, and PM2.5 charts carry the last known value forward between recorder rows. Wavin sensors update every 10–30 minutes, so the new time buckets were leaving empty gaps and the Køkken, Entre, and Bryggers lines looked fragmented or wrong.
+- A temperature sensor that belongs to the same device as the thermostat but has no area is now used as the room's temperature source instead of charting the climate entity's non-numeric `heat`/`off` state. This fixes Bryggers and any similarly unassigned Wavin sensor.
+- Heating, tech, economy, water, and savings charts also forward-fill persistent measurements between state changes.
+- Solar string (PV3/PV4) charts fill their night buckets with 0 like the main solar power line.
+
 ## 0.2.4 - 2026-11-14
 
 ### Fixed

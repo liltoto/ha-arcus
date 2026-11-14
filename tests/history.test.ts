@@ -288,3 +288,29 @@ test("aligns explicit calendar-day windows and fills empty buckets", async () =>
   expect(values[48]).toBe(20);
   expect(values[90]).toBe(0);
 });
+
+test("holds the last known value across sparse temperature gaps", async () => {
+  const midnight = new Date("2026-11-13T00:00:00+01:00").getTime();
+  const rows: HistoryRow[] = [
+    { s: "10", lu: midnight / 1000 },
+    { s: "20", lu: (midnight + 12 * 60 * 60 * 1000) / 1000 },
+  ];
+  const cache = new HistoryCache(
+    makeHass(async () => ({ "sensor.room": rows })),
+    () => new Date("2026-11-13T23:00:00+01:00"),
+  );
+
+  await cache.ensure(["sensor.room"], 24);
+
+  const values = cache.series("sensor.room", {
+    start: midnight,
+    end: midnight + 24 * 60 * 60 * 1000,
+    buckets: 96,
+    fill: "hold",
+  });
+
+  expect(values[0]).toBe(10);
+  expect(values[1]).toBe(10);
+  expect(values[48]).toBe(20);
+  expect(values[90]).toBe(20);
+});

@@ -506,6 +506,31 @@ export function discoverRooms(
     const currentTemp = Number(climate?.attributes?.current_temperature);
     const tempFallback = Number.isFinite(currentTemp) ? climate : null;
 
+    // Some integrations expose the room temperature sensor on the same device
+    // as the thermostat but leave the sensor unassigned to the area. Use that
+    // sibling when the area has no temperature sensor of its own.
+    if (!temp && tempFallback?.entityId) {
+      const climateDevice = hass.entities?.[tempFallback.entityId]?.device_id;
+      if (climateDevice) {
+        const sibling = Object.values(hass.entities ?? {}).find((entity) => {
+          if (entity.device_id !== climateDevice) return false;
+          if (domainOf(entity.entity_id) !== "sensor") return false;
+          if (
+            attrOf(hass, entity.entity_id, "device_class") !== "temperature"
+          ) {
+            return false;
+          }
+          const label = `${entity.entity_id} ${displayName(
+            hass,
+            entity.entity_id,
+          )}`;
+          if (/batteri|battery/i.test(label)) return false;
+          return isAvailable(hass.states[entity.entity_id]?.state);
+        });
+        if (sibling) temp = refForEntity(hass, sibling);
+      }
+    }
+
     const humidity = resolveEntityRef(
       hass,
       pickFirst(

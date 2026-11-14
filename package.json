@@ -1,6 +1,6 @@
 {
   "name": "ha-arcus",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Arcus — a calm, day-arc dashboard for Home Assistant.",
   "type": "module",
   "private": true,

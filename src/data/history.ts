@@ -33,8 +33,12 @@ export interface SeriesOptions {
   start?: number;
   /** Explicit window end in epoch milliseconds. */
   end?: number;
-  /** Value for empty time buckets. Null keeps a visible gap. */
-  fill?: number | null;
+  /**
+   * Value for empty time buckets. `"hold"` carries the last known value
+   * forward (correct for temperature and other persistent states); null keeps
+   * a visible gap.
+   */
+  fill?: number | "hold" | null;
 }
 
 export interface HistoryRow {
@@ -220,7 +224,7 @@ export class HistoryCache {
     start: number,
     end: number,
     buckets: number,
-    fill: number | null,
+    fill: number | "hold" | null,
   ): Array<number | null> {
     const count = Math.max(1, Math.round(buckets));
     const width = (end - start) / count;
@@ -249,9 +253,18 @@ export class HistoryCache {
     // Do not fabricate a full flat series for an entity with no history at all.
     if (!hasValue) return [];
 
+    let held: number | null = null;
     return counts.map((bucketCount, index) => {
-      if (bucketCount) return sums[index] / bucketCount;
-      return nulls[index] ? null : fill;
+      if (bucketCount) {
+        held = sums[index] / bucketCount;
+        return held;
+      }
+      if (nulls[index]) {
+        // An explicit unavailable/unknown state breaks the hold.
+        held = null;
+        return null;
+      }
+      return fill === "hold" ? held : fill;
     });
   }
 

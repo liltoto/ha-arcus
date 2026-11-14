@@ -188,7 +188,7 @@ export function HeatingBody(_props: LayerBodyProps) {
   const source = chartSource(model);
   const sourceEntityId = source?.entityId;
   const values = sourceEntityId
-    ? history.series(sourceEntityId, { buckets: 96 })
+    ? history.series(sourceEntityId, { buckets: 96, fill: "hold" })
     : [];
   const hasData = values.some(
     (value) => typeof value === "number" && Number.isFinite(value),

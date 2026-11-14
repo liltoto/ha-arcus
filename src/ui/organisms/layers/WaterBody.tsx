@@ -175,7 +175,9 @@ export function WaterBody(_props: LayerBodyProps) {
   );
 
   const flowId = config.water?.flow;
-  const flowSeries = flowId ? history.series(flowId) : [];
+  const flowSeries = flowId
+    ? history.series(flowId, { fill: "hold" })
+    : [];
   const hasData = flowSeries.some(
     (value) => typeof value === "number" && Number.isFinite(value),
   );

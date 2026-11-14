@@ -486,13 +486,13 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
           series={[
             {
               key: windowKey(config.solar?.pv3),
-              values: historySeries(history, config.solar?.pv3, 1),
+              values: historySeries(history, config.solar?.pv3, 1, 0),
               color: "var(--brass)",
               label: t("solar.mppt3"),
             },
             {
               key: windowKey(config.solar?.pv4),
-              values: historySeries(history, config.solar?.pv4, 1),
+              values: historySeries(history, config.solar?.pv4, 1, 0),
               color: "var(--sky)",
               label: t("solar.mppt4"),
             },

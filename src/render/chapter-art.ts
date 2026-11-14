@@ -131,7 +131,7 @@ export function renderChapterArt(
 
   if (key === "teknik") {
     const id = context.config.network?.router;
-    const history = id && context.history ? context.history.series(id) : [];
+    const history = id && context.history ? context.history.series(id, { fill: "hold" }) : [];
     const values = history.length ? history : [model.tech?.router ?? null];
     const now = context.now ?? new Date();
     const end = now.getTime();
@@ -154,7 +154,7 @@ export function renderChapterArt(
 
   if (key === "oekonomi") {
     const id = context.config.economy?.bond;
-    const history = id && context.history ? context.history.series(id) : [];
+    const history = id && context.history ? context.history.series(id, { fill: "hold" }) : [];
     const values = history.length ? history : [model.economy?.value ?? null];
     const now = context.now ?? new Date();
     const end = now.getTime();

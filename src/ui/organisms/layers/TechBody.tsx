@@ -54,7 +54,9 @@ function seriesOf(
   entityId: string | undefined,
 ): Array<number | null> {
   if (!entityId) return [];
-  return typeof history.series === "function" ? history.series(entityId) : [];
+  return typeof history.series === "function"
+    ? history.series(entityId, { fill: "hold" })
+    : [];
 }
 
 interface PulseChartProps {

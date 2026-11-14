@@ -103,15 +103,13 @@ describe("TechBody", () => {
       TECH_ROUTE,
     );
 
-    expect(historyMock.series).toHaveBeenCalledWith(
+    for (const id of [
       props.config.network?.router,
-    );
-    expect(historyMock.series).toHaveBeenCalledWith(
       props.config.network?.google,
-    );
-    expect(historyMock.series).toHaveBeenCalledWith(
       props.config.network?.cloudflare,
-    );
+    ]) {
+      expect(historyMock.series).toHaveBeenCalledWith(id, { fill: "hold" });
+    }
 
     const box = document.querySelector<HTMLElement>(".chart-box");
     expect(box).not.toBeNull();
@@ -205,6 +203,7 @@ describe("EconomyBody", () => {
     expect(historyMock.window).toHaveBeenCalledWith(
       props.config.economy?.bond,
       30,
+      { fill: "hold" },
     );
 
     const box = document.querySelector<HTMLElement>(".chart-box");
