@@ -21,16 +21,14 @@ export interface HomeTemplateProps {
  * needs a handful of animated points; the next home pass can restore the full
  * eighteen if the baselines ask for them.
  */
-const STARS = [
-  { x: 8, y: 8, delay: 0, opacity: 0.2 },
-  { x: 18, y: 18, delay: 0.37, opacity: 0.32 },
-  { x: 27, y: 12, delay: 0.74, opacity: 0.44 },
-  { x: 36, y: 22, delay: 1.11, opacity: 0.56 },
-  { x: 45, y: 7, delay: 1.48, opacity: 0.2 },
-  { x: 54, y: 16, delay: 1.85, opacity: 0.32 },
-  { x: 63, y: 9, delay: 2.22, opacity: 0.44 },
-  { x: 71, y: 20, delay: 2.59, opacity: 0.56 },
-] as const;
+const STAR_X = [8, 18, 27, 36, 45, 54, 63, 71, 79, 86, 92, 14, 31, 58, 68, 76, 88, 4];
+const STAR_Y = [8, 18, 12, 22, 7, 16, 9, 20, 13, 6, 18, 26, 5, 24, 11, 3, 22, 15];
+const STARS = STAR_X.map((x, index) => ({
+  x,
+  y: STAR_Y[index],
+  delay: index * 0.37,
+  opacity: 0.2 + (index % 5) * 0.12,
+}));
 
 /**
  * The portal-free home shell. Class names and the `data-*` hooks mirror the
@@ -80,9 +78,7 @@ export function HomeTemplate({
           <section className="section">
             <ChapterGrid />
           </section>
-          <section className="section">
-            <QuickActions />
-          </section>
+          <QuickActions />
           <footer className="footer">
             <Footer />
           </footer>
