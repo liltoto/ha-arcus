@@ -1,172 +1,190 @@
 # AGENTS.md
 
 Arcus is a Home Assistant Marketplace Dashboard plugin: one self-contained
-frontend bundle, a dashboard strategy, and visual editors. Single package,
-no monorepo. Published at `liltoto/ha-arcus`; current release `v0.4.3`.
+frontend bundle (`dist/arcus.js`), a dashboard strategy, and two visual editors.
+Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
+`v0.4.3`. CI runs on Node 22; `tsc` is strict.
 
 ## Commands
 
-- `npm run dev` — esbuild watch on `:5173` plus Panda `cssgen --watch`;
-  builds `dist/arcus.js` and `dev/fixture.js`. Harness: `/dev/index.html`
-  (`?full=1`, `?light=1`).
+- `npm run dev` — esbuild watch + Panda `cssgen --watch` on `:5173`, serving
+  `/dev/index.html` (`?full=1`, `?light=1`) and writing `dist/arcus.js` plus
+  `dev/fixture.js`.
 - `npm test` — Vitest + happy-dom. One file:
-  `npx vitest run tests/<name>.test.tsx`.
-- `npm run test:coverage` — Vitest with Istanbul coverage; writes
-  `coverage/coverage-final.json` for `fallow:health` and `fallow:audit`.
+  `npx vitest run tests/<name>.test.tsx`. Watch: `npm run test:watch`.
+- `npm run test:coverage` — Istanbul; writes `coverage/coverage-final.json`,
+  required by `fallow:health` and `fallow:audit`.
 - `npm run typecheck` — `tsc --noEmit`, strict.
-- `npm run build` — production Panda CSS (minified and hashed) plus minified
-  `dist/arcus.js` without sourcemap. `dist/` is gitignored; stop `npm run dev`
-  first and run `npm run build` before release/asset checks, or the watcher can
-  overwrite `dist/arcus.js` with the development build.
-- If `styled-system/` is missing after a clean checkout, run
-  `npx panda codegen`; `npm ci` normally does this via `prepare`.
-- `npm run size` — asserts `dist/arcus.js` is within the 400 KB gzip budget.
-- `npm run fallow:dead` — Fallow dead-code gate (unused files/exports/deps).
-- `npm run fallow:arch` — Fallow architecture check of atomic-design boundaries.
-- `npm run fallow:dupes` — Fallow copy-paste report; fails above the 2% ceiling.
-- `npm run fallow:audit` — changed-file Fallow audit; PRs gate on new findings.
-- `npm run fallow:health` — Fallow health score from Istanbul coverage; fails below 80.
-- `npm run fallow` — full local Fallow report across every detector.
-- `npm run storybook` — Storybook on `:6006`.
-- `npm run build-storybook` — static Storybook build; CI runs this as a gate.
-- `npm run visual` — Playwright; starts `npm run dev` via `webServer`.
-- `npm run lint` is broken (no `eslint.config.*`); don't use it as a gate.
-- Verify before pushing:
+- `npm run build` — production Panda CSS + minified `dist/arcus.js` (no
+  sourcemap). Stop `npm run dev` first: the watcher can overwrite the build.
+- `npm run size` — fails above 400 KB gzip. Current bundle is ~391 KB.
+- `npm run storybook` / `npm run build-storybook` — Storybook on `:6006`; CI
+  gates the static build.
+- `npm run visual` — Playwright against `npm run dev`.
+- `npm run lint` is broken (no `eslint.config.*`); do not use it as a gate.
+- `styled-system/` is generated and gitignored; `npm ci` runs `prepare`
+  (`panda codegen`). If missing: `npx panda codegen`.
+- Pre-push gate:
   `npm run typecheck && npm run test:coverage && npm run fallow:dead && npm run fallow:arch && npm run fallow:dupes && npm run fallow:health && npm run build && npm run size && npm run build-storybook`.
-- Fallow config lives in `.fallowrc.jsonc`: `legacy/` is excluded,
-  `getStubConfig`/`getConfig` are allowlisted because Home Assistant calls them
-  reflectively, `boundaries` document the atomic-design layer rules, and
-  `duplicates.threshold` caps duplication at 2%. `fallow:audit` gates only
-  changed files. Before deleting an export, confirm with
+
+### Fallow gate
+
+- `.fallowrc.jsonc` excludes `legacy/`, allowlists the reflective
+  `getStubConfig`/`getConfig`, defines atomic-design boundaries, and caps
+  duplication at 2%. Before deleting an export:
   `npx fallow dead-code --trace <file>:<export>`.
+- `npm run fallow:audit` locally compares against the branch upstream and can
+  audit **0 files**. Reproduce CI with:
+  `npx fallow audit --coverage coverage/coverage-final.json --base origin/main`.
+- Audit fails on findings introduced by the changeset, not only worsened ones.
+  New/changed functions must stay under the complexity tiers and CRAP < 30;
+  CRAP needs coverage, so add tests for new helpers. Suppression exists but is
+  a last resort: `// fallow-ignore-next-line complexity`.
+- A new top-level `src/*.ts` file must be added to the `root` zone in
+  `.fallowrc.jsonc` or `fallow:arch` fails boundary coverage.
 
 ## Architecture
 
 - `src/main.ts` is the bundle entrypoint and must import every element module
-  (`card`, `editor`, `strategy`, `strategy-editor`). There is no `views/`
-  bundle anymore. Tests import modules directly, so add new elements to
-  `main.ts` and `tests/smoke.test.ts`.
+  (`card`, `editor`, `strategy`, `strategy-editor`). Add new elements there and
+  to `tests/smoke.test.ts`; tests import modules directly.
 - `src/card.ts` owns `arcus-card`: `hass`, config, `HomeModel`, routing,
   history, theme, clock, and the action bridge. It mounts exactly one React
-  root inside the card's shadow DOM and renders `src/ui/ArcusApp.tsx`.
-- `src/ui/` is the dashboard UI, organized by atomic design:
-  `atoms/` (pure primitives), `molecules/` (domain-shaped pure components),
-  `organisms/` (sections and sheet bodies), `templates/` (layout shells), and
-  `pages/` (data-wired composition). Put a component in the smallest layer
-  that fits; molecules must remain pure props.
-- `src/ui/providers/ArcusProvider.tsx` exposes the small contexts
-  (`hass`, `model`, `config`, `t`, `bindings`, `route`, `actions`, `history`,
-  `now`) through `src/ui/hooks.ts`. Organisms and pages use those hooks; atoms
-  and molecules do not.
+  root inside the card shadow DOM and renders `src/ui/ArcusApp.tsx`.
+- `src/ui/` follows atomic design: `atoms/` (pure primitives), `molecules/`
+  (domain-shaped, props-only), `organisms/` (sections and sheet bodies),
+  `templates/` (layout shells), `pages/` (data-wired composition). Put a
+  component in the smallest layer that fits.
+- `src/ui/providers/ArcusProvider.tsx` exposes `hass`, `model`, `config`, `t`,
+  `bindings`, `route`, `actions`, `history`, and `now` through
+  `src/ui/hooks.ts`. Organisms/pages use the hooks; atoms/molecules do not.
 - `src/ui/pages/SheetFrame.tsx` owns the scrim, focus trap, Escape,
-  drag-to-dismiss, and scroll reset. It is a page-level route shell that
-  `HomePage` passes into `HomeTemplate` as the `sheet` slot, so it can use
-  `SheetPage`/`SheetTemplate` without an organism importing pages or templates.
-  `src/ui/pages/SheetPage.tsx` resolves a route through
-  `src/ui/pages/layerRegistry.ts`. Every sheet body lives in
-  `src/ui/organisms/layers/`; add a route by adding a body and a registry entry.
+  drag-to-dismiss, and scroll reset. `HomePage` passes it to `HomeTemplate` as
+  the `sheet` slot. `src/ui/pages/SheetPage.tsx` resolves routes through
+  `src/ui/pages/layerRegistry.ts`; add a sheet body under
+  `src/ui/organisms/layers/` and a registry entry.
 - `src/model/discover.ts` discovers rooms from HA's area/device/entity
-  registries; `src/model/discover-systems.ts` auto-fills unconfigured system
+  registries. `src/model/discover-systems.ts` auto-fills unconfigured system
   sections (weather, price, solar, water, ventilation, prayers, security) from
-  the live state machine; `src/model/build.ts` builds `HomeModel`. `buildModel`
-  runs `discoverSystems` first, so every builder sees the same resolved config.
+  live states. `src/model/build.ts` builds `HomeModel`; it runs
+  `discoverSystems` first, so every builder sees the same resolved config.
   Explicit config always wins; `auto_discover: false` disables the pass.
-  `RoomModel` sensor fields are `EntityRef | null`, not raw IDs; rooms also
+- `RoomModel` sensor fields are `EntityRef | null`, not raw IDs. Rooms also
   carry `kind` (`indoor`/`outdoor`/`utility`), `wide`, floor metadata, `covers`,
-  and `lock`. `roomStats`/`lightStats` carry computed counts because
+  and `lock`. `roomStats`/`lightStats` hold computed counts because
   light/opening models have no live state. `src/model/lights.ts` is the single
-  light-ID flattener; don't re-add local group loops.
+  light-ID flattener; do not re-add local group loops.
 - `src/format.ts` owns `resolveCurrency`, `resolvePriceUnit`, and
   `resolveTempUnit`. Read units from those helpers instead of hardcoding `kr`,
-  `DKK`, or `°C`; they fall back to Home Assistant's `hass.config` and
-  preserve the Danish defaults. `ArcusConfig.units` overrides all three.
+  `DKK`, or `°C`; they fall back to `hass.config` and preserve Danish defaults.
+  `ArcusConfig.units` overrides them.
 - Never special-case an area ID or brand in the model. Room behavior comes from
-  `rooms.<id>.kind`/`wide`/`icon`; system sheets read optional
+  `rooms.<id>.kind`/`wide`/`icon`; sheets read optional
   `water.softenerName`, `ventilation.name`, `solar.pv1`–`pv4`, and
-  `security.alarm`/`locks`. Localized labels belong in `src/localize.ts`.
-- `src/ui/molecules/HistoryChart.tsx` is the shared economy/tech history chart.
-  Storybook sheet frames come from `src/ui/storybook/with-sheet.tsx`.
-- `src/strategy.ts` generates one panel view and declares
-  `registryDependencies = ["areas", "devices", "entities", "floors"]`. Keep it,
-  or the card receives empty registries.
-- `src/config.ts` `normalizeConfig` is the single config normalizer; `areas`
-  normalizes to `{ include, exclude, order }`. New top-level options:
+  `security.alarm`/`locks`. User-visible labels belong in `src/localize.ts`
+  (Danish + English), not in components.
+- `src/config.ts` `normalizeConfig` is the only config normalizer; `areas`
+  normalizes to `{ include, exclude, order }`. Top-level options include
   `auto_discover`, `group_by_floor`, `person`, `units`, `vitals`,
   `chapter_order`, `energy`, and `heating`; room overrides also accept `kind`,
   `wide`, `icon`, `covers`, and `lock`.
-- `panda.config.ts` owns the global reset, palette variables, conditions, and
-  static tokens. `src/ui/styles/*.ts` define component styles with Panda
-  `css()`; `src/ui/styles/classes.ts` exports `c()`, which keeps the semantic
-  class name (tests/Playwright hook) and appends the generated Panda class.
-  Import `css` directly from `styled-system/css` in a style module so Panda's
-  extractor sees it. `styled-system/` is generated and gitignored; `prepare`
-  runs `panda codegen`.
-- `src/ui/styles/panda.css` is only the Panda layer declaration. Storybook and
-  Vitest run it through `@pandacss/vite`; esbuild serves the generated
-  `styled-system/styles.css` for it. `src/ui/styles/index.ts` injects
-  `FONT_FACE_CSS + panda.css?inline` into the card's shadow root. Do not add a
-  second global stylesheet or edit `dist/arcus.js` by hand.
-- In `css()` objects, conditions use underscore keys (`_phone`, `_compact`,
-  `_light`). `globalCss` is the base layer and loses to utility classes, so
-  keep component responsive/density overrides in `css()`.
-- Keep the semantic class tokens. `c("room-card")` returns
-  `room-card <panda>`; tests and Playwright select the semantic token. Never
-  replace it with only the generated Panda class.
-- When generating HTML strings, put `c()` on the element that owns a standalone
-  style (`wday`, `price-bars`, …); child classes can rely on nested selectors.
-- A chart that sets `pointer-events: none` must restore `pointer-events: auto`
-  on its `[data-graph]` SVG, or the hover/touch readout stops receiving events.
-- `src/editor.ts` keeps its small `EDITOR_STYLES` string for the two config
-  editors. They run in separate shadow roots and use HA's native theme
-  variables; do not inject the dashboard stylesheet there.
-- Storybook uses `.storybook/main.ts` and `.storybook/preview.tsx`, a real
-  shadow-root decorator, and a global fixture provider. Stories are the
-  component docs and the `build-storybook` gate; Playwright remains the visual
-  source of truth.
+- `src/strategy.ts` generates one panel view and declares
+  `registryDependencies = ["areas", "devices", "entities", "floors"]`. Keep it,
+  or the card receives empty registries.
+- `src/ui/molecules/HistoryChart.tsx` is the shared economy/tech history chart;
+  Storybook sheet frames come from `src/ui/storybook/with-sheet.tsx`.
 - The bundle embeds Fraunces/Inter Tight as data URLs. Do not add Google Fonts,
   CDNs, or runtime imports; the release workflow rejects
   `fonts.googleapis|unpkg|cdn.jsdelivr`.
 
-## Fixtures, tests, and screenshots
+## Editors
+
+- `src/editor.ts` and `src/strategy-editor.ts` are framework-free custom
+  elements with their own shadow roots and the shared `EDITOR_STYLES` string.
+  Use plain HTML controls, not `ha-*` components, and do not inject the
+  dashboard stylesheet there.
+- Home Assistant echoes every `config-changed` back into `setConfig`. That echo
+  must **not** re-render: rebuilding drops focus/caret, collapses open
+  `<details>`, and scrolls the dialog to the top. Re-render only on a real
+  external change; `captureViewState`/`restoreViewState` preserve open sections
+  and the focused field, and Backspace/Delete is stopped at the shadow
+  boundary so dashboard shortcuts cannot remove the card.
+- Entity autocomplete is field-specific. `src/editor-entities.ts`
+  (`suggestEntities`, `datalistId`) builds one filtered `<datalist>` per
+  `EntityField.suggest` spec. When adding an entity field, add a `suggest`
+  spec; when adding a name/unit field, set `entity: false` (and no `suggest`)
+  so it gets no datalist. Device-class specs rank name matches first; name-only
+  specs are strict and return an empty list when the integration is absent.
+- `textMarkup` takes a concrete datalist `listId`, not a boolean.
+
+## Styling
+
+- `panda.config.ts` owns the reset, palette variables, conditions, and static
+  tokens. Define component styles in `src/ui/styles/*.ts` with Panda `css()`
+  imported from `styled-system/css` (the extractor must see it).
+- `src/ui/styles/classes.ts` exports `c()`, which keeps the semantic class name
+  (tests/Playwright hook) and appends the generated Panda class. Keep semantic
+  tokens: `c("room-card")` must not become only the generated class.
+- In `css()` conditions use underscore keys (`_phone`, `_compact`, `_light`).
+  `globalCss` is the base layer and loses to utilities, so keep component
+  responsive/density overrides in `css()`.
+- When generating HTML strings, put `c()` on the element that owns a standalone
+  style (`wday`, `price-bars`, …); child classes can rely on nested selectors.
+- A chart that sets `pointer-events: none` must restore `pointer-events: auto`
+  on its `[data-graph]` SVG, or the hover/touch readout stops receiving events.
+- `src/ui/styles/panda.css` is only the layer declaration.
+  `src/ui/styles/index.ts` injects `FONT_FACE_CSS + panda.css?inline` into the
+  card shadow root; do not add a second global stylesheet or edit
+  `dist/arcus.js` by hand.
+
+## Fixtures and tests
 
 - `dev/mock.js` is shared by the dev harness and `tests/fixtures/home.ts`;
-  changing it changes both.
+  changing it changes both. `tests/fixtures/archetypes.ts` adds three divergent
+  homes (urban apartment, multi-floor US home, minimal auto-discovery) used by
+  `tests/archetypes.test.tsx` to prove configurability.
 - `examples/hjem.yaml` is the real-home config (Outdoor repurposed as Skur,
   plus Lille Gang). The mock/fixture use a synthetic `skur` area and 7 rooms.
-  They intentionally differ; don't sync them blindly.
+  They intentionally differ; do not sync them blindly.
 - UI tests use Testing Library. `tests/ui/home-test-utils.tsx`
-  (`renderWithArcus`) wires the provider for home organisms and
+  (`renderWithArcus`) wires the provider for home organisms;
   `tests/ui/layer-test-utils.tsx` (`renderLayer`) does the same for sheet
   bodies. Prefer role/text queries over asserting rendered HTML strings.
+- `tests/editor.test.ts` covers echo/focus/keyboard behaviour;
+  `tests/editor-entities.test.ts` covers the pure suggestion filters.
 - Class assertions must be token-based (`toHaveClass("sheet", "open")`), not
   exact `className`. In Playwright use whitespace-bounded regexes
   (`/(^|\s)open(\s|$)/`); Panda utility names contain state words such as
   `[&.open]` and will false-positive a plain `/open/`.
 - Visual baselines in `tests/visual/__screenshots__` are CI-native for
-  `ubuntu-26.04`. Local WSL runs can differ by font metrics (typically the
-  home/energy baselines); do not run `--update-snapshots` locally. The Visual
+  `ubuntu-26.04` (Playwright pins `Europe/Copenhagen`). Local WSL runs can
+  differ by font metrics; never run `--update-snapshots` locally. The Visual
   workflow is the source of truth.
-- To refresh baselines, dispatch the Visual workflow with
-  `update_snapshots=true` (`gh workflow run Visual -f update_snapshots=true`),
-  download the `playwright-baselines` artifact, copy it over
+- Refresh baselines with
+  `gh workflow run Visual -f update_snapshots=true`, download the
+  `playwright-baselines` artifact, copy it over
   `tests/visual/__screenshots__`, and commit the PNGs.
+- Storybook (`.storybook/main.ts`, `.storybook/preview.tsx`) uses a real
+  shadow-root decorator and a global fixture provider; `typescript.check` is
+  disabled because `npm run typecheck` is the single type gate.
 
 ## Release and live install
 
-- `hacs.json` requires the release asset to be named `arcus.js`;
-  `.github/workflows/release.yml` runs on `v*` and attaches `dist/arcus.js`.
-- To release: update `README.md`, `AGENTS.md`, `CHANGELOG.md`, `package.json`,
-  and `src/version.ts` together, commit, tag `vX.Y.Z`, push the tag. A plain
-  push is not a release.
+- `hacs.json` requires the asset to be named `arcus.js`;
+  `.github/workflows/release.yml` runs on `v*` and attaches `dist/arcus.js`
+  after typecheck, tests, build, size, and a forbidden-URL scan.
+- To release, bump `package.json`, `src/version.ts`, `tests/smoke.test.ts`,
+  README's console version, and `AGENTS.md`, add a `CHANGELOG.md` entry, commit,
+  tag `vX.Y.Z`, and push the tag. A plain push is not a release.
 - `main` is protected. This single-maintainer repo merges with
   `gh pr merge --squash --admin`.
-- CI: typecheck -> test:coverage -> fallow:dead -> fallow:arch -> fallow:dupes
-  -> fallow:health -> build -> size -> HACS validation, plus a Storybook build
-  job. Pull requests also run `fallow:audit` (changed files only). Visual is
-  pinned to `ubuntu-26.04`.
+- CI order: typecheck → test:coverage → fallow:dead → fallow:arch →
+  fallow:dupes → fallow:health → build → size → HACS validation, plus a
+  Storybook job. Pull requests also run `fallow:audit`. Visual is pinned to
+  `ubuntu-26.04`.
 - The live HA dashboard `hjem-dognet` uses `custom:arcus` and the
   Marketplace-installed `/local/community/ha-arcus/arcus.js`; it does not load
-  this repo's `dist/`. Changes need a release + Marketplace update. The old
-  inline `hjem-dognet` resources are gone; `legacy/` is reference only.
-- `docs/marketplace.md` is a historical initial-publish checklist; the repo is
-  already public. Trust README, `hacs.json`, and the workflows.
+  this repo's `dist/`. Changes need a release + Marketplace update.
+- `legacy/` is reference only (not built, ignored by Fallow).
+  `docs/marketplace.md` is a historical initial-publish checklist; trust
+  README, `hacs.json`, and the workflows.
