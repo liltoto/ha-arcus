@@ -13,16 +13,7 @@ import { ChartBox } from "../../molecules/ChartBox";
 import { Readout } from "../../molecules/Readout";
 import { SheetHeader } from "../../molecules/SheetHeader";
 import { ToggleRow } from "../../molecules/ToggleRow";
-import {
-  useActions,
-  useConfig,
-  useHass,
-  useHistory,
-  useHistoryVersion,
-  useModel,
-  useNow,
-  useTranslator,
-} from "../../hooks";
+import { useHistoryFrame } from "../../hooks/useLayerFrame";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { c } from "../../styles/classes";
 
@@ -364,14 +355,7 @@ function WaterNote({ t }: { t: Translator }) {
  * states are only needed for the holiday switch and the leak sensors.
  */
 export function WaterBody(_props: LayerBodyProps) {
-  const hass = useHass();
-  const model = useModel();
-  const config = useConfig();
-  const t = useTranslator();
-  const history = useHistory();
-  useHistoryVersion();
-  const now = useNow();
-  const actions = useActions();
+  const { hass, model, config, t, history, now, actions } = useHistoryFrame();
   const gradientId = `water-chart-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   const water = model.water;
@@ -401,8 +385,7 @@ export function WaterBody(_props: LayerBodyProps) {
     );
   }
 
-  const language =
-    model.language === "en" || config.language === "en" ? "en" : "da";
+  const language = model.language;
   const fmt = (value: number | null | undefined, digits = 1) =>
     formatNumber(value, digits, language);
   const currency = resolveCurrency(hass, config, language);

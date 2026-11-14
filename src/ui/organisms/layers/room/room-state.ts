@@ -1,27 +1,14 @@
 import { numberFrom } from "../../../../format";
 import { lightIdsForRoom } from "../../../../model/lights";
 import type {
-  ArcusConfig,
   ArcusHass,
   EntityRef,
   HassEntity,
   HomeModel,
-  Language,
   RoomModel,
-  Translator,
+  RoomStats,
 } from "../../../../types";
 import type { ArcusRoute } from "../../../types";
-
-/** The computed room card counts, mirroring `views/layers/room.ts`. */
-export interface RoomStat {
-  temp: number | null;
-  humidity: number | null;
-  co2: number | null;
-  lightsOn: number;
-  lightsTotal: number;
-  open: number;
-  leak: boolean;
-}
 
 const ON_STATES = new Set(["on", "open", "home", "playing"]);
 
@@ -81,8 +68,8 @@ export function roomStatFor(
   hass: ArcusHass,
   model: HomeModel,
   room: RoomModel,
-): RoomStat {
-  const stored = ((model.roomStats ?? {}) as Record<string, RoomStat>)[room.id];
+): RoomStats {
+  const stored = model.roomStats?.[room.id];
   const lightIds = lightIdsForRoom(room);
   const fallbackTemp = room.tempFallback
     ? numberFrom(
@@ -99,19 +86,6 @@ export function roomStatFor(
     open: room.openings.filter((opening) => isOn(hass, opening.id)).length,
     leak: room.leak ? isOn(hass, room.leak.entityId, room.leak) : false,
   };
-}
-
-export function languageOf(
-  model: HomeModel,
-  config: ArcusConfig,
-  t: Translator,
-): Language {
-  const modelLanguage = model.language;
-  if (modelLanguage === "da" || modelLanguage === "en") return modelLanguage;
-  if (config.language === "da" || config.language === "en") {
-    return config.language;
-  }
-  return t("common.today") === "I dag" ? "da" : "en";
 }
 
 /**

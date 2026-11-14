@@ -1,23 +1,14 @@
-import { formatUnit, numberFromState } from "../format";
+import { numberFromState } from "../format";
+import { airText } from "../model/bindings";
 import { lightIdsForRoom } from "../model/lights";
 import type {
   HomeModel,
   RoomModel,
+  RoomStats,
   SystemCardModel,
   Translator,
 } from "../types";
 import type { RoomView } from "./view-types";
-
-/** Shape of `model.roomStats` at runtime; the model interface keeps it loose. */
-export interface RoomStatsLike {
-  temp: number | null;
-  humidity: number | null;
-  co2: number | null;
-  lightsOn: number;
-  lightsTotal: number;
-  open: number;
-  leak: boolean;
-}
 
 /**
  * Presentation data for the ventilation and outdoor system cards. The
@@ -37,9 +28,8 @@ export interface SystemCardView {
   language: string;
 }
 
-function statsFor(model: HomeModel, room: RoomModel): RoomStatsLike {
-  const all = (model.roomStats ?? {}) as Record<string, RoomStatsLike>;
-  const stored = all[room.id];
+function statsFor(model: HomeModel, room: RoomModel): RoomStats {
+  const stored = model.roomStats?.[room.id];
   if (stored) return stored;
 
   const lightIds = lightIdsForRoom(room);
@@ -56,7 +46,7 @@ function statsFor(model: HomeModel, room: RoomModel): RoomStatsLike {
   };
 }
 
-function airLevel(stats: RoomStatsLike): RoomView["air"] {
+function airLevel(stats: RoomStats): RoomView["air"] {
   if (stats.co2 !== null) {
     return stats.co2 > 1000 ? "warn" : stats.co2 > 850 ? "mid" : "ok";
   }
@@ -64,31 +54,6 @@ function airLevel(stats: RoomStatsLike): RoomView["air"] {
     return stats.humidity > 65 ? "warn" : "ok";
   }
   return "off";
-}
-
-function airText(
-  room: RoomModel,
-  stats: RoomStatsLike,
-  language: string,
-  t: Translator,
-): string {
-  if (stats.co2 !== null) {
-    return `${t("room.air")} ${formatUnit(
-      stats.co2,
-      room.co2?.unit ?? "ppm",
-      language,
-      0,
-    )}`;
-  }
-  if (stats.humidity !== null) {
-    return `${t("room.humidityShort")} ${formatUnit(
-      stats.humidity,
-      "%",
-      language,
-      0,
-    )}`;
-  }
-  return `${t("room.air")} –`;
 }
 
 /**

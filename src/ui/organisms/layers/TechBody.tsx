@@ -1,36 +1,14 @@
 import type { CSSProperties } from "react";
 import type { HistoryCache } from "../../../data/history";
 import { formatNumber } from "../../../format";
-import type { ArcusConfig, ArcusHass, HomeModel } from "../../../types";
 import { EmptyState } from "../../atoms/EmptyState";
-import {
-  useActions,
-  useConfig,
-  useHass,
-  useHistory,
-  useHistoryVersion,
-  useModel,
-  useNow,
-  useTranslator,
-} from "../../hooks";
+import { useHistoryFrame } from "../../hooks/useLayerFrame";
 import { HistoryChart } from "../../molecules/HistoryChart";
 import { ListRow } from "../../molecules/ListRow";
 import { Readout } from "../../molecules/Readout";
 import { SheetHeader } from "../../molecules/SheetHeader";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { c } from "../../styles/classes";
-
-function languageOf(
-  model: HomeModel,
-  config: ArcusConfig,
-  hass: ArcusHass,
-): "da" | "en" {
-  return model.language === "en" ||
-    config.language === "en" ||
-    hass.language === "en"
-    ? "en"
-    : "da";
-}
 
 function seriesOf(
   history: HistoryCache,
@@ -49,16 +27,9 @@ function seriesOf(
  * fill in later.
  */
 export function TechBody(_props: LayerBodyProps) {
-  const hass = useHass();
-  const model = useModel();
-  const config = useConfig();
-  const t = useTranslator();
-  const history = useHistory();
-  useHistoryVersion();
-  const now = useNow();
-  const actions = useActions();
+  const { model, config, history, t, now, actions } = useHistoryFrame();
 
-  const language = languageOf(model, config, hass);
+  const language = model.language;
   const fmt = (value: number | null | undefined, digits = 1) =>
     formatNumber(value, digits, language);
   const hoursUnit = language === "da" ? "t" : "h";

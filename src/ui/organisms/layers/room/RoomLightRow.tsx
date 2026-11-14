@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { clampPercent } from "../../../../format";
 import type { Translator } from "../../../../types";
 import { Icon } from "../../../atoms/Icon";
 import { c } from "../../../styles/classes";
@@ -17,11 +18,6 @@ export interface RoomLightRowProps {
   t: Translator;
   onToggle: () => void;
   onBrightness: (percent: number) => void;
-}
-
-function clampPercent(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.min(100, Math.round(value)));
 }
 
 /**

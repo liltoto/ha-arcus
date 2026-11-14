@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { clampPercent } from "../../format";
 import { Icon } from "../atoms/Icon";
 import { c } from "../styles/classes";
 
@@ -10,11 +11,6 @@ export interface LightRowProps {
   onBrightness: (percent: number) => void;
   icon?: string;
   entity?: string;
-}
-
-function clampPercent(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.min(100, Math.round(value)));
 }
 
 /**

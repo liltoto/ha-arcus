@@ -71,6 +71,16 @@ export function numberFrom(value: unknown): number | null {
 }
 
 /**
+ * Clamp a brightness or battery value to a whole 0-100 percentage. Missing or
+ * non-finite input becomes 0 so an empty state renders an empty bar rather
+ * than a `NaN` width.
+ */
+export function clampPercent(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+/**
  * Parse a Home Assistant state value. The recorder's `"unavailable"` and
  * `"unknown"` strings count as missing values, like `numberFrom` does for
  * empty and non-numeric input.

@@ -2,7 +2,6 @@ import { useEffect, useId } from "react";
 import { formatNumber, numberFrom, resolveTempUnit } from "../../../format";
 import { areaPath, sparkPath } from "../../../render/charts";
 import type {
-  ArcusConfig,
   ArcusHass,
   EntityRef,
   HeatingModel,
@@ -10,16 +9,7 @@ import type {
   HomeModel,
   TemperatureUnit,
 } from "../../../types";
-import {
-  useActions,
-  useConfig,
-  useHass,
-  useHistory,
-  useHistoryVersion,
-  useModel,
-  useNow,
-  useTranslator,
-} from "../../hooks";
+import { useHistoryFrame } from "../../hooks/useLayerFrame";
 import { EmptyState } from "../../atoms/EmptyState";
 import { ChartBox } from "../../molecules/ChartBox";
 import { SheetHeader } from "../../molecules/SheetHeader";
@@ -27,6 +17,11 @@ import { Stepper } from "../../molecules/Stepper";
 import { ZoneStrip } from "../../molecules/ZoneStrip";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { c } from "../../styles/classes";
+import {
+  heatingReading,
+  liveAttributes,
+  liveState,
+} from "./heating/heating-state";
 
 interface HeatingLimits {
   standard?: EntityRef;
@@ -42,10 +37,6 @@ interface ChartSource {
 const DAY_MS = 24 * 60 * 60 * 1000;
 const CHART_HEIGHT = 120;
 
-function languageOf(model: HomeModel, config: ArcusConfig): "da" | "en" {
-  return model.language === "en" || config.language === "en" ? "en" : "da";
-}
-
 function temperature(
   value: number | null,
   language: "da" | "en",
@@ -54,17 +45,6 @@ function temperature(
   return value === null
     ? "–"
     : `${formatNumber(value, 1, language)}${unit === "°F" ? "°F" : "°"}`;
-}
-
-function liveState(hass: ArcusHass, entity: EntityRef): string | undefined {
-  return hass.states?.[entity.entityId]?.state ?? entity.state;
-}
-
-function liveAttributes(
-  hass: ArcusHass,
-  entity: EntityRef,
-): Record<string, unknown> {
-  return hass.states?.[entity.entityId]?.attributes ?? entity.attributes ?? {};
 }
 
 function isOpeningOn(hass: ArcusHass, opening: EntityRef | null): boolean {
@@ -172,17 +152,10 @@ function Setpoint({
 
 /** Underfloor heating: the discovered climate zones plus reserve channels. */
 export function HeatingBody(_props: LayerBodyProps) {
-  const hass = useHass();
-  const model = useModel();
-  const config = useConfig();
-  const t = useTranslator();
-  const history = useHistory();
-  useHistoryVersion();
-  const now = useNow();
-  const actions = useActions();
+  const { hass, model, config, t, history, now, actions } = useHistoryFrame();
   const gradientId = `heat-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-  const language = languageOf(model, config);
+  const language = model.language;
   const tempUnit = resolveTempUnit(hass, config);
   const zones = model.heating;
   const reserve = model.heatingReserve;
@@ -239,17 +212,11 @@ export function HeatingBody(_props: LayerBodyProps) {
 
   const zoneRow = (zone: HeatingModel) => {
     const entityId = zone.entity.entityId;
-    const attributes = liveAttributes(hass, zone.entity);
-    const current = numberFrom(attributes.current_temperature);
-    const target = numberFrom(attributes.temperature);
-    const min = numberFrom(attributes.min_temp) ?? 5;
-    const max = numberFrom(attributes.max_temp) ?? 35;
-    const mode = liveState(hass, zone.entity);
-    const on = mode !== "off";
+    const reading = heatingReading(hass, zone.entity);
     const activity =
-      mode === "cool" || attributes.hvac_action === "cooling"
+      reading.mode === "cool" || reading.hvacAction === "cooling"
         ? t("room.cooling")
-        : attributes.hvac_action === "heating"
+        : reading.hvacAction === "heating"
           ? t("room.heatingActive")
           : t("room.heatingHolding");
     const opening = isOpeningOn(hass, zone.opening ?? null);
@@ -270,7 +237,7 @@ export function HeatingBody(_props: LayerBodyProps) {
           </div>
           <div className={c("row-sub")}>
             {t("room.heatingNow", {
-              temp: temperature(current, language, tempUnit),
+              temp: temperature(reading.current, language, tempUnit),
             })}{" "}
             · {activity}
             {opening ? ` · ${t("heating.windowOpen")}` : ""}
@@ -278,9 +245,9 @@ export function HeatingBody(_props: LayerBodyProps) {
         </div>
         <Setpoint
           entityId={entityId}
-          value={target}
-          min={min}
-          max={max}
+          value={reading.target}
+          min={reading.min}
+          max={reading.max}
           label={zone.name}
           language={language}
           unit={tempUnit}
@@ -289,12 +256,12 @@ export function HeatingBody(_props: LayerBodyProps) {
         />
         <button
           type="button"
-          className={c("toggle", on && "on")}
+          className={c("toggle", reading.on && "on")}
           data-act="hvac-toggle"
           data-entity={entityId}
           data-on={entityId}
           aria-label={`${t("common.toggle")} ${zone.name}`}
-          aria-pressed={on}
+          aria-pressed={reading.on}
           onClick={() => toggleZone(zone)}
         />
       </div>
@@ -303,11 +270,7 @@ export function HeatingBody(_props: LayerBodyProps) {
 
   const reserveRow = (zone: HeatingReserveModel) => {
     const entityId = zone.entity.entityId;
-    const attributes = liveAttributes(hass, zone.entity);
-    const current = numberFrom(attributes.current_temperature);
-    const target = numberFrom(attributes.temperature);
-    const min = numberFrom(attributes.min_temp) ?? 5;
-    const max = numberFrom(attributes.max_temp) ?? 35;
+    const reading = heatingReading(hass, zone.entity);
 
     return (
       <div className={c("row")} key={entityId}>
@@ -315,15 +278,15 @@ export function HeatingBody(_props: LayerBodyProps) {
           <div className={c("row-name")}>{zone.name}</div>
           <div className={c("row-sub")}>
             {t("room.heatingNow", {
-              temp: temperature(current, language, tempUnit),
+              temp: temperature(reading.current, language, tempUnit),
             })}
           </div>
         </div>
         <Setpoint
           entityId={entityId}
-          value={target}
-          min={min}
-          max={max}
+          value={reading.target}
+          min={reading.min}
+          max={reading.max}
           label={zone.name}
           language={language}
           unit={tempUnit}

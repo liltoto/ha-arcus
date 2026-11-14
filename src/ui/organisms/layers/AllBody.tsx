@@ -1,6 +1,5 @@
 import { formatNumber } from "../../../format";
-import type { ArcusConfig, HomeModel } from "../../../types";
-import { useActions, useConfig, useModel, useTranslator } from "../../hooks";
+import { useActions, useModel, useTranslator } from "../../hooks";
 import { EmptyState } from "../../atoms/EmptyState";
 import { SheetHeader } from "../../molecules/SheetHeader";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
@@ -8,20 +7,10 @@ import { LayerShell } from "./misc/LayerShell";
 import { MiscTile } from "./misc/MiscTile";
 import { c } from "../../styles/classes";
 
-interface RoomStatsView {
-  temp?: number | null;
-  open?: number;
-  leak?: boolean;
-}
-
 interface ChapterLink {
   route: string;
   icon: string;
   title: string;
-}
-
-function languageOf(model: HomeModel, config: ArcusConfig): "da" | "en" {
-  return model.language === "en" || config.language === "en" ? "en" : "da";
 }
 
 /**
@@ -31,16 +20,15 @@ function languageOf(model: HomeModel, config: ArcusConfig): "da" | "en" {
  */
 export function AllBody(_props: LayerBodyProps) {
   const model = useModel();
-  const config = useConfig();
   const t = useTranslator();
   const actions = useActions();
-  const language = languageOf(model, config);
+  const language = model.language;
   const fmt = (value: number | null | undefined, digits = 1) =>
     formatNumber(value, digits, language);
-  const stats = (model.roomStats ?? {}) as Record<string, RoomStatsView>;
+  const stats = model.roomStats;
 
   const roomTiles = model.rooms.map((room) => {
-    const stat = stats[room.id];
+    const stat = stats?.[room.id];
     const parts: string[] = [];
     if (typeof stat?.temp === "number") {
       parts.push(`${fmt(stat.temp, 1)}°`);

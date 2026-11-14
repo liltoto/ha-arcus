@@ -307,6 +307,51 @@ function tipElements(root: ShadowRoot): TipElements | null {
   return { tip, cursor };
 }
 
+/** One labelled row in the multi-series tooltip. */
+function seriesTipRow(
+  entry: ParsedSeries,
+  index: number,
+  language: Language | string,
+): HTMLElement {
+  const row = document.createElement("span");
+  row.className = "gt-row";
+  const dot = document.createElement("i");
+  dot.className = "gt-dot";
+  if (entry.color) dot.style.setProperty("--c", entry.color);
+  row.append(dot);
+  if (entry.label) {
+    const label = document.createElement("span");
+    label.className = "gt-l";
+    label.textContent = entry.label;
+    row.append(label);
+  }
+  const value = document.createElement("b");
+  value.className = "gt-v";
+  value.textContent = valueText(
+    entry.values[index] ?? null,
+    entry.decimals,
+    entry.unit,
+    language,
+  );
+  row.append(value);
+  return row;
+}
+
+function singleTipValue(
+  entry: ParsedSeries | undefined,
+  index: number,
+  language: Language | string,
+): HTMLElement {
+  const value = document.createElement("b");
+  value.textContent = valueText(
+    entry?.values[index] ?? null,
+    entry?.decimals ?? 0,
+    entry?.unit ?? "",
+    language,
+  );
+  return value;
+}
+
 function fillTip(
   tip: HTMLElement,
   graph: ParsedGraph,
@@ -317,40 +362,15 @@ function fillTip(
 ): void {
   const fragment = document.createDocumentFragment();
   if (graph.series.length > 1) {
+    // Bars floor the hovered bucket while lines round to the nearest point.
+    // Every row must use the cursor's bucket so values, x and time agree.
+    const mode: GraphMode = graph.mode === "bars" ? "bars" : "line";
     for (const entry of graph.series) {
-      const row = document.createElement("span");
-      row.className = "gt-row";
-      const dot = document.createElement("i");
-      dot.className = "gt-dot";
-      if (entry.color) dot.style.setProperty("--c", entry.color);
-      row.append(dot);
-      if (entry.label) {
-        const label = document.createElement("span");
-        label.className = "gt-l";
-        label.textContent = entry.label;
-        row.append(label);
-      }
-      const value = document.createElement("b");
-      value.className = "gt-v";
-      value.textContent = valueText(
-        entry.values[indexAt(fraction, entry.values.length, "line")] ?? null,
-        entry.decimals,
-        entry.unit,
-        language,
-      );
-      row.append(value);
-      fragment.append(row);
+      const rowIndex = indexAt(fraction, entry.values.length, mode);
+      fragment.append(seriesTipRow(entry, rowIndex, language));
     }
   } else {
-    const entry = graph.series[0];
-    const value = document.createElement("b");
-    value.textContent = valueText(
-      entry.values[index] ?? null,
-      entry.decimals,
-      entry.unit,
-      language,
-    );
-    fragment.append(value);
+    fragment.append(singleTipValue(graph.series[0], index, language));
   }
 
   const span = graph.end - graph.start;

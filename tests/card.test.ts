@@ -217,6 +217,47 @@ describe("ArcusCard", () => {
     });
   });
 
+  test("falls back to the person name when the HA user name is long", async () => {
+    const hass = makeHass();
+    hass.user = { name: "A very long administrator display name" };
+    const card = await mount(makeConfig(), hass);
+
+    expect(card.shadowRoot!.querySelector(".greeting")).toHaveTextContent(
+      "liltoto",
+    );
+  });
+
+  test("scrubs the day arc readout on pointer move", async () => {
+    const card = await mount();
+    const arc = card.shadowRoot!.querySelector<HTMLElement>("[data-arc]")!;
+    const readout =
+      card.shadowRoot!.querySelector<HTMLElement>("[data-arc-readout]")!;
+    arc.getBoundingClientRect = () =>
+      ({
+        left: 0,
+        top: 0,
+        width: 240,
+        height: 40,
+        right: 240,
+        bottom: 40,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    arc.dispatchEvent(
+      new PointerEvent("pointermove", {
+        bubbles: true,
+        composed: true,
+        pointerType: "mouse",
+        clientX: 120,
+      }),
+    );
+
+    expect(readout).toHaveClass("show");
+    expect(readout.textContent).toContain("12:00");
+  });
+
   test("renders the sheet header/tabs and exposes the stub config", async () => {
     window.history.replaceState(null, "", "/#/sol");
     const card = await mount();

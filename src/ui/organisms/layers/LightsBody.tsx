@@ -1,6 +1,7 @@
 import type { LightGroupModel } from "../../../types";
 import { lightIdsForGroups } from "../../../model/lights";
 import { useActions, useHass, useModel, useTranslator } from "../../hooks";
+import { useLightActions } from "../../hooks/useLightActions";
 import { Icon } from "../../atoms/Icon";
 import { SheetHeader } from "../../molecules/SheetHeader";
 import { c } from "../../styles/classes";
@@ -17,34 +18,14 @@ export function LightsBody() {
   const model = useModel();
   const t = useTranslator();
   const actions = useActions();
+  const lightActions = useLightActions();
 
   const groups = model.lights ?? [];
   const ids = lightIdsForGroups(groups);
-  const stored = model.lightStats as
-    | { on?: number; total?: number }
-    | undefined;
-  const total = typeof stored?.total === "number" ? stored.total : ids.length;
+  const stored = model.lightStats;
+  const total = stored?.total ?? ids.length;
   const on =
-    typeof stored?.on === "number"
-      ? stored.on
-      : ids.filter((id) => lightStateFor(hass, id).isOn).length;
-
-  const toggle = (entityId: string): void => {
-    actions.callService("light", "toggle", {}, { entity_id: entityId });
-  };
-
-  const setBrightness = (entityId: string, percent: number): void => {
-    if (percent <= 0) {
-      actions.callService("light", "turn_off", {}, { entity_id: entityId });
-      return;
-    }
-    actions.callService(
-      "light",
-      "turn_on",
-      { brightness_pct: percent },
-      { entity_id: entityId },
-    );
-  };
+    stored?.on ?? ids.filter((id) => lightStateFor(hass, id).isOn).length;
 
   const turnAllOff = (): void => {
     const areas = [
@@ -76,8 +57,8 @@ export function LightsBody() {
           showSlider={false}
           offWhenZero
           t={t}
-          onToggle={() => toggle(id)}
-          onBrightness={(percent) => setBrightness(id, percent)}
+          onToggle={() => lightActions.toggle(id)}
+          onBrightness={(percent) => lightActions.setBrightness(id, percent)}
         />
       );
     });
@@ -93,8 +74,8 @@ export function LightsBody() {
           showSlider
           offWhenZero
           t={t}
-          onToggle={() => toggle(id)}
-          onBrightness={(percent) => setBrightness(id, percent)}
+          onToggle={() => lightActions.toggle(id)}
+          onBrightness={(percent) => lightActions.setBrightness(id, percent)}
         />
       );
     });
@@ -115,8 +96,10 @@ export function LightsBody() {
           showSlider
           offWhenZero
           t={t}
-          onToggle={() => toggle(group.entityId)}
-          onBrightness={(percent) => setBrightness(group.entityId, percent)}
+          onToggle={() => lightActions.toggle(group.entityId)}
+          onBrightness={(percent) =>
+            lightActions.setBrightness(group.entityId, percent)
+          }
         />
         {group.members.length ? (
           <details className={c("light-details")}>

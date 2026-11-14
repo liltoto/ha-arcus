@@ -1,12 +1,5 @@
 import { countdown, formatTime } from "../../../format";
-import type { ArcusConfig, HomeModel } from "../../../types";
-import {
-  useActions,
-  useConfig,
-  useModel,
-  useNow,
-  useTranslator,
-} from "../../hooks";
+import { useActions, useModel, useNow, useTranslator } from "../../hooks";
 import { EmptyState } from "../../atoms/EmptyState";
 import { PrayerMarker } from "../../molecules/PrayerMarker";
 import { Readout } from "../../molecules/Readout";
@@ -15,10 +8,6 @@ import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { LayerShell } from "./misc/LayerShell";
 import { c } from "../../styles/classes";
 
-function languageOf(model: HomeModel, config: ArcusConfig): "da" | "en" {
-  return model.language === "en" || config.language === "en" ? "en" : "da";
-}
-
 /**
  * Prayers: today's five times, the next-prayer highlight and sunrise/sunset,
  * ported from `views/layers/prayers.ts`. The countdown helper wraps to the
@@ -26,11 +15,10 @@ function languageOf(model: HomeModel, config: ArcusConfig): "da" | "en" {
  */
 export function PrayersBody(_props: LayerBodyProps) {
   const model = useModel();
-  const config = useConfig();
   const t = useTranslator();
   const actions = useActions();
   const now = useNow();
-  const language = languageOf(model, config);
+  const language = model.language;
 
   const prayers = model.prayers;
   const times = Array.isArray(prayers?.times) ? prayers.times : [];

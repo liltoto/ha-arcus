@@ -11,19 +11,10 @@ import type {
   EntityRef,
   HomeModel,
   RoomModel,
+  RoomStats,
   SystemCardModel,
   Translator,
 } from "../types";
-
-interface RoomStatBinding {
-  temp: number | null;
-  humidity: number | null;
-  co2: number | null;
-  lightsOn: number;
-  lightsTotal: number;
-  open: number;
-  leak: boolean;
-}
 
 const CHAPTER_KEYS: ChapterKey[] = [
   "energi",
@@ -37,16 +28,6 @@ const CHAPTER_KEYS: ChapterKey[] = [
   "varme",
   "alarmer",
 ];
-
-function languageOf(model: HomeModel, config: ArcusConfig, t: Translator) {
-  if (model.language === "da" || model.language === "en") {
-    return model.language;
-  }
-  if (config.language === "da" || config.language === "en") {
-    return config.language;
-  }
-  return t("common.today") === "I dag" ? "da" : "en";
-}
 
 function escapeHtml(value: string): string {
   return value
@@ -84,9 +65,8 @@ function effectiveTemp(room: RoomModel): number | null {
   return numberFrom(room.tempFallback?.attributes?.current_temperature);
 }
 
-function roomStats(model: HomeModel, room: RoomModel): RoomStatBinding {
-  const stats = (model.roomStats ?? {}) as Record<string, RoomStatBinding>;
-  const stored = stats[room.id];
+function roomStats(model: HomeModel, room: RoomModel): RoomStats {
+  const stored = model.roomStats?.[room.id];
   if (stored) return stored;
 
   // Fallback for a model assembled by hand (sheet tests, editors).
@@ -110,9 +90,9 @@ function roomStats(model: HomeModel, room: RoomModel): RoomStatBinding {
   };
 }
 
-function airFor(
+export function airText(
   room: RoomModel,
-  stats: RoomStatBinding,
+  stats: RoomStats,
   language: string,
   t: Translator,
 ): string {
@@ -135,11 +115,7 @@ function airFor(
   return `${t("room.air")} –`;
 }
 
-function lightsFor(
-  room: RoomModel,
-  stats: RoomStatBinding,
-  t: Translator,
-): string {
+function lightsFor(room: RoomModel, stats: RoomStats, t: Translator): string {
   if (!room.lights.length || stats.lightsTotal === 0) return "";
   return t("room.lightsCount", {
     on: stats.lightsOn,
@@ -147,18 +123,14 @@ function lightsFor(
   });
 }
 
-function openFor(
-  room: RoomModel,
-  stats: RoomStatBinding,
-  t: Translator,
-): string {
+function openFor(room: RoomModel, stats: RoomStats, t: Translator): string {
   if (stats.leak) return t("room.leak");
   if (!room.openings.length) return "";
   if (stats.open > 0) return t("room.openCount", { count: stats.open });
   return t("room.closed");
 }
 
-function allStats(model: HomeModel): RoomStatBinding[] {
+function allStats(model: HomeModel): RoomStats[] {
   return model.rooms.map((room) => roomStats(model, room));
 }
 
@@ -438,7 +410,7 @@ export function buildBindings(
   config: ArcusConfig,
   t: Translator,
 ): Record<string, string> {
-  const language = languageOf(model, config, t);
+  const language = model.language;
   const priceUnit = resolvePriceUnit(undefined, config, language);
   const stats = allStats(model);
   const lights = lightsSummary(model);
@@ -494,7 +466,7 @@ export function buildBindings(
   for (const room of model.rooms) {
     const stat = roomStats(model, room);
     bindings[`r_${room.id}_temp`] = formatNumber(stat.temp, 1, language);
-    bindings[`r_${room.id}_air`] = airFor(room, stat, language, t);
+    bindings[`r_${room.id}_air`] = airText(room, stat, language, t);
     bindings[`r_${room.id}_lights`] = lightsFor(room, stat, t);
     bindings[`r_${room.id}_open`] = openFor(room, stat, t);
   }

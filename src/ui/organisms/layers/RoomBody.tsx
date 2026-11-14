@@ -16,16 +16,8 @@ import { EmptyState } from "../../atoms/EmptyState";
 import { Icon } from "../../atoms/Icon";
 import { Readout } from "../../molecules/Readout";
 import { SheetHeader } from "../../molecules/SheetHeader";
-import {
-  useActions,
-  useConfig,
-  useHass,
-  useHistory,
-  useHistoryVersion,
-  useModel,
-  useNow,
-  useTranslator,
-} from "../../hooks";
+import { useHistoryFrame } from "../../hooks/useLayerFrame";
+import { useLightActions } from "../../hooks/useLightActions";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { RoomChart } from "./room/RoomChart";
 import { RoomLightRow } from "./room/RoomLightRow";
@@ -33,7 +25,6 @@ import { RoomStepper } from "./room/RoomStepper";
 import {
   entityName,
   isOn,
-  languageOf,
   lightName,
   lightStateFor,
   liveEntity,
@@ -215,17 +206,11 @@ function LockBlock({ lock, hass, t, actions }: LockBlockProps) {
  * matching the prototype's first-room fallback.
  */
 export function RoomBody({ route }: LayerBodyProps) {
-  const hass = useHass();
-  const model = useModel();
-  const config = useConfig();
-  const t = useTranslator();
-  const history = useHistory();
-  useHistoryVersion();
-  const now = useNow();
-  const actions = useActions();
+  const { hass, model, config, t, history, now, actions } = useHistoryFrame();
+  const lightActions = useLightActions();
 
   const room = resolveRoom(model, route);
-  const language = languageOf(model, config, t);
+  const language = model.language;
   const tempUnit = resolveTempUnit(hass, config);
   const nowMs = now().getTime();
 
@@ -298,23 +283,6 @@ export function RoomBody({ route }: LayerBodyProps) {
   const fallbackNote =
     room.tempFallback && directTemp === null && stat.temp !== null;
 
-  const toggleLight = (entityId: string): void => {
-    actions.callService("light", "toggle", {}, { entity_id: entityId });
-  };
-
-  const setBrightness = (entityId: string, percent: number): void => {
-    if (percent <= 0) {
-      actions.callService("light", "turn_off", {}, { entity_id: entityId });
-      return;
-    }
-    actions.callService(
-      "light",
-      "turn_on",
-      { brightness_pct: percent },
-      { entity_id: entityId },
-    );
-  };
-
   const light = (entityId: string, name: string, showSlider: boolean) => {
     const state = lightStateFor(hass, entityId);
     return (
@@ -326,8 +294,10 @@ export function RoomBody({ route }: LayerBodyProps) {
         brightness={state.pct}
         showSlider={showSlider}
         t={t}
-        onToggle={() => toggleLight(entityId)}
-        onBrightness={(percent) => setBrightness(entityId, percent)}
+        onToggle={() => lightActions.toggle(entityId)}
+        onBrightness={(percent) =>
+          lightActions.setBrightness(entityId, percent)
+        }
       />
     );
   };
