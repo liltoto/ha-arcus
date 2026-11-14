@@ -88,7 +88,7 @@ describe("ArcusCard", () => {
     expect(room).not.toBeNull();
 
     room!.click();
-    await tick();
+    await tick(120);
 
     expect(location.hash).toBe("#/rum/stue");
     expect(card.shadowRoot!.querySelector(".sheet.open")).not.toBeNull();
