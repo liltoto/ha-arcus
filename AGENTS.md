@@ -21,7 +21,7 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
 - `npm run storybook` / `npm run build-storybook` — Storybook on `:6006`; CI
   gates the static build.
 - `npm run visual` — Playwright against `npm run dev`.
-- `npm run lint` is broken (no `eslint.config.*`); do not use it as a gate.
+- No linter is configured; `typecheck` and Fallow are the static gates.
 - `styled-system/` is generated and gitignored; `npm ci` runs `prepare`
   (`panda codegen`). If missing: `npx panda codegen`.
 - Pre-push gate:
@@ -29,8 +29,8 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
 
 ### Fallow gate
 
-- `.fallowrc.jsonc` excludes `legacy/`, allowlists the reflective
-  `getStubConfig`/`getConfig`, defines atomic-design boundaries, and caps
+- `.fallowrc.jsonc` allowlists the reflective `getStubConfig`/`getConfig`,
+  defines atomic-design boundaries, and caps
   duplication at 2%. Before deleting an export:
   `npx fallow dead-code --trace <file>:<export>`.
 - `npm run fallow:audit` locally compares against the branch upstream and can
@@ -185,6 +185,3 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
 - The live HA dashboard `hjem-dognet` uses `custom:arcus` and the
   Marketplace-installed `/local/community/ha-arcus/arcus.js`; it does not load
   this repo's `dist/`. Changes need a release + Marketplace update.
-- `legacy/` is reference only (not built, ignored by Fallow).
-  `docs/marketplace.md` is a historical initial-publish checklist; trust
-  README, `hacs.json`, and the workflows.
