@@ -201,3 +201,28 @@ test("notifies subscribers when new rows are cached", async () => {
   await cache.ensure(["sensor.d"], 48);
   expect(listener).toHaveBeenCalledTimes(1);
 });
+
+test("batches large history requests instead of sending one giant payload", async () => {
+  const calls: HistoryWsRequest[] = [];
+  const hass = makeHass(async (message) => {
+    calls.push(message);
+    return Object.fromEntries(
+      (message.entity_ids ?? []).map((id) => [
+        id,
+        [{ s: "7", lu: 1763000000 }],
+      ]),
+    );
+  });
+  const cache = new HistoryCache(hass, () => FIXED);
+  const ids = Array.from({ length: 17 }, (_, index) => `sensor.batch_${index}`);
+
+  await cache.ensure(ids, 24);
+
+  expect(calls).toHaveLength(5);
+  expect(calls.map((call) => call.entity_ids.length)).toEqual([
+    4, 4, 4, 4, 1,
+  ]);
+  expect(cache.series("sensor.batch_0")).toEqual([7]);
+  expect(cache.series("sensor.batch_8")).toEqual([7]);
+  expect(cache.series("sensor.batch_16")).toEqual([7]);
+});

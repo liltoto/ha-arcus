@@ -16,6 +16,7 @@ export interface SparklineProps {
   area?: boolean;
   className?: string;
   style?: CSSProperties;
+  strokeWidth?: number;
   /** Hover-readout metadata; `applyGraph` writes the `data-g*` hooks. */
   graph?: GraphInput | null;
 }
@@ -29,6 +30,7 @@ export function Sparkline({
   area = false,
   className,
   style,
+  strokeWidth = 1.1,
   graph = null,
 }: SparklineProps) {
   const ref = useRef<SVGSVGElement>(null);
@@ -55,7 +57,10 @@ export function Sparkline({
         fill={area ? "currentColor" : "none"}
         fillOpacity={area ? 0.12 : undefined}
         stroke="currentColor"
-        strokeWidth={1.5}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );

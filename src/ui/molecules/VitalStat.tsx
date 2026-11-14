@@ -45,6 +45,7 @@ export function VitalStat({
           className="vital-spark"
           values={spark}
           range={sparkRange}
+          strokeWidth={1}
           graph={sparkGraph}
           style={{ color: sparkColor } as CSSProperties}
         />

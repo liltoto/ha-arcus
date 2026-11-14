@@ -151,6 +151,10 @@ describe("Sparkline", () => {
     expect(d.length).toBeGreaterThan(0);
     expect(d.startsWith("M")).toBe(true);
     expect(path?.getAttribute("fill")).toBe("none");
+    expect(path).toHaveAttribute("vector-effect", "non-scaling-stroke");
+    expect(path).toHaveAttribute("stroke-linecap", "round");
+    expect(path).toHaveAttribute("stroke-linejoin", "round");
+    expect(path).toHaveAttribute("stroke-width", "1.1");
   });
 
   it("fills the area variant", () => {
