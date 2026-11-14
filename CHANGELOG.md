@@ -2,6 +2,28 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.1 - 2026-11-14
+
+Chart readouts, larger labels, and sheet polish.
+
+### Added
+
+- Hover value readouts on every chart: a value, unit and timestamp with a snapped cursor, covering the vital and room sparklines, the chapter charts, all detail-sheet line charts and the hourly/daily bar charts. Multi-series solar charts list every series with its colour.
+- Clicking or tapping the dimmed backdrop closes a detail sheet, alongside the existing close button and Escape.
+
+### Changed
+
+- Raised the micro-label type scale: 7-9 px labels now use a 10 px floor (8 px on mobile home labels) with tighter tracking.
+- Vital and room sparklines now sit in their own footer band instead of running behind the sub-label or status row.
+- The Visual workflow accepts a manual `update_snapshots` dispatch so CI-native baselines can be regenerated and downloaded.
+
+### Fixed
+
+- Solar sheet tabs align with the sheet content instead of hugging the border.
+- The mobile sheet tab strip no longer shrinks vertically; the active tab is scrolled into view and hidden edges fade.
+- Standalone sheet block labels have 12 px of space below them.
+- Charts that follow a readings grid keep 16 px of separation.
+
 ## 0.1.0 - 2026-11-13
 
 The first Marketplace release. Arcus is a Dashboard plugin for Home Assistant 2026.11 and newer.

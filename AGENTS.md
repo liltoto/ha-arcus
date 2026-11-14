@@ -2,7 +2,7 @@
 
 Arcus is a Home Assistant Marketplace Dashboard plugin: one self-contained
 frontend bundle, a dashboard strategy, and visual editors. Single package,
-no monorepo. Published at `liltoto/ha-arcus`; current release `v0.1.0`.
+no monorepo. Published at `liltoto/ha-arcus`; current release `v0.1.1`.
 
 ## Commands
 
@@ -68,5 +68,5 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.1.0`.
   this repo's `dist/`. Changes need a release + Marketplace update. The old
   inline `hjem-dognet` resources are gone; `legacy/` is reference only.
 - `docs/marketplace.md` is a historical initial-publish checklist; the repo is
-  already public and `v0.1.0` is released. Trust README, `hacs.json`, and the
+  already public and `v0.1.1` is released. Trust README, `hacs.json`, and the
   workflows.
