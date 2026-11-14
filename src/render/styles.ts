@@ -15,6 +15,10 @@ export const STYLES = `${FONT_FACE_CSS}
   --arcus-grid-gap: 12px;
   --arcus-section-gap: clamp(32px, 3vw, 40px);
   --arcus-sheet-pad: 24px;
+  /* Height of the sparkline footer band in vitals and room cards. Text is
+     padded clear of it so charts never run behind labels. */
+  --arcus-spark-vital: 26px;
+  --arcus-spark-room: 46px;
 
   display: block;
   height: calc(100dvh - var(--header-height, 56px));
@@ -268,8 +272,8 @@ input:focus-visible {
 .brand-sub {
   display: block;
   margin-top: 5px;
-  font-size: 8px;
-  letter-spacing: 0.22em;
+  font-size: 10px;
+  letter-spacing: 0.16em;
   color: var(--muted);
 }
 
@@ -358,8 +362,8 @@ input:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 9px;
-  letter-spacing: 0.26em;
+  font-size: 10px;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--muted);
   margin-bottom: 9px;
@@ -523,8 +527,8 @@ button.eyebrow:hover { color: var(--text-2); }
 .arc-label {
   position: absolute;
   transform: translateX(-50%);
-  font-size: 9px;
-  letter-spacing: 0.12em;
+  font-size: 10px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
   white-space: nowrap;
@@ -584,7 +588,7 @@ button.eyebrow:hover { color: var(--text-2); }
   bottom: -2px;
   display: flex;
   justify-content: space-between;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.1em;
   color: var(--muted);
   opacity: 0.55;
@@ -604,7 +608,7 @@ button.eyebrow:hover { color: var(--text-2); }
   border-radius: 99px;
   background: rgba(8, 11, 15, 0.55);
   backdrop-filter: blur(10px);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-2);
@@ -639,7 +643,7 @@ button.eyebrow:hover { color: var(--text-2); }
   position: relative;
   overflow: hidden;
   min-height: 94px;
-  padding: 14px 16px;
+  padding: 14px 16px calc(var(--arcus-spark-vital) + 10px);
   border: 1px solid var(--line);
   border-radius: 16px;
   background: linear-gradient(150deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.008));
@@ -654,8 +658,8 @@ button.eyebrow:hover { color: var(--text-2); }
 }
 
 .vital-label {
-  font-size: 8px;
-  letter-spacing: 0.2em;
+  font-size: 10px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -684,7 +688,7 @@ button.eyebrow:hover { color: var(--text-2); }
   position: relative;
   z-index: 2;
   margin-top: 5px;
-  font-size: 9px;
+  font-size: 10px;
   color: var(--muted);
   letter-spacing: 0.04em;
 }
@@ -695,7 +699,7 @@ button.eyebrow:hover { color: var(--text-2); }
   right: 0;
   bottom: 0;
   width: 100%;
-  height: 32px;
+  height: var(--arcus-spark-vital);
   opacity: 0.55;
   pointer-events: none;
 }
@@ -729,8 +733,8 @@ button.eyebrow:hover { color: var(--text-2); }
   gap: 7px;
   min-width: 0;
   color: var(--muted);
-  font-size: 8px;
-  letter-spacing: 0.1em;
+  font-size: 10px;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
@@ -774,7 +778,7 @@ button.eyebrow:hover { color: var(--text-2); }
 }
 
 .alert-count {
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.08em;
   color: var(--coral);
   text-transform: uppercase;
@@ -792,8 +796,8 @@ button.eyebrow:hover { color: var(--text-2); }
 }
 
 .section-head .kicker {
-  font-size: 9px;
-  letter-spacing: 0.26em;
+  font-size: 10px;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--muted);
   margin-bottom: 6px;
@@ -829,7 +833,8 @@ button.eyebrow:hover { color: var(--text-2); }
   position: relative;
   overflow: hidden;
   min-height: 168px;
-  padding: var(--arcus-card-pad);
+  padding: var(--arcus-card-pad) var(--arcus-card-pad)
+    calc(var(--arcus-spark-room) + 8px);
   border: 1px solid var(--line);
   border-radius: 20px;
   background:
@@ -864,8 +869,8 @@ button.eyebrow:hover { color: var(--text-2); }
 
 .room-kind {
   margin-top: 4px;
-  font-size: 8px;
-  letter-spacing: 0.18em;
+  font-size: 10px;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -915,8 +920,8 @@ button.eyebrow:hover { color: var(--text-2); }
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 8px;
-  letter-spacing: 0.12em;
+  font-size: 10px;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--muted);
   white-space: nowrap;
@@ -938,17 +943,17 @@ button.eyebrow:hover { color: var(--text-2); }
   right: 0;
   bottom: 0;
   width: 100%;
-  height: 48px;
+  height: var(--arcus-spark-room);
   opacity: 0.5;
   pointer-events: none;
 }
 
 .room-open {
   position: absolute;
-  right: 20px;
-  bottom: 14px;
-  font-size: 8px;
-  letter-spacing: 0.16em;
+  right: var(--arcus-card-pad);
+  bottom: calc(var(--arcus-spark-room) + 10px);
+  font-size: 10px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
   opacity: 0;
@@ -995,7 +1000,7 @@ button.eyebrow:hover { color: var(--text-2); }
 
 .chapter .num {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.16em;
   color: var(--muted);
   opacity: 0.8;
@@ -1073,7 +1078,7 @@ button.eyebrow:hover { color: var(--text-2); }
   align-items: flex-end;
   justify-content: space-between;
   gap: 10px;
-  font-size: 9px;
+  font-size: 10px;
   color: var(--muted);
   letter-spacing: 0.04em;
 }
@@ -1193,8 +1198,8 @@ button.eyebrow:hover { color: var(--text-2); }
   margin: 40px 0 24px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
-  font-size: 9px;
-  letter-spacing: 0.1em;
+  font-size: 10px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -1292,8 +1297,8 @@ arcus-sheets {
 }
 
 .sheet-kicker {
-  font-size: 9px;
-  letter-spacing: 0.24em;
+  font-size: 10px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--muted);
   margin-bottom: 7px;
@@ -1351,8 +1356,9 @@ arcus-sheets {
   top: 0;
   z-index: 3;
   display: flex;
+  flex: 0 0 auto;
   gap: 6px;
-  margin: 0 calc(-1 * var(--arcus-sheet-pad));
+  margin: 0;
   padding: 12px var(--arcus-sheet-pad) 12px;
   overflow-x: auto;
   background: var(--bg-1);
@@ -1361,14 +1367,31 @@ arcus-sheets {
 }
 .sheet-tabs::-webkit-scrollbar { display: none; }
 
+/* Fade only the edges that hide more tabs. The classes are set by the sheet
+   element after render and on scroll, so a strip that fits stays untouched. */
+.sheet-tabs.can-left {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 100%);
+}
+
+.sheet-tabs.can-right {
+  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 18px), transparent 100%);
+}
+
+.sheet-tabs.can-left.can-right {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+}
+
 .tab {
   flex: 0 0 auto;
   height: 30px;
   padding: 0 12px;
   border: 1px solid var(--line);
   border-radius: 99px;
-  font-size: 9px;
-  letter-spacing: 0.11em;
+  font-size: 10px;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--muted);
   white-space: nowrap;
@@ -1396,11 +1419,15 @@ arcus-sheets {
 }
 
 .block-label {
-  font-size: 9px;
-  letter-spacing: 0.2em;
+  font-size: 10px;
+  letter-spacing: 0.17em;
   text-transform: uppercase;
   color: var(--muted);
 }
+
+/* Standalone section labels sit directly above readings or charts; the labels
+   inside .block-head already get their spacing from the head itself. */
+.block > .block-label { margin-bottom: 12px; }
 
 .block-label b { color: var(--text-2); font-weight: 500; }
 
@@ -1434,8 +1461,8 @@ arcus-sheets {
   font-variant-numeric: tabular-nums;
 }
 
-.reading .v small { font-family: var(--sans); font-size: 9px; color: var(--muted); margin-left: 2px; }
-.reading .l { margin-top: 6px; font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.reading .v small { font-family: var(--sans); font-size: 10px; color: var(--muted); margin-left: 2px; }
+.reading .l { margin-top: 6px; font-size: 10px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--muted); }
 
 .big-read {
   font-family: var(--serif);
@@ -1457,14 +1484,18 @@ arcus-sheets {
   overflow: hidden;
 }
 
+/* A chart that follows a readings grid needs its own breathing room; the
+   grid has no bottom margin and the chart has no top margin. */
+.readings + .chart-box { margin-top: 16px; }
+
 .chart-empty {
   position: absolute;
   inset: 0;
   display: none;
   align-items: center;
   justify-content: center;
-  font-size: 9px;
-  letter-spacing: 0.16em;
+  font-size: 10px;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -1492,6 +1523,86 @@ arcus-sheets {
 
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+/* ---------- graph hover readout ---------- */
+[data-graph] { pointer-events: auto; }
+
+.graph-tip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 95;
+  min-width: 64px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-1) 94%, transparent);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 11px;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.38);
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.graph-tip.show { opacity: 1; transform: none; }
+
+.graph-tip b {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.graph-tip .gt-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-tip .gt-row + .gt-row { margin-top: 3px; }
+
+.graph-tip .gt-dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c, var(--accent));
+}
+
+.graph-tip .gt-l {
+  color: var(--muted);
+  margin-right: auto;
+}
+
+.graph-tip .gt-v { margin-left: auto; }
+
+.graph-tip .gt-t {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.graph-cursor {
+  position: fixed;
+  z-index: 90;
+  width: 1px;
+  background: var(--line-strong);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.graph-cursor.show { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .graph-tip,
+  .graph-cursor { transition: none; }
+}
+
 .chart-box svg { display: block; width: 100%; height: auto; overflow: visible; }
 
 .chart-cap {
@@ -1500,7 +1611,7 @@ arcus-sheets {
   gap: 12px;
   padding: 0 2px;
   margin-top: 4px;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.08em;
   color: var(--muted);
 }
@@ -1516,7 +1627,7 @@ arcus-sheets {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 9px;
+  font-size: 10px;
   color: var(--muted);
   letter-spacing: 0.03em;
 }
@@ -1552,7 +1663,7 @@ arcus-sheets {
 
 .row .row-sub {
   margin-top: 2px;
-  font-size: 9px;
+  font-size: 10px;
   color: var(--muted);
   letter-spacing: 0.03em;
 }
@@ -1564,7 +1675,7 @@ arcus-sheets {
   white-space: nowrap;
 }
 
-.row .row-val small { font-family: var(--sans); font-size: 9px; color: var(--muted); margin-left: 2px; }
+.row .row-val small { font-family: var(--sans); font-size: 10px; color: var(--muted); margin-left: 2px; }
 
 .row .ico { color: var(--muted); }
 
@@ -1633,7 +1744,7 @@ arcus-sheets {
   background: color-mix(in srgb, var(--coral) 8%, transparent);
 }
 
-.btn.small { height: 32px; padding: 0 12px; font-size: 9px; }
+.btn.small { height: 32px; padding: 0 12px; font-size: 10px; }
 .btn .ico { width: 15px; height: 15px; }
 
 .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
@@ -1667,7 +1778,7 @@ arcus-sheets {
   font-variant-numeric: tabular-nums;
 }
 
-.stepper .val small { font-family: var(--sans); font-size: 9px; color: var(--muted); }
+.stepper .val small { font-family: var(--sans); font-size: 10px; color: var(--muted); }
 
 .seg {
   display: inline-flex;
@@ -1682,7 +1793,7 @@ arcus-sheets {
   height: 28px;
   padding: 0 12px;
   border-radius: 99px;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -1728,7 +1839,7 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
 }
 
 .light-row .slider-wrap .pct {
-  font-size: 9px;
+  font-size: 10px;
   color: var(--muted);
   text-align: right;
   margin-top: -2px;
@@ -1836,7 +1947,7 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
 }
 
 .day-bars .day-label {
-  font-size: 7px;
+  font-size: 9px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
@@ -1848,7 +1959,7 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
   justify-content: center;
   width: 100%;
   height: 100%;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
@@ -1861,7 +1972,7 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
 .light-details summary {
   cursor: pointer;
   padding: 12px 0 10px;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
@@ -1984,16 +2095,16 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
   background: var(--panel);
 }
 
-.mini-stat .k { font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.mini-stat .k { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .mini-stat .v { margin-top: 5px; font-family: var(--serif); font-size: 23px; line-height: 1; font-variant-numeric: tabular-nums; }
-.mini-stat .v small { font-family: var(--sans); font-size: 8px; color: var(--muted); margin-left: 2px; }
+.mini-stat .v small { font-family: var(--sans); font-size: 10px; color: var(--muted); margin-left: 2px; }
 
 .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .chip {
   padding: 5px 10px;
   border: 1px solid var(--line);
   border-radius: 99px;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
@@ -2019,7 +2130,7 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
@@ -2092,36 +2203,44 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
   .arc-label .t { font-size: 8px; }
   .arc-label.opt { display: none; }
   .arc-label:not(.next):not(.sun) { display: none; }
-  .arc-hours { font-size: 7px; }
+  .arc-hours { font-size: 8px; }
   .vitals { gap: 8px; }
-  .vital { min-height: 84px; padding: 12px 14px; }
-  .vital-label { font-size: 7px; letter-spacing: 0.16em; }
+  .vital {
+    min-height: 84px;
+    padding: 12px 14px calc(var(--arcus-spark-vital) + 8px);
+  }
+  .vital-label { font-size: 8px; letter-spacing: 0.14em; }
+  .vital-sub { font-size: 9px; }
   .vital-value { font-size: 24px; }
-  .vital-spark { height: 26px; }
   .weather-strip { gap: 6px; padding: 10px 0; }
-  .wday { gap: 4px; font-size: 7px; letter-spacing: 0.06em; }
+  .wday { gap: 4px; font-size: 8px; letter-spacing: 0.05em; }
   .wday .wico { display: none; }
   .wday .wtemps { font-size: 8px; }
-  .room-card { min-height: 160px; padding: 16px; }
+  .room-card {
+    min-height: 160px;
+    padding: 16px 16px calc(var(--arcus-spark-room) + 8px);
+  }
   .room-name { font-size: 17px; }
+  .room-kind { font-size: 8px; letter-spacing: 0.13em; }
   .room-temp { font-size: 36px; }
   .room-main { gap: 8px; margin-top: 14px; }
   .room-status { gap: 4px 8px; }
-  .room-status span { font-size: 7px; letter-spacing: 0.08em; }
+  .room-status span { font-size: 8px; letter-spacing: 0.07em; }
   .room-icon { width: 23px; height: 23px; }
   .room-icon .ico { width: 23px; height: 23px; }
   .chapter { min-height: 148px; padding: 16px; }
   .chapter h3 { font-size: 19px; }
   .chapter.large h3 { font-size: 26px; }
   .chapter .sum { font-size: 9px; }
+  .chapter .ch-foot { font-size: 9px; }
   .chapter .ch-art { height: 58px; }
   .chapter .big-num { font-size: 36px; }
   .section-head h2 { font-size: 25px; }
-  .footer { font-size: 8px; letter-spacing: 0.06em; }
+  .footer { font-size: 9px; letter-spacing: 0.06em; }
   .sheet-head { padding: 18px 16px 14px; }
   .sheet-close { top: 16px; right: 16px; }
   .sheet-scroll { padding-left: 16px; padding-right: 16px; }
-  .sheet-tabs { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
+  .sheet-tabs { margin: 0; padding-left: 16px; padding-right: 16px; }
   .confirm { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
   .readings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2150,18 +2269,21 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
 
 
 /* ---------- compact density ---------- */
-.app[data-density="compact"] .room-card,
 .app[data-density="compact"] .chapter { padding: 16px; }
-.app[data-density="compact"] .vital { padding: 12px 14px; }
+.app[data-density="compact"] .room-card {
+  padding: 16px 16px calc(var(--arcus-spark-room) + 8px);
+}
+.app[data-density="compact"] .vital {
+  padding: 12px 14px calc(var(--arcus-spark-vital) + 8px);
+}
 .app[data-density="compact"] .section { margin-top: 32px; }
 .app[data-density="compact"] .room-grid,
 .app[data-density="compact"] .chapter-grid { gap: 10px; }
-.app[data-density="compact"] .room-open { right: 16px; bottom: 12px; }
 .app[data-density="compact"] .ch-art { height: 56px; }
 .app[data-density="compact"] .ch-art svg { height: 46px; }
 .app[data-density="compact"] .sheet-head { padding: 18px 20px 14px; }
 .app[data-density="compact"] .sheet-scroll { padding: 8px 20px 40px; }
-.app[data-density="compact"] .sheet-tabs { margin: 0 -20px; padding: 10px 20px; }
+.app[data-density="compact"] .sheet-tabs { margin: 0; padding: 10px 20px; }
 .app[data-density="compact"] .block { margin-top: 20px; }
 .app[data-density="compact"] .reading { padding: 11px 12px; }
 .app[data-density="compact"] .mini-stat { padding: 12px 14px; }

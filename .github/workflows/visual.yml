@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: "Regenerate the Playwright baselines on ubuntu-26.04"
+        type: boolean
+        default: false
 
 jobs:
   visual:
@@ -23,7 +29,25 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
+      # Manual runs with `update_snapshots` rewrite every committed baseline and
+      # upload them for a human to review and commit. `=all` is deliberate:
+      # without it Playwright leaves snapshots that still pass the pixel
+      # tolerance on their old rendering. Normal PR runs never write snapshots,
+      # so they stay the source of truth for visual diffs.
+      - name: Update baselines
+        if: ${{ inputs.update_snapshots }}
+        run: npx playwright test --update-snapshots=all
+
+      - name: Upload updated baselines
+        if: ${{ inputs.update_snapshots }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-baselines
+          path: tests/visual/__screenshots__
+          if-no-files-found: error
+
       - name: Run visual tests
+        if: ${{ !inputs.update_snapshots }}
         run: npx playwright test
 
       - name: Upload visual diffs

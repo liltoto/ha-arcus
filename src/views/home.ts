@@ -1,6 +1,7 @@
 import type { HistoryCache } from "../data/history";
-import { formatNumber, formatPrice, formatUnit } from "../format";
+import { formatNumber, formatUnit } from "../format";
 import { arcPoint, priceColor, sparkPath } from "../render/charts";
+import { graphAttrs } from "../render/graph";
 import { icon } from "../render/icons";
 import type {
   ArcusConfig,
@@ -402,6 +403,7 @@ export interface ChapterArtContext {
   t: Translator;
   language?: string;
   history?: HistoryCache;
+  now?: Date;
   isOn?: (entityId: string) => boolean;
 }
 
@@ -425,7 +427,21 @@ export function renderChapterArt(
   if (key === "energi") {
     const price = model.price;
     if (!price || !price.values.length) return "";
-    return `<div class="price-bars">${price.values
+    const now = context.now ?? new Date();
+    const dayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    ).getTime();
+    const graph = graphAttrs({
+      mode: "bars",
+      start: dayStart,
+      end: dayStart + 86_400_000,
+      unit: "kr",
+      decimals: 2,
+      series: [{ values: price.values }],
+    });
+    return `<div class="price-bars" ${graph}>${price.values
       .map(
         (value) =>
           `<i style="--bar:${priceColor(
@@ -435,7 +451,7 @@ export function renderChapterArt(
           )};height:${Math.max(
             6,
             ((value - price.min) / (price.max - price.min || 1)) * 100,
-          )}%" title="${escapeHtml(formatPrice(value, language))}"></i>`,
+          )}%"></i>`,
       )
       .join("")}</div>`;
   }
@@ -451,7 +467,18 @@ export function renderChapterArt(
     const line = points.length ? `M${points.join("L")}` : "";
     const area = points.length ? `${line}L220,100L0,100Z` : "";
     const soc = model.solar?.batterySoc ?? 0;
-    return `<svg viewBox="0 0 220 110" preserveAspectRatio="none"><path d="${area}" fill="url(#solarFill)" opacity=".55" stroke="none"/><path d="${line}" fill="none" stroke="var(--amber)" stroke-width="1.2" vector-effect="non-scaling-stroke"/><text x="4" y="96" fill="var(--muted)" font-size="7">${escapeHtml(
+    const graph = series.length
+      ? graphAttrs({
+          mode: "timed",
+          points: series.map((point) => ({
+            t: point.t.getTime(),
+            v: point.v,
+          })),
+          unit: "W",
+          decimals: 0,
+        })
+      : "";
+    return `<svg viewBox="0 0 220 110" preserveAspectRatio="none" ${graph}><path d="${area}" fill="url(#solarFill)" opacity=".55" stroke="none"/><path d="${line}" fill="none" stroke="var(--amber)" stroke-width="1.2" vector-effect="non-scaling-stroke"/><text x="4" y="96" fill="var(--muted)" font-size="7">${escapeHtml(
       t("solar.battery").toLocaleUpperCase(),
     )} ${formatNumber(soc, 0, language)} %</text></svg>`;
   }
@@ -493,7 +520,18 @@ export function renderChapterArt(
     const id = context.config.network?.router;
     const history = id && context.history ? context.history.series(id) : [];
     const values = history.length ? history : [model.tech?.router ?? null];
-    return `<svg viewBox="0 0 220 52" preserveAspectRatio="none"><path d="${sparkPath(
+    const now = context.now ?? new Date();
+    const end = now.getTime();
+    const graph = values.length > 1
+      ? graphAttrs({
+          start: end - 86_400_000,
+          end,
+          unit: "ms",
+          decimals: 0,
+          series: [{ values }],
+        })
+      : "";
+    return `<svg viewBox="0 0 220 52" preserveAspectRatio="none" ${graph}><path d="${sparkPath(
       values,
       220,
       52,
@@ -505,7 +543,18 @@ export function renderChapterArt(
     const id = context.config.economy?.bond;
     const history = id && context.history ? context.history.series(id) : [];
     const values = history.length ? history : [model.economy?.value ?? null];
-    return `<svg viewBox="0 0 220 52" preserveAspectRatio="none"><path d="${sparkPath(
+    const now = context.now ?? new Date();
+    const end = now.getTime();
+    const graph = values.length > 1
+      ? graphAttrs({
+          start: end - 86_400_000,
+          end,
+          unit: "",
+          decimals: 2,
+          series: [{ values }],
+        })
+      : "";
+    return `<svg viewBox="0 0 220 52" preserveAspectRatio="none" ${graph}><path d="${sparkPath(
       values,
       220,
       52,
@@ -843,5 +892,7 @@ export function renderHome(
           t("sheet.details"),
         )}"></section>
         <div class="toast" data-toast></div>
+        <div class="graph-tip" data-graph-tip aria-hidden="true"></div>
+        <div class="graph-cursor" data-graph-cursor aria-hidden="true"></div>
       </div>`;
 }

@@ -13,6 +13,7 @@ import { createTranslator, resolveLanguage } from "./localize";
 import { buildModel } from "./model/build";
 import { buildBindings } from "./model/bindings";
 import { arcPoint, areaPath, priceColor, sparkPath } from "./render/charts";
+import { applyGraph, mountGraphTips } from "./render/graph";
 import { icon } from "./render/icons";
 import { STYLES } from "./render/styles";
 import type {
@@ -135,6 +136,7 @@ export class ArcusCard extends HTMLElement {
   private _lastFocus: HTMLElement | null = null;
   private _sheetBuiltFor = "";
   private _sheetEl: ArcusSheetsElement | null = null;
+  private _graphTips: { destroy(): void } | null = null;
   private _atmoMode: AtmosphereSetting = "auto";
   private _reduced = false;
   private _listeners = false;
@@ -920,6 +922,7 @@ export class ArcusCard extends HTMLElement {
   }
 
   private _refreshSparks(): void {
+    const now = this._now().getTime();
     this._root
       .querySelectorAll<SVGPathElement>("[data-spark]")
       .forEach((element) => {
@@ -932,6 +935,21 @@ export class ArcusCard extends HTMLElement {
         const svg = element.closest("svg");
         const { h } = this._viewBox(svg, 100, 28);
         element.setAttribute("d", sparkPath(values, 100, h, 1));
+
+        const hasData = values.filter(
+          (value): value is number => value !== null && Number.isFinite(value),
+        ).length;
+        if (hasData < 2) {
+          applyGraph(svg ?? element, null);
+          return;
+        }
+        applyGraph(svg ?? element, {
+          start: now - 86_400_000,
+          end: now,
+          unit: key === "price" ? "kr" : key === "solarActual" ? "W" : "°C",
+          decimals: key === "price" ? 2 : key === "solarActual" ? 0 : 1,
+          series: [{ values }],
+        });
       });
   }
 
@@ -1348,6 +1366,7 @@ export class ArcusCard extends HTMLElement {
       t: this._t,
       language: this._language,
       history: this._history,
+      now: this._now(),
       isOn: (entityId) => this._on(entityId),
     });
   }
@@ -1692,6 +1711,8 @@ export class ArcusCard extends HTMLElement {
       if (this._drag) this._dragEnd();
     };
     window.addEventListener("pointerup", this._onPointerUp);
+
+    this._graphTips = mountGraphTips(this._root, () => this._language);
   }
 
   private _removeListeners(): void {
@@ -1705,6 +1726,8 @@ export class ArcusCard extends HTMLElement {
     this._root.removeEventListener("pointermove", this._onPointerMove);
     this._root.removeEventListener("pointerdown", this._onPointerDown);
     window.removeEventListener("pointerup", this._onPointerUp);
+    this._graphTips?.destroy();
+    this._graphTips = null;
   }
 
   private _onHash!: () => void;
@@ -1742,6 +1765,13 @@ export class ArcusCard extends HTMLElement {
 
   private _click(event: Event): void {
     const target = event.target as Element | null;
+
+    if (target?.closest?.("[data-scrim]")) {
+      event.preventDefault();
+      this._closeRoute();
+      return;
+    }
+
     const nav = target?.closest?.("[data-nav]") as HTMLElement | null;
     if (nav && this._root.contains(nav)) {
       event.preventDefault();

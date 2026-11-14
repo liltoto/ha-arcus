@@ -1,6 +1,7 @@
 import type { HistoryRow } from "../../data/history";
 import { formatNumber } from "../../format";
 import { areaPath, sparkPath } from "../../render/charts";
+import { graphAttrs } from "../../render/graph";
 import { icon } from "../../render/icons";
 import type {
   HassEntity,
@@ -25,6 +26,9 @@ interface ChartSeries {
   key: string;
   values: Array<number | null>;
   color: string;
+  label?: string;
+  unit?: string;
+  decimals?: number;
 }
 
 const SOLAR_TABS: readonly SolarTab[] = [
@@ -223,7 +227,14 @@ function chartBox(
   chart: string,
   series: ChartSeries[],
   height: number,
-  options: { shared?: boolean; empty?: string } = {},
+  options: {
+    shared?: boolean;
+    empty?: string;
+    start?: number;
+    end?: number;
+    unit?: string;
+    decimals?: number;
+  } = {},
 ): string {
   const shared = options.shared ?? series.length > 1;
   const valid = series.flatMap((item) => item.values).filter(isFiniteNumber);
@@ -252,9 +263,25 @@ function chartBox(
     .join("");
   const noData = valid.length === 0;
   const points = Math.max(0, ...series.map((item) => item.values.length));
+  const now = Date.now();
+  const graph = noData
+    ? ""
+    : graphAttrs({
+        start: options.start ?? now - 86_400_000,
+        end: options.end ?? now,
+        unit: options.unit ?? "W",
+        decimals: options.decimals ?? 0,
+        series: series.map((item) => ({
+          label: item.label,
+          color: item.color,
+          values: item.values,
+          unit: item.unit,
+          decimals: item.decimals,
+        })),
+      });
   return `<div class="chart-box${
     noData ? " no-data" : ""
-  }" data-chart="${escapeHtml(chart)}" data-points="${points}">
+  }" data-chart="${escapeHtml(chart)}" data-points="${points}" ${graph}>
     <svg viewBox="0 0 560 ${height}" preserveAspectRatio="none" data-chart-shared="${
       shared ? "1" : "0"
     }" aria-hidden="true">
@@ -481,7 +508,19 @@ function dailyProductionBars(
       )}</div></div>`;
     })
     .join("");
-  return `<div class="day-bars" data-bars="solarWeek">${bars}</div>`;
+  const start = new Date(`${days[0][0]}T00:00:00`).getTime();
+  const end =
+    new Date(`${days[days.length - 1][0]}T00:00:00`).getTime() +
+    86_400_000;
+  const graph = graphAttrs({
+    mode: "bars",
+    start,
+    end,
+    unit: "kWh",
+    decimals: 1,
+    series: [{ values: days.map(([, value]) => value) }],
+  });
+  return `<div class="day-bars" data-bars="solarWeek" ${graph}>${bars}</div>`;
 }
 
 function sumDelta(
@@ -642,21 +681,25 @@ function solarOverview(
           key: "solarForecast",
           values: todayForecastValues(solar, now),
           color: "var(--amber)",
+          label: t("solar.legendSolar"),
         },
         {
           key: windowKey(config?.load),
           values: historySeries(ctx, config?.load, 1),
           color: "var(--sky)",
+          label: t("solar.legendHouse"),
         },
         {
           key: windowKey(config?.batteryPower),
           values: historySeries(ctx, config?.batteryPower, 1),
           color: "var(--sage)",
+          label: t("solar.legendBattery"),
         },
         {
           key: windowKey(config?.grid),
           values: historySeries(ctx, config?.grid, 1),
           color: "var(--muted)",
+          label: t("solar.legendGrid"),
         },
       ],
       150,
@@ -686,20 +729,23 @@ function solarOverview(
           key: windowKey(config?.gridL1),
           values: historySeries(ctx, config?.gridL1, 1),
           color: "var(--sky)",
+          label: "L1",
         },
         {
           key: windowKey(config?.gridL2),
           values: historySeries(ctx, config?.gridL2, 1),
           color: "var(--brass)",
+          label: "L2",
         },
         {
           key: windowKey(config?.gridL3),
           values: historySeries(ctx, config?.gridL3, 1),
           color: "var(--plum)",
+          label: "L3",
         },
       ],
       110,
-      { shared: true },
+      { shared: true, unit: "A", decimals: 1 },
     )}
   </div>
   <div class="block">
@@ -776,11 +822,13 @@ function solarProduction(
           key: "solarForecast",
           values: todayForecastValues(solar, now),
           color: "var(--amber)",
+          label: t("solar.forecastToday"),
         },
         {
           key: windowKey(config?.power),
           values: historySeries(ctx, config?.power, 1),
           color: "var(--text)",
+          label: t("solar.actual"),
         },
       ],
       150,
@@ -828,11 +876,13 @@ function solarProduction(
           key: windowKey(config?.pv3),
           values: historySeries(ctx, config?.pv3, 1),
           color: "var(--brass)",
+          label: t("solar.mppt3"),
         },
         {
           key: windowKey(config?.pv4),
           values: historySeries(ctx, config?.pv4, 1),
           color: "var(--sky)",
+          label: t("solar.mppt4"),
         },
       ],
       110,
@@ -928,6 +978,7 @@ function solarBattery(
         },
       ],
       120,
+      { unit: "%", decimals: 0, start: Date.now() - 7 * 86_400_000 },
     )}
   </div>
   <div class="block">
@@ -940,15 +991,17 @@ function solarBattery(
           key: entityKey(config?.batteryCharge),
           values: historySeries(ctx, config?.batteryCharge, 7),
           color: "var(--sky)",
+          label: t("solar.charge"),
         },
         {
           key: entityKey(config?.batteryDischarge),
           values: historySeries(ctx, config?.batteryDischarge, 7),
           color: "var(--brass)",
+          label: t("solar.discharge"),
         },
       ],
       110,
-      { shared: true },
+      { shared: true, start: Date.now() - 7 * 86_400_000 },
     )}
     <div class="legend"><span><i style="--c:var(--sky)"></i>${escapeHtml(
       t("solar.charge"),
@@ -1034,6 +1087,7 @@ function solarForecast(
         },
       ],
       150,
+      { start: Date.now(), end: Date.now() + 48 * 3_600_000 },
     )}
     <div class="block-note">${escapeHtml(
       t("solar.forecastTodayNote", {
@@ -1171,6 +1225,7 @@ function solarPayback(
         },
       ],
       110,
+      { unit: "kr", decimals: 0, start: Date.now() - 30 * 86_400_000 },
     )}
   </div>
   <div class="block">
@@ -1186,6 +1241,7 @@ function solarPayback(
         },
       ],
       110,
+      { unit: "kr", decimals: 0, start: Date.now() - 365 * 86_400_000 },
     )}
   </div>
   <div class="block">

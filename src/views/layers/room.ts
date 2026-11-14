@@ -1,5 +1,6 @@
 import { formatNumber, formatUnit } from "../../format";
 import { areaPath, sparkPath } from "../../render/charts";
+import { graphAttrs } from "../../render/graph";
 import { icon } from "../../render/icons";
 import type {
   EntityRef,
@@ -237,6 +238,7 @@ export function chart(
   entityId: string | null | undefined,
   color: string,
   height = 120,
+  options: { unit?: string; decimals?: number } = {},
 ): string {
   const values = entityId ? ctx.history.series(entityId) : [];
   const hasData = values.some(
@@ -257,7 +259,17 @@ export function chart(
     )
     .join("");
 
-  return `<div class="chart-box${hasData ? "" : " no-data"}">
+  const now = Date.now();
+  const graph = hasData
+    ? graphAttrs({
+        start: now - 86_400_000,
+        end: now,
+        unit: options.unit ?? "",
+        decimals: options.decimals ?? 1,
+        series: [{ values }],
+      })
+    : "";
+  return `<div class="chart-box${hasData ? "" : " no-data"}" ${graph}>
     <svg viewBox="0 0 560 ${height}" preserveAspectRatio="none" aria-hidden="true">
       <defs><linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="${color}" stop-opacity=".26"/>
@@ -679,7 +691,10 @@ export function renderRoomSheet(
       1,
       language,
     )}°</b></div></div>
-    ${chart(ctx, tempChartId, "var(--sky)", 120)}
+    ${chart(ctx, tempChartId, "var(--sky)", 120, {
+      unit: "°C",
+      decimals: 1,
+    })}
   </div>`;
 
   const humidityChart = room.humidity
@@ -692,6 +707,7 @@ export function renderRoomSheet(
         room.humidity.entityId,
         "var(--sky)",
         100,
+        { unit: "%", decimals: 0 },
       )}</div>`
     : "";
 
@@ -700,7 +716,10 @@ export function renderRoomSheet(
         t("room.chart24", { label: t("room.co2") }),
       )}</div><div class="block-label"><b>${
         co2 === null ? "–" : `${Math.round(co2)} ppm`
-      }</b></div></div>${chart(ctx, room.co2.entityId, "var(--sage)", 100)}</div>`
+      }</b></div></div>${chart(ctx, room.co2.entityId, "var(--sage)", 100, {
+        unit: "ppm",
+        decimals: 0,
+      })}</div>`
     : "";
 
   const pm25Chart = room.pm25
@@ -713,6 +732,7 @@ export function renderRoomSheet(
         room.pm25.entityId,
         "var(--brass)",
         90,
+        { unit: "µg/m³", decimals: 1 },
       )}</div>`
     : "";
 
