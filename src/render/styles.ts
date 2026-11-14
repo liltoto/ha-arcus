@@ -1407,6 +1407,10 @@ arcus-sheets {
   color: var(--muted);
 }
 
+/* Standalone section labels sit directly above readings or charts; the labels
+   inside .block-head already get their spacing from the head itself. */
+.block > .block-label { margin-bottom: 12px; }
+
 .block-label b { color: var(--text-2); font-weight: 500; }
 
 .block-note {
