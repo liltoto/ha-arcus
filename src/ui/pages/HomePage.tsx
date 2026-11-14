@@ -1,16 +1,14 @@
 import type { AtmosphereSetting } from "../../types";
 import type { SheetApp } from "../../views/layers/types";
-import { useConfig, useTranslator } from "../hooks";
+import { useConfig } from "../hooks";
 import { HomeTemplate } from "../templates/HomeTemplate";
 
 export interface HomePageProps {
-  /**
-   * The card's imperative sheet bridge. The skeleton does not call into it
-   * yet; the sheet task threads it to the layer organisms.
-   */
+  /** The card's imperative bridge; the sheet frame hands it to the layers. */
   app: SheetApp;
   atmo: AtmosphereSetting;
   dark: boolean;
+  /** Kept for the card bridge API; the route now owns the open state. */
   sheetOpen: boolean;
 }
 
@@ -18,17 +16,10 @@ export interface HomePageProps {
  * Context-aware home page. It resolves the values that come from the provider
  * and hands the pure shell to `HomeTemplate`.
  */
-export function HomePage({ atmo, dark, sheetOpen }: HomePageProps) {
+export function HomePage({ app, atmo, dark }: HomePageProps) {
   const config = useConfig();
-  const t = useTranslator();
 
   return (
-    <HomeTemplate
-      atmo={atmo}
-      dark={dark}
-      density={config.density}
-      sheetOpen={sheetOpen}
-      sheetLabel={t("sheet.details")}
-    />
+    <HomeTemplate app={app} atmo={atmo} dark={dark} density={config.density} />
   );
 }

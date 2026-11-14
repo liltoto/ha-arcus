@@ -1,0 +1,48 @@
+import type { ReactNode, RefObject } from "react";
+import { SheetGrab } from "../atoms/SheetGrab";
+
+export interface SheetTemplateProps {
+  open: boolean;
+  label: string;
+  sheetRef: RefObject<HTMLElement | null>;
+  onScrimClick: () => void;
+  children: ReactNode;
+}
+
+/**
+ * The static sheet shell: scrim, grab handle, and the dialog frame. Behavior
+ * (focus, escape, drag, scroll reset) lives in `SheetFrame`.
+ */
+export function SheetTemplate({
+  open,
+  label,
+  sheetRef,
+  onScrimClick,
+  children,
+}: SheetTemplateProps) {
+  return (
+    <>
+      <div
+        className={`scrim${open ? " open" : ""}`}
+        data-scrim
+        onClick={(event) => {
+          // React owns the scrim; stop the card's legacy click delegation
+          // from closing the route a second time.
+          event.stopPropagation();
+          onScrimClick();
+        }}
+      />
+      <section
+        ref={sheetRef}
+        className={`sheet${open ? " open" : ""}`}
+        data-sheet
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+      >
+        <SheetGrab />
+        {children}
+      </section>
+    </>
+  );
+}

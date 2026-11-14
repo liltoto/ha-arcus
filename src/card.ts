@@ -30,7 +30,6 @@ import type {
   Language,
   PrayerTimeModel,
   PriceModel,
-  SheetRoute,
   SolarPoint,
   Translator,
   WeatherForecastDay,
@@ -38,7 +37,7 @@ import type {
 import { ArcusApp } from "./ui/ArcusApp";
 import type { ArcusActions } from "./ui/types";
 import { ARCUS_VERSION } from "./version";
-import type { SheetApp } from "./views/layers/types";
+import type { ArcusSheetsElement, SheetApp } from "./views/layers/types";
 import { escapeHtml, renderChapterArt } from "./views/home";
 
 declare global {
@@ -46,13 +45,6 @@ declare global {
     /** The dev harness and visual tests pin the clock through this. */
     __HJEM_NOW?: Date;
   }
-}
-
-interface ArcusSheetsElement extends HTMLElement {
-  app: SheetApp;
-  route: SheetRoute;
-  update?(): void;
-  binds?(): Record<string, string>;
 }
 
 interface RoomStats {
@@ -168,15 +160,10 @@ export class ArcusCard extends HTMLElement {
   private _scrubTimer: ReturnType<typeof setTimeout> | null = null;
   private _clockTimer: ReturnType<typeof setInterval> | null = null;
   private _toastTimer: ReturnType<typeof setTimeout> | null = null;
-  private _lastFocus: HTMLElement | null = null;
-  private _sheetBuiltFor = "";
-  private _sheetEl: ArcusSheetsElement | null = null;
   private _graphTips: { destroy(): void } | null = null;
   private _atmoMode: AtmosphereSetting = "auto";
-  private _reduced = false;
   private _listeners = false;
   private _weather: WeatherForecastDay[] | null = null;
-  private _drag: { y: number; sheet: HTMLElement; dy?: number } | null = null;
   private _configSignature: string;
   private _reactRoot: Root | null = null;
   private _reactContainer: HTMLElement | null = null;
@@ -264,8 +251,6 @@ export class ArcusCard extends HTMLElement {
   }
 
   connectedCallback(): void {
-    this._reduced =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches || false;
     if (this._hass && (!this._built || !this._reactRoot)) this._build();
     this._addListeners();
     if (this._built) this._startClock();
@@ -787,8 +772,9 @@ export class ArcusCard extends HTMLElement {
     bindings.weatherStrip = this._weatherStripHTML();
     bindings.version = ARCUS_VERSION;
 
-    if (this._sheetEl?.binds) {
-      Object.assign(bindings, this._sheetEl.binds());
+    const sheet = this._root.querySelector<ArcusSheetsElement>("arcus-sheets");
+    if (sheet?.binds) {
+      Object.assign(bindings, sheet.binds());
     }
     return bindings;
   }
@@ -797,7 +783,6 @@ export class ArcusCard extends HTMLElement {
     if (!this._hass) return;
     this._unmountReact();
     this._built = true;
-    this._sheetEl = null;
     this._root.innerHTML = `<style>${STYLES}</style><div class="arcus-react"></div>`;
 
     const container = this._root.querySelector<HTMLElement>(".arcus-react");
@@ -805,10 +790,10 @@ export class ArcusCard extends HTMLElement {
     container.style.display = "contents";
     this._reactContainer = container;
     this._reactRoot = createRoot(container);
+    this._route = this._parseHash();
     flushSync(() => this._renderIntoReact());
 
     this._applyAtmo();
-    this._applyRoute(true);
     this._startClock();
     this._refresh();
     void this._loadInitial();
@@ -995,7 +980,7 @@ export class ArcusCard extends HTMLElement {
     this._applyBindings(bindings);
     this._applyState();
 
-    this._sheetEl?.update?.();
+    this._root.querySelector<ArcusSheetsElement>("arcus-sheets")?.update?.();
     // The sheet may have rendered new nodes; apply the same flat bindings once
     // more before drawing charts and sparks.
     this._applyBindings(bindings);
@@ -1526,120 +1511,19 @@ export class ArcusCard extends HTMLElement {
     return { base: base || "hjem", sub: sub || null };
   }
 
-  private _routeKey(): string {
-    return `${this._route.base}/${this._route.sub || ""}`;
-  }
-
-  _applyRoute(first = false): void {
-    const route = this._parseHash();
-    const changed =
-      route.base !== this._route.base || route.sub !== this._route.sub;
-    this._route = route;
-
-    if (route.base === "hjem") {
-      this._closeSheet(true);
-      return;
-    }
-
-    if (changed || first || this._sheetBuiltFor !== this._routeKey()) {
-      this._openSheet(route as SheetRoute);
-    }
+  _applyRoute(): void {
+    this._route = this._parseHash();
+    this._schedule();
   }
 
   private _navigate(path: string): void {
     const hash = `#/${path}`;
     if (typeof location === "undefined") return;
     if (location.hash === hash) {
-      this._applyRoute(true);
+      this._applyRoute();
       return;
     }
     location.hash = hash;
-  }
-
-  private _raf(callback: () => void): void {
-    if (typeof requestAnimationFrame === "function") {
-      requestAnimationFrame(callback);
-    } else {
-      setTimeout(callback, 0);
-    }
-  }
-
-  _openSheet(route: SheetRoute): void {
-    const sheet = this._root.querySelector<HTMLElement>("[data-sheet]");
-    const scrim = this._root.querySelector<HTMLElement>("[data-scrim]");
-    if (!sheet || !scrim) return;
-
-    this._lastFocus =
-      (this._root.activeElement as HTMLElement | null) ??
-      (document.activeElement as HTMLElement | null);
-    const key = this._routeKey();
-
-    const mount = () => {
-      if (!sheet.querySelector("[data-sheet-grab]")) {
-        sheet.innerHTML = `<div class="sheet-grab" data-sheet-grab></div>`;
-      }
-      let inner = sheet.querySelector<ArcusSheetsElement>("arcus-sheets");
-      if (!inner) {
-        inner = document.createElement("arcus-sheets") as ArcusSheetsElement;
-        sheet.appendChild(inner);
-      }
-      inner.app = this;
-      inner.route = route;
-      this._sheetEl = inner;
-      sheet.querySelector<HTMLElement>(".sheet-scroll")?.scrollTo(0, 0);
-      this._sheetBuiltFor = key;
-      this._refresh();
-      this._raf(() => {
-        const focus = sheet.querySelector<HTMLElement>("[data-act='close']");
-        if (focus && !this._reduced) focus.focus({ preventScroll: true });
-      });
-    };
-
-    if (customElements.get("arcus-sheets")) {
-      mount();
-    } else if (typeof customElements.whenDefined === "function") {
-      customElements
-        .whenDefined("arcus-sheets")
-        .then(() => {
-          if (this._routeKey() === key) mount();
-        })
-        .catch(() => {
-          /* The sheet element is optional until the sheets bundle lands. */
-        });
-    }
-
-    this._raf(() => {
-      scrim.classList.add("open");
-      sheet.classList.add("open");
-    });
-  }
-
-  _closeSheet(instant = false): void {
-    const sheet = this._root.querySelector<HTMLElement>("[data-sheet]");
-    const scrim = this._root.querySelector<HTMLElement>("[data-scrim]");
-    if (!sheet || !scrim) return;
-
-    if (!sheet.classList.contains("open")) {
-      if (instant) {
-        sheet.classList.remove("open");
-        scrim.classList.remove("open");
-        this._sheetBuiltFor = "";
-        this._sheetEl = null;
-      }
-      return;
-    }
-
-    sheet.classList.remove("open");
-    scrim.classList.remove("open");
-    this._sheetBuiltFor = "";
-    this._sheetEl = null;
-    if (this._lastFocus?.focus) {
-      try {
-        this._lastFocus.focus({ preventScroll: true });
-      } catch {
-        /* ignore */
-      }
-    }
   }
 
   _closeRoute(): void {
@@ -1649,10 +1533,9 @@ export class ArcusCard extends HTMLElement {
       location.hash !== "#/"
     ) {
       location.replace("#/");
-    } else {
-      this._closeSheet();
-      this._route = { base: "hjem", sub: null };
     }
+    this._route = { base: "hjem", sub: null };
+    this._schedule();
   }
 
   _sheetHeader(kicker: string, title: string, sum: string): string {
@@ -1770,13 +1653,6 @@ export class ArcusCard extends HTMLElement {
     this._onHash = () => this._applyRoute();
     window.addEventListener("hashchange", this._onHash);
 
-    this._onKey = (event: Event) => {
-      const key = (event as KeyboardEvent).key;
-      if (key === "Escape") this._closeRoute();
-      if (key === "Tab") this._trapFocus(event as KeyboardEvent);
-    };
-    this._root.addEventListener("keydown", this._onKey);
-
     this._onClick = (event: Event) => this._click(event);
     this._root.addEventListener("click", this._onClick);
 
@@ -1800,14 +1676,8 @@ export class ArcusCard extends HTMLElement {
       const pointer = event as PointerEvent;
       const target = event.target as Element | null;
       if (target?.closest?.("[data-arc]")) this._scrubAt(pointer.clientX);
-      if (target?.closest?.("[data-sheet-grab]")) this._dragStart(pointer);
     };
     this._root.addEventListener("pointerdown", this._onPointerDown);
-
-    this._onPointerUp = () => {
-      if (this._drag) this._dragEnd();
-    };
-    window.addEventListener("pointerup", this._onPointerUp);
 
     this._graphTips = mountGraphTips(this._root, () => this._language);
   }
@@ -1816,52 +1686,28 @@ export class ArcusCard extends HTMLElement {
     if (!this._listeners) return;
     this._listeners = false;
     window.removeEventListener("hashchange", this._onHash);
-    this._root.removeEventListener("keydown", this._onKey);
     this._root.removeEventListener("click", this._onClick);
     this._root.removeEventListener("input", this._onInput);
     this._root.removeEventListener("change", this._onChange);
     this._root.removeEventListener("pointermove", this._onPointerMove);
     this._root.removeEventListener("pointerdown", this._onPointerDown);
-    window.removeEventListener("pointerup", this._onPointerUp);
     this._graphTips?.destroy();
     this._graphTips = null;
   }
 
   private _onHash!: () => void;
-  private _onKey!: (event: Event) => void;
   private _onClick!: (event: Event) => void;
   private _onInput!: (event: Event) => void;
   private _onChange!: (event: Event) => void;
   private _onPointerMove!: (event: Event) => void;
   private _onPointerDown!: (event: Event) => void;
-  private _onPointerUp!: () => void;
-
-  private _trapFocus(event: KeyboardEvent): void {
-    const sheet = this._root.querySelector<HTMLElement>("[data-sheet].open");
-    if (!sheet) return;
-    const focusables = [
-      ...sheet.querySelectorAll<HTMLElement>(
-        "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])",
-      ),
-    ].filter(
-      (element) =>
-        !element.hasAttribute("disabled") && element.offsetParent !== null,
-    );
-    if (!focusables.length) return;
-
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (event.shiftKey && this._root.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && this._root.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
 
   private _click(event: Event): void {
     const target = event.target as Element | null;
+
+    // React-owned layers handle their own events; only legacy markup goes
+    // through the card's event delegation.
+    if (target?.closest?.("[data-react-layer]")) return;
 
     if (target?.closest?.("[data-scrim]")) {
       event.preventDefault();
@@ -2286,44 +2132,6 @@ export class ArcusCard extends HTMLElement {
     )}</button><button class="btn small danger" data-act="${escapeHtml(
       this._confirm.act,
     )}">${escapeHtml(this._t("confirm.yesLightOff"))}</button></div>`;
-  }
-
-  private _dragStart(event: PointerEvent): void {
-    if (
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(min-width: 900px)")?.matches
-    ) {
-      return;
-    }
-    const sheet = this._root.querySelector<HTMLElement>("[data-sheet]");
-    if (!sheet) return;
-
-    this._drag = { y: event.clientY, sheet };
-    sheet.style.transition = "none";
-
-    const move = (moveEvent: PointerEvent) => {
-      if (!this._drag) return;
-      const dy = Math.max(0, moveEvent.clientY - this._drag.y);
-      sheet.style.transform = `translateY(${dy}px)`;
-      this._drag.dy = dy;
-    };
-    const up = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-      sheet.style.transition = "";
-      sheet.style.transform = "";
-      if (this._drag?.dy !== undefined && this._drag.dy > 100) {
-        this._closeRoute();
-      }
-      this._drag = null;
-    };
-
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
-  }
-
-  private _dragEnd(): void {
-    /* The drag lifecycle is owned by the listeners in _dragStart. */
   }
 }
 

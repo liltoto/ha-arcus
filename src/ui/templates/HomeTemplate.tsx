@@ -1,19 +1,19 @@
 import type { AtmosphereSetting, DensitySetting } from "../../types";
+import type { SheetApp } from "../../views/layers/types";
 import { ChapterGrid } from "../organisms/ChapterGrid";
 import { Footer } from "../organisms/Footer";
 import { Hero } from "../organisms/Hero";
 import { QuickActions } from "../organisms/QuickActions";
 import { RoomGrid } from "../organisms/RoomGrid";
+import { SheetFrame } from "../organisms/SheetFrame";
 import { TopBar } from "../organisms/TopBar";
 import { Vitals } from "../organisms/Vitals";
 
 export interface HomeTemplateProps {
+  app: SheetApp;
   atmo: AtmosphereSetting;
   dark: boolean;
   density: DensitySetting;
-  sheetOpen: boolean;
-  /** Localized accessible name for the empty sheet dialog. */
-  sheetLabel: string;
 }
 
 /**
@@ -21,8 +21,12 @@ export interface HomeTemplateProps {
  * needs a handful of animated points; the next home pass can restore the full
  * eighteen if the baselines ask for them.
  */
-const STAR_X = [8, 18, 27, 36, 45, 54, 63, 71, 79, 86, 92, 14, 31, 58, 68, 76, 88, 4];
-const STAR_Y = [8, 18, 12, 22, 7, 16, 9, 20, 13, 6, 18, 26, 5, 24, 11, 3, 22, 15];
+const STAR_X = [
+  8, 18, 27, 36, 45, 54, 63, 71, 79, 86, 92, 14, 31, 58, 68, 76, 88, 4,
+];
+const STAR_Y = [
+  8, 18, 12, 22, 7, 16, 9, 20, 13, 6, 18, 26, 5, 24, 11, 3, 22, 15,
+];
 const STARS = STAR_X.map((x, index) => ({
   x,
   y: STAR_Y[index],
@@ -35,13 +39,7 @@ const STARS = STAR_X.map((x, index) => ({
  * legacy `renderHome` markup so the card's sheet, toast, graph, and theme
  * helpers keep working while the organisms are ported.
  */
-export function HomeTemplate({
-  atmo,
-  dark,
-  density,
-  sheetOpen,
-  sheetLabel,
-}: HomeTemplateProps) {
+export function HomeTemplate({ app, atmo, dark, density }: HomeTemplateProps) {
   return (
     <div
       className={`app${dark ? "" : " light"}`}
@@ -84,14 +82,7 @@ export function HomeTemplate({
           </footer>
         </main>
       </div>
-      <div className="scrim" data-scrim />
-      <section
-        className={`sheet${sheetOpen ? " open" : ""}`}
-        data-sheet
-        role="dialog"
-        aria-modal="true"
-        aria-label={sheetLabel}
-      />
+      <SheetFrame app={app} />
       <div className="toast" data-toast />
       <div className="graph-tip" data-graph-tip aria-hidden="true" />
       <div className="graph-cursor" data-graph-cursor aria-hidden="true" />

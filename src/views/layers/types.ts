@@ -33,6 +33,17 @@ export interface SheetApp {
   _refreshConfirm(): void;
 }
 
+/**
+ * The legacy `<arcus-sheets>` surface used by the unported layer bridge.
+ * `app`/`route` are assigned from React and `update()` re-renders the layer.
+ */
+export interface ArcusSheetsElement extends HTMLElement {
+  app: SheetApp | null;
+  route: SheetRoute | null;
+  update?(): void;
+  binds?(): Record<string, string>;
+}
+
 export interface LayerContext {
   model: HomeModel;
   config: ArcusConfig;
@@ -41,9 +52,6 @@ export interface LayerContext {
   app: SheetApp;
 }
 
-export type LayerRenderer = (
-  ctx: LayerContext,
-  sub?: string | null,
-) => string;
+export type LayerRenderer = (ctx: LayerContext, sub?: string | null) => string;
 
 export type { SheetRoute };
