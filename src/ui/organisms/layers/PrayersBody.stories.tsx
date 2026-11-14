@@ -1,0 +1,32 @@
+import type { Meta, StoryObj } from "@storybook/react";
+import { storyApp } from "../../providers/StoryProviders";
+import { PrayersBody } from "./PrayersBody";
+
+const meta = {
+  title: "Sheets/Prayers",
+  component: PrayersBody,
+  args: {
+    app: storyApp,
+    route: { base: "bon", sub: null },
+  },
+  render: (args) => (
+    <div
+      className="sheet open"
+      style={{
+        position: "relative",
+        height: "90vh",
+        width: "min(590px, 100%)",
+        margin: "0 auto",
+        transform: "none",
+      }}
+    >
+      <PrayersBody {...args} />
+    </div>
+  ),
+} satisfies Meta<typeof PrayersBody>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
