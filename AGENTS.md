@@ -67,6 +67,9 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.0`.
   `styled-system/styles.css` for it. `src/ui/styles/index.ts` injects
   `FONT_FACE_CSS + panda.css?inline` into the card's shadow root. Do not add a
   second global stylesheet or edit `dist/arcus.js` by hand.
+- `src/editor.ts` keeps its small `EDITOR_STYLES` string for the two config
+  editors. They run in separate shadow roots and use HA's native theme
+  variables; do not inject the dashboard stylesheet there.
 - Storybook uses `.storybook/main.ts` and `.storybook/preview.tsx`, a real
   shadow-root decorator, and a global fixture provider. Stories are the
   component docs and the `build-storybook` gate; Playwright remains the visual
