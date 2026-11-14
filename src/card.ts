@@ -1765,6 +1765,13 @@ export class ArcusCard extends HTMLElement {
 
   private _click(event: Event): void {
     const target = event.target as Element | null;
+
+    if (target?.closest?.("[data-scrim]")) {
+      event.preventDefault();
+      this._closeRoute();
+      return;
+    }
+
     const nav = target?.closest?.("[data-nav]") as HTMLElement | null;
     if (nav && this._root.contains(nav)) {
       event.preventDefault();
