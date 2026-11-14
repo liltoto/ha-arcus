@@ -1,6 +1,7 @@
-import type { KeyboardEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Icon } from "../atoms/Icon";
 import { c } from "../styles/classes";
+import { rowActivation } from "./row-activation";
 
 export interface EntityRowProps {
   name: string;
@@ -29,14 +30,7 @@ export function EntityRow({
   trailing,
 }: EntityRowProps) {
   const interactive = Boolean(onClick);
-
-  const activate = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!onClick) return;
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      onClick();
-    }
-  };
+  const activate = rowActivation(onClick);
 
   const right =
     trailing ??

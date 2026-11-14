@@ -9,6 +9,11 @@ export interface RoomLightRowProps {
   isOn: boolean;
   brightness: number;
   showSlider?: boolean;
+  /**
+   * Label the slider from the thumb value instead of `isOn`. The lights sheet
+   * needs this because a group can report off while its members are on.
+   */
+  offWhenZero?: boolean;
   t: Translator;
   onToggle: () => void;
   onBrightness: (percent: number) => void;
@@ -20,9 +25,10 @@ function clampPercent(value: number): number {
 }
 
 /**
- * The room sheet's light row. The slider is deliberately uncontrolled: a
- * hass push can re-render the whole sheet mid-drag, and writing `value` back
- * would fight the thumb. Sync the DOM value only while it is not focused.
+ * The shared light row for the room and lights sheets. The slider is
+ * deliberately uncontrolled: a hass push can re-render the whole sheet
+ * mid-drag, and writing `value` back would fight the thumb. Sync the DOM
+ * value only while it is not focused.
  */
 export function RoomLightRow({
   entityId,
@@ -30,6 +36,7 @@ export function RoomLightRow({
   isOn,
   brightness,
   showSlider = true,
+  offWhenZero = false,
   t,
   onToggle,
   onBrightness,
@@ -55,6 +62,7 @@ export function RoomLightRow({
   const sub = isOn
     ? t("room.lightOn", { pct: displayPct })
     : t("room.lightOff");
+  const showPct = offWhenZero ? displayPct > 0 : isOn;
 
   return (
     <div className={c("light-row")}>
@@ -86,6 +94,7 @@ export function RoomLightRow({
               min="0"
               max="100"
               step="1"
+              data-light-range={entityId}
               data-range-entity={entityId}
               defaultValue={pct}
               aria-label={name}
@@ -99,7 +108,7 @@ export function RoomLightRow({
             />
           </div>
           <div className={c("pct")}>
-            {isOn ? `${displayPct} %` : t("lights.sliderOff")}
+            {showPct ? `${displayPct} %` : t("lights.sliderOff")}
           </div>
         </div>
       ) : null}

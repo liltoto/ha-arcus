@@ -2,7 +2,11 @@ import { useId } from "react";
 import { formatNumber } from "../../../format";
 import { areaPath, sparkPath } from "../../../render/charts";
 import { graphAttrs, type GraphInput } from "../../../render/graph";
-import type { ArcusHass, Translator } from "../../../types";
+import type {
+  ArcusHass,
+  SecurityBatteryModel,
+  Translator,
+} from "../../../types";
 import { EmptyState } from "../../atoms/EmptyState";
 import { Icon } from "../../atoms/Icon";
 import { ChartBox } from "../../molecules/ChartBox";
@@ -25,6 +29,11 @@ import { c } from "../../styles/classes";
 const CHART_HEIGHT = 110;
 const CHART_WIDTH = 560;
 const DAY_MS = 86_400_000;
+
+type WaterFormat = (
+  value: number | null | undefined,
+  digits?: number,
+) => string;
 
 /**
  * `graphAttrs` produces an HTML attribute string for the legacy string views.
@@ -106,6 +115,216 @@ function LeakRow({ name, on, t }: LeakRowProps) {
       </span>
     </div>
   );
+}
+
+interface WaterFlowChartProps {
+  hasData: boolean;
+  gradientId: string;
+  graph: Record<string, string>;
+  area: string;
+  line: string;
+  t: Translator;
+}
+
+/** The 24-hour flow chart, with the exact legacy graph bindings. */
+function WaterFlowChart({
+  hasData,
+  gradientId,
+  graph,
+  area,
+  line,
+  t,
+}: WaterFlowChartProps) {
+  return (
+    <div className={c("block")}>
+      <div className={c("block-label")}>{t("water.flow24")}</div>
+      <ChartBox noData={!hasData} emptyLabel={t("empty.chart")}>
+        <svg
+          viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          {...graph}
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="var(--sky)" stopOpacity=".26" />
+              <stop offset="1" stopColor="var(--sky)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {[0.25, 0.5, 0.75].map((part) => (
+            <line
+              key={part}
+              x1="0"
+              y1={CHART_HEIGHT * part}
+              x2={CHART_WIDTH}
+              y2={CHART_HEIGHT * part}
+              stroke="var(--line)"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+          <path fill={`url(#${gradientId})`} d={area} />
+          <path
+            fill="none"
+            stroke="var(--sky)"
+            strokeWidth="1.5"
+            vectorEffect="non-scaling-stroke"
+            d={line}
+          />
+        </svg>
+      </ChartBox>
+    </div>
+  );
+}
+
+interface WaterTodayProps {
+  day: number | null;
+  month: number | null;
+  total: number | null;
+  fmt: WaterFormat;
+  t: Translator;
+}
+
+/** The headline consumption and the monthly/total note. */
+function WaterToday({ day, month, total, fmt, t }: WaterTodayProps) {
+  return (
+    <div className={c("block")}>
+      <div className={c("big-read")}>
+        {fmt(day, 1)}
+        <small>L {t("common.today").toLocaleLowerCase()}</small>
+      </div>
+      <div className={c("block-note")}>
+        {month !== null || total !== null
+          ? t("water.note", {
+              month: fmt(month, 0),
+              total: fmt(total === null ? null : total / 1000, 1),
+            })
+          : t("empty.data")}
+      </div>
+    </div>
+  );
+}
+
+interface WaterSoftenerProps {
+  state: string;
+  salt: number | null;
+  saltDays: number | null;
+  capacity: number | null;
+  flow: number | null;
+  holidayId: string | undefined;
+  holidayOn: boolean;
+  onToggleHoliday: () => void;
+  fmt: WaterFormat;
+  t: Translator;
+}
+
+/** The BWT salt/capacity readings plus the holiday toggle. */
+function WaterSoftener({
+  state,
+  salt,
+  saltDays,
+  capacity,
+  flow,
+  holidayId,
+  holidayOn,
+  onToggleHoliday,
+  fmt,
+  t,
+}: WaterSoftenerProps) {
+  return (
+    <div className={c("block")}>
+      <div className={c("block-head")}>
+        <div className={c("block-label")}>{t("water.bwt")}</div>
+        <div className={c("block-label")}>
+          <b>{state}</b>
+        </div>
+      </div>
+      <div className={c("readings")}>
+        <Readout label={t("water.salt")} value={fmt(salt, 0)} unit="%" />
+        <Readout
+          label={t("water.daysLeft")}
+          value={fmt(saltDays, 0)}
+          unit={t("water.days")}
+        />
+        <Readout
+          label={t("water.capacity")}
+          value={fmt(capacity, 0)}
+          unit="L"
+        />
+        <Readout label={t("water.flow")} value={fmt(flow, 2)} unit="m³/h" />
+      </div>
+      {holidayId ? (
+        <ToggleRow
+          label={t("water.holiday")}
+          sub={t("water.holidaySub")}
+          isOn={holidayOn}
+          onChange={onToggleHoliday}
+          dataAct="toggle-bool"
+          dataEntity={holidayId}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+interface WaterLeaksProps {
+  hass: ArcusHass;
+  leakIds: string[];
+  leak: boolean;
+  leakBattery: SecurityBatteryModel | undefined;
+  fmt: WaterFormat;
+  t: Translator;
+}
+
+/** The leak sensors and, when present, the leak sensor battery. */
+function WaterLeaks({
+  hass,
+  leakIds,
+  leak,
+  leakBattery,
+  fmt,
+  t,
+}: WaterLeaksProps) {
+  return (
+    <div className={c("block")}>
+      <div className={c("block-head")}>
+        <div className={c("block-label")}>{t("water.leak")}</div>
+        <div className={c("block-label")}>
+          <b>{leak ? t("water.alarm") : t("water.allDry")}</b>
+        </div>
+      </div>
+      {leakIds.length ? (
+        leakIds.map((entityId, index) => (
+          <LeakRow
+            key={entityId}
+            name={entityName(hass, entityId, index, t)}
+            on={isOn(hass, entityId, leak)}
+            t={t}
+          />
+        ))
+      ) : (
+        <div className={c("block-note")}>{t("empty.data")}</div>
+      )}
+      {leakBattery ? (
+        <div className={c("row")}>
+          <Icon name="battery" />
+          <div className={c("row-main")}>
+            <div className={c("row-name")}>{t("water.battery")}</div>
+            <div className={c("row-sub")}>{t("water.leakBattery")}</div>
+          </div>
+          <span className={c("row-val")}>
+            {leakBattery.level === null ? "–" : fmt(leakBattery.level, 0)}
+            <small>%</small>
+          </span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** The sheet's closing explanatory note. */
+function WaterNote({ t }: { t: Translator }) {
+  return <div className={c("note")}>{t("water.footer")}</div>;
 }
 
 /**
@@ -225,20 +444,7 @@ export function WaterBody(_props: LayerBodyProps) {
         onClose={actions.closeSheet}
       />
       <div className={c("sheet-scroll")}>
-        <div className={c("block")}>
-          <div className={c("big-read")}>
-            {fmt(day, 1)}
-            <small>L {t("common.today").toLocaleLowerCase()}</small>
-          </div>
-          <div className={c("block-note")}>
-            {month !== null || total !== null
-              ? t("water.note", {
-                  month: fmt(month, 0),
-                  total: fmt(total === null ? null : total / 1000, 1),
-                })
-              : t("empty.data")}
-          </div>
-        </div>
+        <WaterToday day={day} month={month} total={total} fmt={fmt} t={t} />
 
         <div className={c("readings")}>
           <Readout
@@ -259,115 +465,38 @@ export function WaterBody(_props: LayerBodyProps) {
           />
         </div>
 
-        <div className={c("block")}>
-          <div className={c("block-head")}>
-            <div className={c("block-label")}>{t("water.bwt")}</div>
-            <div className={c("block-label")}>
-              <b>{state}</b>
-            </div>
-          </div>
-          <div className={c("readings")}>
-            <Readout label={t("water.salt")} value={fmt(salt, 0)} unit="%" />
-            <Readout
-              label={t("water.daysLeft")}
-              value={fmt(saltDays, 0)}
-              unit={t("water.days")}
-            />
-            <Readout
-              label={t("water.capacity")}
-              value={fmt(capacity, 0)}
-              unit="L"
-            />
-            <Readout label={t("water.flow")} value={fmt(flow, 2)} unit="m³/h" />
-          </div>
-          {holidayId ? (
-            <ToggleRow
-              label={t("water.holiday")}
-              sub={t("water.holidaySub")}
-              isOn={holidayOn}
-              onChange={toggleHoliday}
-              dataAct="toggle-bool"
-              dataEntity={holidayId}
-            />
-          ) : null}
-        </div>
+        <WaterSoftener
+          state={state}
+          salt={salt}
+          saltDays={saltDays}
+          capacity={capacity}
+          flow={flow}
+          holidayId={holidayId}
+          holidayOn={holidayOn}
+          onToggleHoliday={toggleHoliday}
+          fmt={fmt}
+          t={t}
+        />
 
-        <div className={c("block")}>
-          <div className={c("block-head")}>
-            <div className={c("block-label")}>{t("water.leak")}</div>
-            <div className={c("block-label")}>
-              <b>
-                {model.security?.leak ? t("water.alarm") : t("water.allDry")}
-              </b>
-            </div>
-          </div>
-          {leakIds.length ? (
-            leakIds.map((entityId, index) => (
-              <LeakRow
-                key={entityId}
-                name={entityName(hass, entityId, index, t)}
-                on={isOn(hass, entityId, Boolean(model.security?.leak))}
-                t={t}
-              />
-            ))
-          ) : (
-            <div className={c("block-note")}>{t("empty.data")}</div>
-          )}
-          {leakBattery ? (
-            <div className={c("row")}>
-              <Icon name="battery" />
-              <div className={c("row-main")}>
-                <div className={c("row-name")}>{t("water.battery")}</div>
-                <div className={c("row-sub")}>{t("water.leakBattery")}</div>
-              </div>
-              <span className={c("row-val")}>
-                {leakBattery.level === null ? "–" : fmt(leakBattery.level, 0)}
-                <small>%</small>
-              </span>
-            </div>
-          ) : null}
-        </div>
+        <WaterLeaks
+          hass={hass}
+          leakIds={leakIds}
+          leak={Boolean(model.security?.leak)}
+          leakBattery={leakBattery}
+          fmt={fmt}
+          t={t}
+        />
 
-        <div className={c("block")}>
-          <div className={c("block-label")}>{t("water.flow24")}</div>
-          <ChartBox noData={!hasData} emptyLabel={t("empty.chart")}>
-            <svg
-              viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-              preserveAspectRatio="none"
-              aria-hidden="true"
-              {...graph}
-            >
-              <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stopColor="var(--sky)" stopOpacity=".26" />
-                  <stop offset="1" stopColor="var(--sky)" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {[0.25, 0.5, 0.75].map((part) => (
-                <line
-                  key={part}
-                  x1="0"
-                  y1={CHART_HEIGHT * part}
-                  x2={CHART_WIDTH}
-                  y2={CHART_HEIGHT * part}
-                  stroke="var(--line)"
-                  strokeWidth="1"
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
-              <path fill={`url(#${gradientId})`} d={area} />
-              <path
-                fill="none"
-                stroke="var(--sky)"
-                strokeWidth="1.5"
-                vectorEffect="non-scaling-stroke"
-                d={line}
-              />
-            </svg>
-          </ChartBox>
-        </div>
+        <WaterFlowChart
+          hasData={hasData}
+          gradientId={gradientId}
+          graph={graph}
+          area={area}
+          line={line}
+          t={t}
+        />
 
-        <div className={c("note")}>{t("water.footer")}</div>
+        <WaterNote t={t} />
       </div>
     </div>
   );

@@ -210,80 +210,98 @@ function systemCardSub(
     : "–";
 }
 
-function chapterSummaries(
+function energySummary(
   model: HomeModel,
   language: string,
   t: Translator,
-): Record<string, string> {
-  const out: Record<string, string> = {};
+): string {
   const price = model.price;
-  const solar = model.solar;
-  const water = model.water;
-  const security = model.security;
-  const tech = model.tech;
-  const economy = model.economy;
-  const ventilation = model.ventilation;
-  const lightStats = lightsSummary(model);
-
   const priceNow =
     price?.now !== null && price?.now !== undefined
       ? formatPrice(price.now, language)
       : "–";
-  out.ch_energi_sum =
-    `<b>${priceNow} ${t("common.perKwh")}</b> · ${lower(
-      t("solar.load"),
-    )} ${formatNumber(solar?.load, 0, language)} W`;
+  return `<b>${priceNow} ${t("common.perKwh")}</b> · ${lower(
+    t("solar.load"),
+  )} ${formatNumber(model.solar?.load, 0, language)} W`;
+}
 
-  out.ch_sol_sum = `<b>${formatNumber(
-    solar?.batterySoc,
+function solarSummary(
+  model: HomeModel,
+  language: string,
+  t: Translator,
+): string {
+  return `<b>${formatNumber(
+    model.solar?.batterySoc,
     0,
     language,
   )} % ${lower(t("solar.battery"))}</b> · ${formatNumber(
-    solar?.today,
+    model.solar?.today,
     1,
     language,
   )} ${t("energy.kwh")} ${lower(t("common.today"))}`;
+}
 
-  out.ch_vand_sum = `<b>${formatNumber(
-    water?.day,
+function waterSummary(
+  model: HomeModel,
+  language: string,
+  t: Translator,
+): string {
+  return `<b>${formatNumber(
+    model.water?.day,
     1,
     language,
   )} L ${lower(t("common.today"))}</b> · BWT ${
-    water?.state ?? "–"
+    model.water?.state ?? "–"
   } · ${lower(t("water.salt"))} ${formatNumber(
-    water?.salt,
+    model.water?.salt,
     0,
     language,
   )} %`;
+}
 
-  const leak = !!security?.leak;
-  out.ch_sikkerhed_sum = leak
-    ? `<b>${escapeHtml(capitalizeFirst(t("security.leakDetected")))}</b>`
-    : `<b>${escapeHtml(
-        capitalizeFirst(
-          security?.open
-            ? t("security.summaryOpen", { count: security.open })
-            : t("security.summaryClosed"),
-        ),
-      )}</b> · ${t("security.noLeak")}`;
+function securitySummary(model: HomeModel, t: Translator): string {
+  const security = model.security;
+  if (security?.leak) {
+    return `<b>${escapeHtml(capitalizeFirst(t("security.leakDetected")))}</b>`;
+  }
+  return `<b>${escapeHtml(
+    capitalizeFirst(
+      security?.open
+        ? t("security.summaryOpen", { count: security.open })
+        : t("security.summaryClosed"),
+    ),
+  )}</b> · ${t("security.noLeak")}`;
+}
 
-  const filter = ventilation?.filter;
+function ventilationSummary(
+  model: HomeModel,
+  language: string,
+  t: Translator,
+): string {
+  const filter = model.ventilation?.filter;
   const filterOk =
     !filter ||
     ["OK", "Nej", "Neutral", "off", "unknown", "unavailable"].includes(filter);
-  out.ch_ventilation_sum = `<b>${formatNumber(
-    ventilation?.temperature,
+  return `<b>${formatNumber(
+    model.ventilation?.temperature,
     1,
     language,
   )}°</b> · ${lower(t("ventilation.fanStep"))} ${
-    ventilation?.step ?? "–"
+    model.ventilation?.step ?? "–"
   } · ${
     filterOk
       ? t("ventilation.filterOk")
       : escapeHtml(filter.toLowerCase())
   }`;
+}
 
-  out.ch_teknik_sum = `<b>${
+function techSummary(
+  model: HomeModel,
+  language: string,
+  t: Translator,
+): string {
+  const tech = model.tech;
+  return `<b>${
     tech?.router !== null && tech?.router !== undefined
       ? `${formatNumber(tech.router, 1, language)} ms`
       : "–"
@@ -292,7 +310,14 @@ function chapterSummaries(
       ? `${formatNumber(tech.google, 1, language)} ms`
       : "–"
   } ${lower(t("tech.google"))}`;
+}
 
+function economySummary(
+  model: HomeModel,
+  language: string,
+  t: Translator,
+): string {
+  const economy = model.economy;
   const change =
     economy?.change !== null && economy?.change !== undefined
       ? `${economy.change >= 0 ? "+" : ""}${formatNumber(
@@ -301,12 +326,15 @@ function chapterSummaries(
           language,
         )}`
       : "–";
-  out.ch_oekonomi_sum = `<b>${formatNumber(
+  return `<b>${formatNumber(
     economy?.value,
     2,
     language,
   )}</b> · ${change} ${lower(t("common.today"))}`;
+}
 
+function chapterLightsSummary(model: HomeModel, t: Translator): string {
+  const lightStats = lightsSummary(model);
   const lightCount = t("room.lightCountOf", {
     on: lightStats.on,
     total: lightStats.total,
@@ -318,8 +346,14 @@ function chapterSummaries(
   const lightRest = lightSummary.startsWith(lightCount)
     ? lightSummary.slice(lightCount.length)
     : "";
-  out.ch_lys_sum = `<b>${escapeHtml(lightCount)}</b>${escapeHtml(lightRest)}`;
+  return `<b>${escapeHtml(lightCount)}</b>${escapeHtml(lightRest)}`;
+}
 
+function heatingSummary(
+  model: HomeModel,
+  language: string,
+  t: Translator,
+): string {
   const currentTemps = model.heating
     .map((zone) => numberFrom(zone.entity.attributes?.current_temperature))
     .filter((value): value is number => value !== null);
@@ -328,7 +362,7 @@ function chapterSummaries(
     .filter((value): value is number => value !== null);
   const currentAverage = average(currentTemps);
   const targetAverage = average(targetTemps);
-  out.ch_varme_sum = `<b>${formatNumber(
+  return `<b>${formatNumber(
     currentAverage,
     1,
     language,
@@ -337,28 +371,51 @@ function chapterSummaries(
     1,
     language,
   )}° ${lower(t("heating.setpoint"))}`;
+}
 
-  if (model.alerts.length) {
-    const first = model.alerts[0];
-    const summary = t("alerts.countTitle", {
-      count: model.alerts.length,
-      title: first.title,
-    });
-    const split = summary.indexOf(" · ");
-    out.ch_alarmer_sum =
-      split >= 0
-        ? `<b>${escapeHtml(summary.slice(0, split))}</b> · ${escapeHtml(
-            summary.slice(split + 3),
-          )}`
-        : `<b>${escapeHtml(summary)}</b>`;
-  } else {
-    out.ch_alarmer_sum = t("alerts.calmTitle");
+function alertsSummary(model: HomeModel, t: Translator): string {
+  if (!model.alerts.length) {
+    return t("alerts.calmTitle");
   }
-  out.ch_alarmer_num = String(model.alerts.length);
+  const first = model.alerts[0];
+  const summary = t("alerts.countTitle", {
+    count: model.alerts.length,
+    title: first.title,
+  });
+  const split = summary.indexOf(" · ");
+  return split >= 0
+    ? `<b>${escapeHtml(summary.slice(0, split))}</b> · ${escapeHtml(
+        summary.slice(split + 3),
+      )}`
+    : `<b>${escapeHtml(summary)}</b>`;
+}
+
+function defaultSummary(): string {
+  return "–";
+}
+
+function chapterSummaries(
+  model: HomeModel,
+  language: string,
+  t: Translator,
+): Record<string, string> {
+  const out: Record<string, string> = {
+    ch_energi_sum: energySummary(model, language, t),
+    ch_sol_sum: solarSummary(model, language, t),
+    ch_vand_sum: waterSummary(model, language, t),
+    ch_sikkerhed_sum: securitySummary(model, t),
+    ch_ventilation_sum: ventilationSummary(model, language, t),
+    ch_teknik_sum: techSummary(model, language, t),
+    ch_oekonomi_sum: economySummary(model, language, t),
+    ch_lys_sum: chapterLightsSummary(model, t),
+    ch_varme_sum: heatingSummary(model, language, t),
+    ch_alarmer_sum: alertsSummary(model, t),
+    ch_alarmer_num: String(model.alerts.length),
+  };
 
   // Every chapter card asks for a binding; keep disabled chapters valid too.
   for (const key of CHAPTER_KEYS) {
-    if (!(`ch_${key}_sum` in out)) out[`ch_${key}_sum`] = "–";
+    if (!(`ch_${key}_sum` in out)) out[`ch_${key}_sum`] = defaultSummary();
   }
   return out;
 }
