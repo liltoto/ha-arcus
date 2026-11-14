@@ -182,6 +182,173 @@ describe("ArcusConfigEditor", () => {
     expect(changes).toHaveLength(1);
     expect(changes[0].solar.power).toBe("sensor.future_solar");
   });
+
+  test("auto_discover is on by default and only stores the opt-out", () => {
+    const editor = new ArcusConfigEditor();
+    editor.setConfig({ type: "custom:arcus-card" });
+    editor.hass = makeHass();
+    document.body.appendChild(editor);
+
+    const changes = trackConfigChanges(editor);
+    const toggle = field<HTMLInputElement>(
+      editor.shadowRoot!,
+      "auto_discover",
+    );
+    expect(toggle.checked).toBe(true);
+
+    toggle.checked = false;
+    change(toggle);
+    expect(changes).toHaveLength(1);
+    expect(changes[0].auto_discover).toBe(false);
+
+    // Turning discovery back on removes the key again.
+    toggle.checked = true;
+    change(toggle);
+    expect(changes).toHaveLength(2);
+    expect(changes[1]).not.toHaveProperty("auto_discover");
+  });
+
+  test("group_by_floor stores true and is removed when unchecked", () => {
+    const editor = new ArcusConfigEditor();
+    editor.setConfig({ type: "custom:arcus-card" });
+    editor.hass = makeHass();
+    document.body.appendChild(editor);
+
+    const changes = trackConfigChanges(editor);
+    const toggle = field<HTMLInputElement>(
+      editor.shadowRoot!,
+      "group_by_floor",
+    );
+    expect(toggle.checked).toBe(false);
+
+    toggle.checked = true;
+    change(toggle);
+    expect(changes).toHaveLength(1);
+    expect(changes[0].group_by_floor).toBe(true);
+
+    toggle.checked = false;
+    change(toggle);
+    expect(changes).toHaveLength(2);
+    expect(changes[1]).not.toHaveProperty("group_by_floor");
+  });
+
+  test("units.currency, units.price_unit, and units.temperature are editable", () => {
+    const editor = new ArcusConfigEditor();
+    editor.setConfig({ type: "custom:arcus-card" });
+    editor.hass = makeHass();
+    document.body.appendChild(editor);
+
+    const changes = trackConfigChanges(editor);
+
+    const currency = field<HTMLInputElement>(
+      editor.shadowRoot!,
+      "units.currency",
+    );
+    currency.value = "EUR";
+    change(currency);
+    expect(changes[0].units).toEqual({ currency: "EUR" });
+
+    const priceUnit = field<HTMLInputElement>(
+      editor.shadowRoot!,
+      "units.price_unit",
+    );
+    priceUnit.value = "EUR/kWh";
+    change(priceUnit);
+    expect(changes[1].units).toEqual({
+      currency: "EUR",
+      price_unit: "EUR/kWh",
+    });
+
+    const temperature = field<HTMLSelectElement>(
+      editor.shadowRoot!,
+      "units.temperature",
+    );
+    temperature.value = "°F";
+    change(temperature);
+    expect(changes[2].units).toEqual({
+      currency: "EUR",
+      price_unit: "EUR/kWh",
+      temperature: "°F",
+    });
+
+    // The empty option is Auto and removes the key.
+    temperature.value = "";
+    change(temperature);
+    expect(changes[3].units).toEqual({
+      currency: "EUR",
+      price_unit: "EUR/kWh",
+    });
+  });
+
+  test("chapter checkboxes toggle chapters.<key>", () => {
+    const editor = new ArcusConfigEditor();
+    editor.setConfig({ type: "custom:arcus-card" });
+    editor.hass = makeHass();
+    document.body.appendChild(editor);
+
+    const changes = trackConfigChanges(editor);
+    const chapter = field<HTMLInputElement>(editor.shadowRoot!, "chapters.sol");
+    expect(chapter.checked).toBe(true);
+
+    chapter.checked = false;
+    change(chapter);
+    expect(changes).toHaveLength(1);
+    expect(changes[0].chapters).toEqual({ sol: false });
+
+    chapter.checked = true;
+    change(chapter);
+    expect(changes).toHaveLength(2);
+    expect(changes[1].chapters).toEqual({ sol: true });
+  });
+
+  test("entity inputs are backed by a datalist of hass.states", () => {
+    const hass = makeHass();
+    const editor = new ArcusConfigEditor();
+    editor.setConfig({ type: "custom:arcus-card" });
+    editor.hass = hass;
+    document.body.appendChild(editor);
+
+    const datalist = editor.shadowRoot!.querySelector<HTMLDataListElement>(
+      "datalist#arcus-entities",
+    );
+    expect(datalist).not.toBeNull();
+    const options = Array.from(datalist!.querySelectorAll("option")).map(
+      (option) => option.value,
+    );
+    expect(options).toEqual(Object.keys(hass.states).sort());
+    expect(options).toContain("sensor.outdoor_temperature");
+  });
+
+  test("only entity fields point at the entity datalist", () => {
+    const editor = new ArcusConfigEditor();
+    editor.setConfig({ type: "custom:arcus-card" });
+    editor.hass = makeHass();
+    document.body.appendChild(editor);
+
+    expect(
+      field<HTMLInputElement>(editor.shadowRoot!, "solar.power").getAttribute(
+        "list",
+      ),
+    ).toBe("arcus-entities");
+    expect(
+      field<HTMLInputElement>(editor.shadowRoot!, "title").hasAttribute("list"),
+    ).toBe(false);
+  });
+
+  test("entity suggestions appear when states arrive after the editor", () => {
+    const editor = new ArcusConfigEditor();
+    editor.setConfig({ type: "custom:arcus-card" });
+    editor.hass = { ...makeHass(), states: {} };
+    document.body.appendChild(editor);
+    expect(
+      editor.shadowRoot!.querySelector("datalist#arcus-entities"),
+    ).toBeNull();
+
+    editor.hass = makeHass();
+    expect(
+      editor.shadowRoot!.querySelector("datalist#arcus-entities"),
+    ).not.toBeNull();
+  });
 });
 
 describe("ArcusStrategyEditor", () => {

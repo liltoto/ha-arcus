@@ -1,4 +1,4 @@
-import type { Language } from "./types";
+import type { Language, TemperatureUnit } from "./types";
 
 const LOCALES: Record<Language, string> = {
   da: "da-DK",
@@ -11,6 +11,57 @@ function localeFor(language: Language | string | undefined): string {
     .startsWith("da")
     ? LOCALES.da
     : LOCALES.en;
+}
+
+/**
+ * Resolve the display currency label (e.g. `kr`, `DKK`, `EUR`, `USD`, `$`).
+ * Defaults to `kr` in Danish and `DKK` in English when neither `config.units`
+ * nor `hass.config.currency` is specified, preserving legacy output.
+ */
+export function resolveCurrency(
+  hass?: { config?: { currency?: string } } | null,
+  config?: { units?: { currency?: string } } | null,
+  language: Language | string = "da",
+): string {
+  const configured = config?.units?.currency?.trim();
+  if (configured) return configured;
+  const hassCurrency = hass?.config?.currency?.trim();
+  if (hassCurrency) {
+    if (
+      hassCurrency.toUpperCase() === "DKK" &&
+      localeFor(language) === LOCALES.da
+    ) {
+      return "kr";
+    }
+    return hassCurrency;
+  }
+  return localeFor(language) === LOCALES.da ? "kr" : "DKK";
+}
+
+/**
+ * Resolve the electricity price unit (e.g. `kr/kWh`, `DKK/kWh`, `EUR/kWh`).
+ */
+export function resolvePriceUnit(
+  hass?: { config?: { currency?: string } } | null,
+  config?: { units?: { currency?: string; price_unit?: string } } | null,
+  language: Language | string = "da",
+): string {
+  const configured = config?.units?.price_unit?.trim();
+  if (configured) return configured;
+  return `${resolveCurrency(hass, config, language)}/kWh`;
+}
+
+/**
+ * Resolve the temperature unit (`°C` or `°F`) from config or HA's unit system.
+ */
+export function resolveTempUnit(
+  hass?: { config?: { unit_system?: { temperature?: string } } } | null,
+  config?: { units?: { temperature?: TemperatureUnit } } | null,
+): TemperatureUnit {
+  if (config?.units?.temperature === "°F") return "°F";
+  if (config?.units?.temperature === "°C") return "°C";
+  if (hass?.config?.unit_system?.temperature === "°F") return "°F";
+  return "°C";
 }
 
 export function numberFrom(value: unknown): number | null {

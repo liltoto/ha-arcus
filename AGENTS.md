@@ -2,7 +2,7 @@
 
 Arcus is a Home Assistant Marketplace Dashboard plugin: one self-contained
 frontend bundle, a dashboard strategy, and visual editors. Single package,
-no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.1`.
+no monorepo. Published at `liltoto/ha-arcus`; current release `v0.4.0`.
 
 ## Commands
 
@@ -66,17 +66,34 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.1`.
   `src/ui/pages/layerRegistry.ts`. Every sheet body lives in
   `src/ui/organisms/layers/`; add a route by adding a body and a registry entry.
 - `src/model/discover.ts` discovers rooms from HA's area/device/entity
-  registries; `src/model/build.ts` builds `HomeModel`. `RoomModel` sensor fields
-  are `EntityRef | null`, not raw IDs; `roomStats`/`lightStats` carry computed
-  counts because light/opening models have no live state. `src/model/lights.ts`
-  is the single light-ID flattener; don't re-add local group loops.
+  registries; `src/model/discover-systems.ts` auto-fills unconfigured system
+  sections (weather, price, solar, water, ventilation, prayers, security) from
+  the live state machine; `src/model/build.ts` builds `HomeModel`. `buildModel`
+  runs `discoverSystems` first, so every builder sees the same resolved config.
+  Explicit config always wins; `auto_discover: false` disables the pass.
+  `RoomModel` sensor fields are `EntityRef | null`, not raw IDs; rooms also
+  carry `kind` (`indoor`/`outdoor`/`utility`), `wide`, floor metadata, `covers`,
+  and `lock`. `roomStats`/`lightStats` carry computed counts because
+  light/opening models have no live state. `src/model/lights.ts` is the single
+  light-ID flattener; don't re-add local group loops.
+- `src/format.ts` owns `resolveCurrency`, `resolvePriceUnit`, and
+  `resolveTempUnit`. Read units from those helpers instead of hardcoding `kr`,
+  `DKK`, or `°C`; they fall back to Home Assistant's `hass.config` and
+  preserve the Danish defaults. `ArcusConfig.units` overrides all three.
+- Never special-case an area ID or brand in the model. Room behavior comes from
+  `rooms.<id>.kind`/`wide`/`icon`; system sheets read optional
+  `water.softenerName`, `ventilation.name`, `solar.pv1`–`pv4`, and
+  `security.alarm`/`locks`. Localized labels belong in `src/localize.ts`.
 - `src/ui/molecules/HistoryChart.tsx` is the shared economy/tech history chart.
   Storybook sheet frames come from `src/ui/storybook/with-sheet.tsx`.
 - `src/strategy.ts` generates one panel view and declares
   `registryDependencies = ["areas", "devices", "entities", "floors"]`. Keep it,
   or the card receives empty registries.
 - `src/config.ts` `normalizeConfig` is the single config normalizer; `areas`
-  normalizes to `{ include, exclude, order }`.
+  normalizes to `{ include, exclude, order }`. New top-level options:
+  `auto_discover`, `group_by_floor`, `person`, `units`, `vitals`,
+  `chapter_order`, `energy`, and `heating`; room overrides also accept `kind`,
+  `wide`, `icon`, `covers`, and `lock`.
 - `panda.config.ts` owns the global reset, palette variables, conditions, and
   static tokens. `src/ui/styles/*.ts` define component styles with Panda
   `css()`; `src/ui/styles/classes.ts` exports `c()`, which keeps the semantic

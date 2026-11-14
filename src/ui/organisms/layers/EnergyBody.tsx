@@ -1,10 +1,17 @@
 import { priceColor } from "../../../render/charts";
 import { graphAttrs } from "../../../render/graph";
-import { formatPrice } from "../../../format";
+import {
+  formatNumber,
+  formatPrice,
+  resolveCurrency,
+  resolvePriceUnit,
+} from "../../../format";
 import type { HistoryCache } from "../../../data/history";
 import type {
   ArcusConfig,
   ArcusHass,
+  EnergyApplianceConfig,
+  EnergyEvConfig,
   HomeModel,
   Language,
   PriceModel,
@@ -135,6 +142,7 @@ interface PriceBarsProps {
   price: PriceModel;
   now: Date;
   t: Translator;
+  currency: string;
 }
 
 /**
@@ -142,7 +150,7 @@ interface PriceBarsProps {
  * legacy sheet, and carry the same `data-graph` attributes so the card's
  * hover readout can parse the plotted values back out.
  */
-function PriceBars({ price, now, t }: PriceBarsProps) {
+function PriceBars({ price, now, t, currency }: PriceBarsProps) {
   const values = price.values ?? [];
 
   if (!values.length) {
@@ -167,7 +175,7 @@ function PriceBars({ price, now, t }: PriceBarsProps) {
       mode: "bars",
       start: dayStart,
       end: dayStart + 86_400_000,
-      unit: "kr",
+      unit: currency,
       decimals: 2,
       series: [{ values }],
     }),
@@ -201,12 +209,113 @@ function PriceBars({ price, now, t }: PriceBarsProps) {
   );
 }
 
+interface EnergyReadingProps {
+  hass: ArcusHass;
+  history: HistoryCache;
+  t: Translator;
+  language: Language;
+}
+
+/** One optional EV block driven by `config.energy.ev`. */
+function EvBlock({
+  ev,
+  hass,
+  history,
+  t,
+  language,
+}: EnergyReadingProps & { ev: EnergyEvConfig }) {
+  const plugged = liveOn(hass, ev.plugged, undefined);
+  const value = (entityId: string, digits: number): string =>
+    formatNumber(liveNumber(hass, history, entityId, null), digits, language);
+
+  return (
+    <div className={c("block")}>
+      <div className={c("block-head")}>
+        <div className={c("block-label")}>{ev.name || t("energy.tesla")}</div>
+        <div className={c("block-label")}>
+          <b>{plugged ? t("energy.plugged") : t("energy.unplugged")}</b>
+        </div>
+      </div>
+      <div className={c("readings")}>
+        {ev.power ? (
+          <Readout
+            label={t("energy.power")}
+            value={value(ev.power, 0)}
+            unit={t("energy.w")}
+          />
+        ) : null}
+        {ev.session ? (
+          <Readout
+            label={t("energy.session")}
+            value={value(ev.session, 1)}
+            unit={t("energy.kwh")}
+          />
+        ) : null}
+        {ev.total ? (
+          <Readout
+            label={t("energy.total")}
+            value={value(ev.total, 0)}
+            unit={t("energy.kwh")}
+          />
+        ) : null}
+        {ev.soc ? (
+          <Readout label={t("solar.soc")} value={value(ev.soc, 0)} unit="%" />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/** The optional standby and appliance list driven by `config.energy`. */
+function AppliancesBlock({
+  standby,
+  appliances,
+  hass,
+  history,
+  t,
+  language,
+}: EnergyReadingProps & {
+  standby: string | undefined;
+  appliances: EnergyApplianceConfig[];
+}) {
+  const standbyValue = liveNumber(hass, history, standby, null);
+  const value = (entityId: string): string =>
+    formatNumber(liveNumber(hass, history, entityId, null), 0, language);
+
+  return (
+    <div className={c("block")}>
+      <div className={c("block-head")}>
+        <div className={c("block-label")}>{t("energy.appliances")}</div>
+        {standby ? (
+          <div className={c("block-label")}>
+            <b>
+              {t("energy.standbyKwh", {
+                value: formatNumber(standbyValue, 1, language),
+              })}
+            </b>
+          </div>
+        ) : null}
+      </div>
+      <div className={c("list")}>
+        {appliances.map((appliance, index) => (
+          <ListRow
+            key={`${appliance.entity}:${index}`}
+            icon={appliance.icon || "bolt"}
+            name={appliance.name}
+            value={value(appliance.entity)}
+            unit={t("energy.w")}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /**
  * The energy sheet, ported from `views/layers/energy.ts`.
  *
- * It is built from the typed price model only: Tesla, standby, and appliance
- * readings have no typed model section or config entity mapping, so those
- * legacy blocks stay omitted until the config grows an energy section.
+ * The price section always renders; the optional EV, standby, and appliance
+ * blocks come from `config.energy` and read their live values from `hass`.
  */
 export function EnergyBody(_props: LayerBodyProps) {
   const hass = useHass();
@@ -221,6 +330,16 @@ export function EnergyBody(_props: LayerBodyProps) {
   const language = languageOf(model, config, t);
   const price = priceSection(model);
   const nowDate = nowOf(now);
+  const currency = resolveCurrency(hass, config, language);
+  const priceUnit = resolvePriceUnit(hass, config, language);
+  const localizeSummary = (text: string): string =>
+    priceUnit === t("common.perKwh")
+      ? text
+      : text.replaceAll(t("common.perKwh"), priceUnit);
+  const localizeCurrency = (text: string): string =>
+    currency === t("energy.kr")
+      ? text
+      : text.replaceAll(t("energy.kr"), currency);
 
   if (!price || !Array.isArray(price.values) || !price.values.length) {
     return (
@@ -296,12 +415,18 @@ export function EnergyBody(_props: LayerBodyProps) {
   const sellText = formatPrice(sell, language);
   const spotText = formatPrice(spot, language);
   const summary = cheap
-    ? t("energy.summary", {
-        price: buyText,
-        start: cheapStart,
-        end: cheapEnd,
-      })
-    : `${buyText} ${t("common.perKwh")}`;
+    ? localizeSummary(
+        t("energy.summary", {
+          price: buyText,
+          start: cheapStart,
+          end: cheapEnd,
+        }),
+      )
+    : `${buyText} ${priceUnit}`;
+
+  const ev = config.energy?.ev;
+  const standby = config.energy?.standby;
+  const appliances = config.energy?.appliances ?? [];
 
   return (
     <div
@@ -324,21 +449,28 @@ export function EnergyBody(_props: LayerBodyProps) {
         <div className={c("block")}>
           <div className={c("big-read")}>
             {buyText}
-            <small>{t("common.perKwh")}</small>
+            <small>{priceUnit}</small>
           </div>
           <div className={c("block-note")}>
-            {t("energy.nowNote", { sell: sellText, spot: spotText })}
+            {localizeCurrency(
+              t("energy.nowNote", { sell: sellText, spot: spotText }),
+            )}
           </div>
           <div className={c("block")} style={{ marginTop: 18 }}>
             <div className={c("block-label")}>{t("energy.dayPrices")}</div>
-            <PriceBars price={price} now={nowDate} t={t} />
+            <PriceBars
+              price={price}
+              now={nowDate}
+              t={t}
+              currency={currency}
+            />
           </div>
           <div className={c("mini-grid")} style={{ marginTop: 12 }}>
             <div className={c("mini-stat")}>
               <div className={c("k")}>{t("energy.cheapest", { count: 3 })}</div>
               <div className={c("v")}>
                 {formatPrice(cheap?.avg ?? null, language)}
-                <small>{t("energy.kr")}</small>
+                <small>{currency}</small>
               </div>
               <div className={c("row-sub")}>
                 {cheap
@@ -367,25 +499,13 @@ export function EnergyBody(_props: LayerBodyProps) {
         <div className={c("block")}>
           <div className={c("block-label")}>{t("energy.pricesNow")}</div>
           <div className={c("readings")}>
-            <Readout
-              label={t("energy.buy")}
-              value={buyText}
-              unit={t("energy.kr")}
-            />
-            <Readout
-              label={t("energy.sell")}
-              value={sellText}
-              unit={t("energy.kr")}
-            />
-            <Readout
-              label={t("energy.spot")}
-              value={spotText}
-              unit={t("energy.kr")}
-            />
+            <Readout label={t("energy.buy")} value={buyText} unit={currency} />
+            <Readout label={t("energy.sell")} value={sellText} unit={currency} />
+            <Readout label={t("energy.spot")} value={spotText} unit={currency} />
             <Readout
               label={t("energy.nextHour")}
               value={formatPrice(next, language)}
-              unit={t("energy.kr")}
+              unit={currency}
             />
           </div>
         </div>
@@ -399,23 +519,42 @@ export function EnergyBody(_props: LayerBodyProps) {
               name={t("energy.lowest")}
               sub={t("common.today")}
               value={formatPrice(lowest, language)}
-              unit={t("energy.kr")}
+              unit={currency}
             />
             <ListRow
               icon="flame"
               name={t("energy.highest")}
               sub={t("common.today")}
               value={formatPrice(highest, language)}
-              unit={t("energy.kr")}
+              unit={currency}
             />
             <ListRow
               icon="clock"
               name={t("energy.previousHour")}
               value={formatPrice(previous, language)}
-              unit={t("energy.kr")}
+              unit={currency}
             />
           </div>
         </div>
+        {ev ? (
+          <EvBlock
+            ev={ev}
+            hass={hass}
+            history={history}
+            t={t}
+            language={language}
+          />
+        ) : null}
+        {standby || appliances.length ? (
+          <AppliancesBlock
+            standby={standby}
+            appliances={appliances}
+            hass={hass}
+            history={history}
+            t={t}
+            language={language}
+          />
+        ) : null}
         <div className={c("btn-row")}>
           <button
             type="button"

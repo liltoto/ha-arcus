@@ -1,5 +1,11 @@
 import { Icon } from "../atoms/Icon";
-import { useActions, useBindings, useModel, useTranslator } from "../hooks";
+import {
+  useActions,
+  useBindings,
+  useConfig,
+  useModel,
+  useTranslator,
+} from "../hooks";
 import { DayArc } from "./DayArc";
 import { c } from "../styles/classes";
 
@@ -7,12 +13,18 @@ import { c } from "../styles/classes";
  * The greeting, prayer shortcut, date, and current weather. The card owns the
  * derived copy in the bindings map; this organism only lays it out. The day arc
  * follows the text block and reads the same provider.
+ *
+ * The eyebrow opens the prayer sheet when the home has prayer times (or a
+ * prayer config); otherwise it becomes the "all layers" shortcut.
  */
 export function Hero() {
   const actions = useActions();
   const bindings = useBindings();
   const model = useModel();
+  const config = useConfig();
   const t = useTranslator();
+  const hasPrayers = Boolean(model.prayers?.times?.length || config.prayers);
+  const eyebrowRoute = hasPrayers ? "bon" : "alle";
 
   return (
     <>
@@ -20,9 +32,9 @@ export function Hero() {
         <div>
           <button
             className={c("eyebrow")}
-            data-nav="bon"
-            aria-label={t("hero.seePrayers")}
-            onClick={() => actions.navigate("bon")}
+            data-nav={eyebrowRoute}
+            aria-label={hasPrayers ? t("hero.seePrayers") : t("hero.seeLayers")}
+            onClick={() => actions.navigate(eyebrowRoute)}
           >
             <span>{bindings.eyebrow}</span>
             <span className={c("eyebrow-arrow")}>

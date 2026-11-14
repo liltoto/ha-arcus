@@ -234,6 +234,86 @@ describe("SolarBody", () => {
     );
   });
 
+  it("renders MPPT 1/2 for a pv1/pv2-only system", () => {
+    const base = baseModel();
+    const config = makeConfig({
+      solar: {
+        pv1: "sensor.inverter_pv1_power",
+        pv2: "sensor.inverter_pv2_power",
+        pv1Voltage: "sensor.inverter_pv1_voltage",
+        pv2Voltage: "sensor.inverter_pv2_voltage",
+        pv3: undefined,
+        pv4: undefined,
+      },
+    });
+    const solar = {
+      ...base.solar!,
+      pv1: 1200,
+      pv1Voltage: 210.4,
+      pv1Current: 5.7,
+      pv2: 900,
+      pv2Voltage: 198.2,
+      pv2Current: 4.5,
+      pv3: null,
+      pv3Voltage: null,
+      pv3Current: null,
+      pv4: null,
+      pv4Voltage: null,
+      pv4Current: null,
+    };
+    const { container } = renderSolar("produktion", {
+      config,
+      model: { ...base, solar },
+    });
+
+    expect(screen.getAllByText("MPPT 1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("MPPT 2").length).toBeGreaterThan(0);
+    expect(screen.getByText("Spænding 1")).toBeInTheDocument();
+    expect(screen.getByText("Spænding 2")).toBeInTheDocument();
+    expect(screen.queryByText("MPPT 3")).toBeNull();
+    expect(screen.queryByText("MPPT 4")).toBeNull();
+
+    const strings = container.querySelector(
+      '[data-chart="solar-strings-24h"]',
+    ) as HTMLElement;
+    expect(strings).not.toBeNull();
+    const stringsBlock = strings.closest(".block") as HTMLElement;
+    expect(stringsBlock.querySelector(".legend")).toHaveTextContent("MPPT 1");
+    expect(stringsBlock.querySelector(".legend")).toHaveTextContent("MPPT 2");
+
+    const production = container.querySelector(
+      '[data-chart="solar-production-forecast"]',
+    ) as HTMLElement;
+    expect(production.getAttribute("data-gs")).toContain("MPPT 1");
+    expect(production.getAttribute("data-gs")).toContain("MPPT 2");
+  });
+
+  it("summarises production without a battery", () => {
+    const base = baseModel();
+    const config = makeConfig({
+      solar: { batterySoc: undefined, batteryPower: undefined },
+    });
+    const solar = { ...base.solar!, batterySoc: null, batteryPower: null };
+    const { container } = renderSolar(null, {
+      config,
+      model: { ...base, solar },
+    });
+
+    const summary = container.querySelector(".sheet-sum") as HTMLElement;
+    expect(summary).toHaveTextContent("15,3 kWh i dag · 0 W nu");
+    expect(summary).not.toHaveTextContent("batteri");
+  });
+
+  it("uses a configured currency on the payback tab", () => {
+    const { container } = renderSolar("afkast", {
+      config: makeConfig({ units: { currency: "EUR" } }),
+    });
+
+    const readings = container.querySelector(".readings") as HTMLElement;
+    expect(within(readings).getAllByText("EUR").length).toBeGreaterThan(0);
+    expect(within(readings).queryByText("kr")).toBeNull();
+  });
+
   it("shows the calm empty state without solar data", () => {
     const base = baseModel();
     const { container } = renderSolar(null, {

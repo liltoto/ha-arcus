@@ -6,19 +6,29 @@ import type {
   AtmosphereSetting,
   ChapterKey,
   ChaptersConfig,
+  CustomVitalConfig,
   DensitySetting,
   EconomyConfig,
+  EnergyApplianceConfig,
+  EnergyConfig,
+  EnergyEvConfig,
+  HeatingConfig,
   LanguageSetting,
   NetworkConfig,
   OpeningOverrideConfig,
   PrayersConfig,
   PriceConfig,
   QuickActionConfig,
+  RoomKind,
   RoomOverrideConfig,
   RoomsConfig,
   SecurityConfig,
   SolarConfig,
+  TemperatureUnit,
+  UnitsConfig,
   VentilationConfig,
+  VitalItemConfig,
+  VitalPresetKey,
   WaterConfig,
 } from "./types";
 
@@ -45,6 +55,21 @@ const LANGUAGE_SETTINGS = ["auto", "da", "en"] as const;
 const APPEARANCE_SETTINGS = ["auto", "dark", "light"] as const;
 const ATMOSPHERE_SETTINGS = ["auto", "night", "dawn", "day", "dusk"] as const;
 const DENSITY_SETTINGS = ["comfortable", "compact"] as const;
+const ROOM_KINDS: readonly RoomKind[] = ["indoor", "outdoor", "utility"];
+const TEMPERATURE_UNITS: readonly TemperatureUnit[] = ["°C", "°F"];
+const VITAL_PRESET_KEYS: readonly VitalPresetKey[] = [
+  "indoor",
+  "outdoor",
+  "price",
+  "battery",
+  "solar",
+  "power",
+  "humidity",
+  "co2",
+  "water",
+  "security",
+  "lights",
+];
 
 const CHAPTER_KEYS: readonly ChapterKey[] = [
   "energi",
@@ -80,6 +105,8 @@ const SOLAR_KEYS = [
   "load",
   "grid",
   "batteryPower",
+  "pv1",
+  "pv2",
   "pv3",
   "pv4",
   "totalProduction",
@@ -101,6 +128,10 @@ const SOLAR_KEYS = [
   "gridL1",
   "gridL2",
   "gridL3",
+  "pv1Voltage",
+  "pv1Current",
+  "pv2Voltage",
+  "pv2Current",
   "pv3Voltage",
   "pv3Current",
   "pv4Voltage",
@@ -132,6 +163,7 @@ const PRAYERS_KEYS = [
   "sunrise",
 ] as const;
 const WATER_KEYS = [
+  "softenerName",
   "state",
   "flow",
   "day",
@@ -161,6 +193,7 @@ const NETWORK_KEYS = [
 ] as const;
 const ECONOMY_KEYS = ["bond", "change", "yield", "duration"] as const;
 const VENTILATION_KEYS = [
+  "name",
   "temperature",
   "humidity",
   "step",
@@ -195,6 +228,7 @@ const ROOM_ENTITY_KEYS = [
   "media",
   "leak",
   "battery",
+  "lock",
 ] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -346,15 +380,187 @@ function normalizeSecurity(value: unknown): SecurityConfig | undefined {
     "security.windowAlert",
   );
   const windows = readOptionalString(value.windows, "security.windows");
+  const alarm = readOptionalString(value.alarm, "security.alarm");
   if (windowAlert !== undefined) out.windowAlert = windowAlert;
   if (windows !== undefined) out.windows = windows;
+  if (alarm !== undefined) out.alarm = alarm;
   if (value.leaks !== undefined && value.leaks !== null) {
     out.leaks = readStringArray(value.leaks, "security.leaks");
   }
   if (value.batteries !== undefined && value.batteries !== null) {
     out.batteries = readStringArray(value.batteries, "security.batteries");
   }
+  if (value.locks !== undefined && value.locks !== null) {
+    out.locks = readStringArray(value.locks, "security.locks");
+  }
   return Object.keys(out).length ? out : undefined;
+}
+
+function normalizeHeating(value: unknown): HeatingConfig | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!isRecord(value)) fail("heating must be an object.");
+  const out: HeatingConfig = {};
+  if (value.include !== undefined && value.include !== null) {
+    out.include = readStringArray(value.include, "heating.include");
+  }
+  if (value.exclude !== undefined && value.exclude !== null) {
+    out.exclude = readStringArray(value.exclude, "heating.exclude");
+  }
+  if (value.reserve !== undefined && value.reserve !== null) {
+    out.reserve = readStringArray(value.reserve, "heating.reserve");
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+const ENERGY_EV_KEYS = [
+  "name",
+  "plugged",
+  "power",
+  "session",
+  "total",
+  "soc",
+] as const;
+
+function assignIfDefined<T extends object>(
+  target: T,
+  key: keyof T,
+  value: unknown,
+): void {
+  if (value === undefined || value === null) return;
+  (target as Record<keyof T, unknown>)[key] = value;
+}
+
+function normalizeEv(value: unknown): EnergyEvConfig | undefined {
+  if (!isRecord(value)) fail("energy.ev must be an object.");
+  const ev: EnergyEvConfig = {};
+  for (const key of ENERGY_EV_KEYS) {
+    assignIfDefined(ev, key, readOptionalString(value[key], `energy.ev.${key}`));
+  }
+  return Object.keys(ev).length ? ev : undefined;
+}
+
+function normalizeAppliance(
+  item: unknown,
+  index: number,
+): EnergyApplianceConfig {
+  const field = `energy.appliances[${index}]`;
+  if (!isRecord(item)) fail(`${field} must be an object.`);
+  const name = readOptionalString(item.name, `${field}.name`);
+  const entity = readOptionalString(item.entity, `${field}.entity`);
+  if (!name) fail(`${field}.name is required.`);
+  if (!entity) fail(`${field}.entity is required.`);
+  const appliance: EnergyApplianceConfig = { name, entity };
+  assignIfDefined(appliance, "icon", readOptionalString(item.icon, `${field}.icon`));
+  return appliance;
+}
+
+function normalizeAppliances(value: unknown): EnergyApplianceConfig[] | undefined {
+  if (!Array.isArray(value)) fail("energy.appliances must be an array.");
+  const appliances = value.map(normalizeAppliance);
+  return appliances.length ? appliances : undefined;
+}
+
+function normalizeEnergy(value: unknown): EnergyConfig | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!isRecord(value)) fail("energy must be an object.");
+  const out: EnergyConfig = {};
+  assignIfDefined(out, "standby", readOptionalString(value.standby, "energy.standby"));
+  if (value.ev !== undefined && value.ev !== null) {
+    out.ev = normalizeEv(value.ev);
+  }
+  if (value.appliances !== undefined && value.appliances !== null) {
+    out.appliances = normalizeAppliances(value.appliances);
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+function normalizeUnits(value: unknown): UnitsConfig | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!isRecord(value)) fail("units must be an object.");
+  const out: UnitsConfig = {};
+  const currency = readOptionalString(value.currency, "units.currency");
+  const priceUnit = readOptionalString(value.price_unit, "units.price_unit");
+  const water = readOptionalString(value.water, "units.water");
+  if (currency !== undefined) out.currency = currency;
+  if (priceUnit !== undefined) out.price_unit = priceUnit;
+  if (water !== undefined) out.water = water;
+  if (value.temperature !== undefined && value.temperature !== null) {
+    out.temperature = readEnum<TemperatureUnit>(
+      value.temperature,
+      "units.temperature",
+      TEMPERATURE_UNITS,
+      "°C",
+    );
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+const VITAL_STRING_KEYS = ["label", "entity", "unit", "route", "color"] as const;
+
+function normalizeVitalDecimals(
+  value: unknown,
+  field: string,
+): number | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    fail(`${field}.decimals must be a number.`);
+  }
+  return Math.max(0, Math.trunc(value));
+}
+
+function normalizeVital(item: unknown, index: number): VitalItemConfig {
+  const field = `vitals[${index}]`;
+  if (typeof item === "string") {
+    return readEnum<VitalPresetKey>(item, field, VITAL_PRESET_KEYS, "indoor");
+  }
+  if (!isRecord(item)) {
+    fail(`${field} must be a preset key or a custom vital object.`);
+  }
+
+  const vital: CustomVitalConfig = {};
+  if (item.key !== undefined && item.key !== null) {
+    vital.key = readEnum<VitalPresetKey>(
+      item.key,
+      `${field}.key`,
+      VITAL_PRESET_KEYS,
+      "indoor",
+    );
+  }
+  for (const key of VITAL_STRING_KEYS) {
+    assignIfDefined(
+      vital,
+      key,
+      readOptionalString(item[key], `${field}.${key}`),
+    );
+  }
+  assignIfDefined(vital, "decimals", normalizeVitalDecimals(item.decimals, field));
+
+  if (!vital.key && !vital.entity) {
+    fail(`${field} requires either a preset key or an entity.`);
+  }
+  return vital;
+}
+
+function normalizeVitals(value: unknown): VitalItemConfig[] | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!Array.isArray(value)) fail("vitals must be an array.");
+  return value.map(normalizeVital);
+}
+
+function normalizeChapterOrder(value: unknown): ChapterKey[] | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!Array.isArray(value)) fail("chapter_order must be an array.");
+  const out: ChapterKey[] = [];
+  value.forEach((item, index) => {
+    const key = readEnum<ChapterKey>(
+      item,
+      `chapter_order[${index}]`,
+      CHAPTER_KEYS,
+      "energi",
+    );
+    if (!out.includes(key)) out.push(key);
+  });
+  return out;
 }
 
 function normalizeQuickActions(value: unknown): QuickActionConfig[] {
@@ -409,6 +615,68 @@ function normalizeOpenings(
   });
 }
 
+function assignRoomEntities(
+  room: RoomOverrideConfig,
+  rawRoom: Record<string, unknown>,
+  field: string,
+): void {
+  for (const key of ROOM_ENTITY_KEYS) {
+    assignIfDefined(
+      room,
+      key,
+      readOptionalString(rawRoom[key], `${field}.${key}`),
+    );
+  }
+}
+
+function assignRoomIdentity(
+  room: RoomOverrideConfig,
+  rawRoom: Record<string, unknown>,
+  field: string,
+): void {
+  assignIfDefined(room, "name", readOptionalString(rawRoom.name, `${field}.name`));
+  assignIfDefined(room, "tint", readOptionalString(rawRoom.tint, `${field}.tint`));
+  assignIfDefined(room, "icon", readOptionalString(rawRoom.icon, `${field}.icon`));
+  if (rawRoom.kind !== undefined && rawRoom.kind !== null) {
+    room.kind = readEnum<RoomKind>(
+      rawRoom.kind,
+      `${field}.kind`,
+      ROOM_KINDS,
+      "indoor",
+    );
+  }
+  if (rawRoom.wide !== undefined && rawRoom.wide !== null) {
+    room.wide = readBoolean(rawRoom.wide, `${field}.wide`, false);
+  }
+}
+
+function assignRoomLists(
+  room: RoomOverrideConfig,
+  rawRoom: Record<string, unknown>,
+  field: string,
+): void {
+  if (rawRoom.lights !== undefined && rawRoom.lights !== null) {
+    room.lights = readEntityList(rawRoom.lights, `${field}.lights`) ?? [];
+  }
+  if (rawRoom.covers !== undefined && rawRoom.covers !== null) {
+    room.covers = readEntityList(rawRoom.covers, `${field}.covers`) ?? [];
+  }
+  if (rawRoom.openings !== undefined && rawRoom.openings !== null) {
+    room.openings = normalizeOpenings(rawRoom.openings, `${field}.openings`);
+  }
+}
+
+function normalizeRoomOverride(
+  rawRoom: Record<string, unknown>,
+  field: string,
+): RoomOverrideConfig {
+  const room: RoomOverrideConfig = {};
+  assignRoomEntities(room, rawRoom, field);
+  assignRoomIdentity(room, rawRoom, field);
+  assignRoomLists(room, rawRoom, field);
+  return room;
+}
+
 function normalizeRooms(value: unknown): RoomsConfig {
   if (value === undefined || value === null) return {};
   if (!isRecord(value)) fail("rooms must be an object keyed by area ID.");
@@ -417,22 +685,7 @@ function normalizeRooms(value: unknown): RoomsConfig {
     if (!areaId.trim()) fail("rooms keys must be area IDs.");
     const field = `rooms.${areaId}`;
     if (!isRecord(rawRoom)) fail(`${field} must be an object.`);
-    const room: RoomOverrideConfig = {};
-    for (const key of ROOM_ENTITY_KEYS) {
-      const entity = readOptionalString(rawRoom[key], `${field}.${key}`);
-      if (entity !== undefined) room[key] = entity;
-    }
-    const name = readOptionalString(rawRoom.name, `${field}.name`);
-    const tint = readOptionalString(rawRoom.tint, `${field}.tint`);
-    if (name !== undefined) room.name = name;
-    if (tint !== undefined) room.tint = tint;
-    if (rawRoom.lights !== undefined && rawRoom.lights !== null) {
-      room.lights = readEntityList(rawRoom.lights, `${field}.lights`) ?? [];
-    }
-    if (rawRoom.openings !== undefined && rawRoom.openings !== null) {
-      room.openings = normalizeOpenings(rawRoom.openings, `${field}.openings`);
-    }
-    out[areaId] = room;
+    out[areaId] = normalizeRoomOverride(rawRoom, field);
   }
   return out;
 }
@@ -510,28 +763,58 @@ export function normalizeConfig(input: unknown): ArcusConfig {
     [
       keyof Pick<
         ArcusConfig,
+        | "auto_discover"
+        | "group_by_floor"
+        | "person"
+        | "units"
+        | "vitals"
+        | "chapter_order"
         | "weather"
         | "price"
+        | "energy"
         | "solar"
         | "prayers"
         | "water"
         | "network"
         | "economy"
         | "ventilation"
+        | "heating"
         | "security"
       >,
       unknown,
       (value: unknown) => unknown,
     ]
   > = [
+    [
+      "auto_discover",
+      raw.auto_discover,
+      (value) =>
+        value === undefined || value === null
+          ? undefined
+          : readBoolean(value, "auto_discover", true),
+    ],
+    [
+      "group_by_floor",
+      raw.group_by_floor,
+      (value) =>
+        value === undefined || value === null
+          ? undefined
+          : readBoolean(value, "group_by_floor", false),
+    ],
+    ["person", raw.person, (value) => readOptionalString(value, "person")],
+    ["units", raw.units, normalizeUnits],
+    ["vitals", raw.vitals, normalizeVitals],
+    ["chapter_order", raw.chapter_order, normalizeChapterOrder],
     ["weather", raw.weather, (value) => readOptionalString(value, "weather")],
     ["price", raw.price, normalizePrice],
+    ["energy", raw.energy, normalizeEnergy],
     ["solar", raw.solar, normalizeSolar],
     ["prayers", raw.prayers, normalizePrayers],
     ["water", raw.water, normalizeWater],
     ["network", raw.network, normalizeNetwork],
     ["economy", raw.economy, normalizeEconomy],
     ["ventilation", raw.ventilation, normalizeVentilation],
+    ["heating", raw.heating, normalizeHeating],
     ["security", raw.security, normalizeSecurity],
   ];
 

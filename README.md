@@ -102,6 +102,15 @@ appearance: auto # auto | dark | light
 atmosphere: auto # auto | night | dawn | day | dusk
 density: comfortable # comfortable | compact
 show_weather_forecast: true
+auto_discover: true
+group_by_floor: false
+person: person.alex
+units:
+  currency: EUR
+  price_unit: €/kWh
+  temperature: "°F"
+vitals: [indoor, outdoor, price, battery]
+chapter_order: [lys, varme, sikkerhed]
 ```
 
 | Option                  | Default       | Description                                                                                                        |
@@ -113,6 +122,15 @@ show_weather_forecast: true
 | `atmosphere`            | `auto`        | `auto` follows the time of day: night, dawn, day, or dusk.                                                         |
 | `density`               | `comfortable` | `comfortable` is the designed layout; `compact` tightens card padding, grid gaps, and sheet padding.               |
 | `show_weather_forecast` | `true`        | Show the short forecast strip under the vitals.                                                                    |
+| `auto_discover`         | `true`        | Fill unconfigured sections (weather, price, solar, water, ventilation, prayers, security) from the HA registries.  |
+| `group_by_floor`        | `false`       | Group the room grid by Home Assistant floor.                                                                        |
+| `person`                | –             | Pin the presence pill to one `person.*` entity instead of "anyone home".                                           |
+| `units`                 | HA defaults   | Override `currency`, `price_unit`, `temperature` (`°C`/`°F`), and `water` labels.                                  |
+| `vitals`                | auto          | Replace the hero vitals with presets (`indoor`, `outdoor`, `price`, `battery`, `solar`, `power`, `humidity`, `co2`, `water`, `security`, `lights`) or custom `{ label, entity, unit, route }` tiles. |
+| `chapter_order`         | legacy order  | Reorder the chapter grid; disabled chapters stay hidden.                                                           |
+
+Arcus reads `hass.config.currency` and `hass.config.unit_system` when `units` is not set, so a Home Assistant configured in USD/°F does not need any Arcus-specific units.
+
 
 ### Areas
 
@@ -155,6 +173,20 @@ price:
   previous: sensor.nord_pool_previous_price
   tomorrow: binary_sensor.nord_pool_tomorrow_available
 
+energy:
+  standby: sensor.standby_power
+  ev:
+    name: Tesla
+    plugged: binary_sensor.ev_plugged
+    power: sensor.ev_power
+    session: sensor.ev_session
+    total: sensor.ev_total
+    soc: sensor.ev_soc
+  appliances:
+    - name: Freezer
+      entity: sensor.freezer_power
+      icon: snow
+
 solar:
   power: sensor.solar_power
   today: sensor.solar_today
@@ -164,6 +196,13 @@ solar:
   load: sensor.home_load
   grid: sensor.grid_power
   batteryPower: sensor.battery_power
+  pv1: sensor.pv1_power
+  pv2: sensor.pv2_power
+  pv3: sensor.pv3_power
+  pv4: sensor.pv4_power
+  gridL1: sensor.grid_l1
+  gridL2: sensor.grid_l2
+  gridL3: sensor.grid_l3
 
 prayers:
   fajr: sensor.fajr
@@ -174,6 +213,7 @@ prayers:
   sunrise: sensor.sunrise
 
 water:
+  softenerName: EcoWater
   state: sensor.water_state
   flow: sensor.water_flow
   day: sensor.water_today
@@ -185,6 +225,11 @@ water:
   saltDays: sensor.water_salt_days
   capacity: sensor.water_capacity
   holiday: input_boolean.water_holiday
+
+heating:
+  include: [climate.living_room]
+  exclude: [climate.guest_room]
+  reserve: [climate.reserve_1]
 
 network:
   router: sensor.router_latency
@@ -203,6 +248,7 @@ economy:
   duration: sensor.bond_duration
 
 ventilation:
+  name: Dantherm HCV 400
   climate: climate.ventilation
   temperature: sensor.ventilation_temperature
   humidity: sensor.ventilation_humidity
@@ -214,13 +260,23 @@ ventilation:
 security:
   windowAlert: input_boolean.window_alert
   windows: sensor.open_windows
+  alarm: alarm_control_panel.home
   leaks:
     - binary_sensor.kitchen_leak
     - binary_sensor.bathroom_leak
+  locks:
+    - lock.front_door
   batteries:
     - sensor.door_battery
     - sensor.window_battery
 ```
+
+Every section is optional and independent:
+
+- A home with no battery hides the battery tab and the battery vital; solar-only homes still get production, forecast, and payback.
+- A home with a water meter but no softener hides the salt/capacity block automatically. Set `softenerName` only to rename a brand you do have.
+- A home with no duct sensors renders the ventilation controls without the five-node airflow diagram.
+- A home with no mortgage bond simply has no Economy chapter; hide `oekonomi` if the section is not relevant.
 
 See [`examples/hjem.yaml`](examples/hjem.yaml) for the complete home configuration used during development, including the detailed solar and ventilation keys.
 
@@ -232,8 +288,20 @@ Arcus reads the area, device, and entity registries and rebuilds when they chang
 - An entity belongs to a room when its own `area_id` matches, or when it has no area and its device is in that area.
 - Hidden, disabled, diagnostic, and configuration entities are skipped.
 - A light group is used as the room's master light, and its members are not shown twice.
-- Openings, leak sensors, climate, media players, and batteries are matched by domain and device class.
+- Openings, covers, locks, leak sensors, climate, media players, and batteries are matched by domain and device class.
 - A missing or unavailable entity renders as `–`; it never breaks the card.
+
+With `auto_discover` enabled (the default), Arcus also fills unconfigured chapters from what Home Assistant already exposes:
+
+- `weather.*`, preferring `weather.forecast_home` and `weather.home`
+- spot-price integrations (Nordpool, Energi Data Service, Tibber, Octopus, Amber) by their forecast and current-price attributes
+- solar inverters, forecast providers, MPPT strings, and home batteries
+- smart water meters and softeners
+- ventilation units (Nilan, Vallox, Dantherm, Flexit, Duka, Komfovent)
+- Islamic prayer times
+- moisture leaks, locks, alarm panels, and sensor batteries
+
+Anything you put in `weather`, `price`, `solar`, `water`, `ventilation`, `prayers`, or `security` wins; auto-discovery only fills blanks. Set `auto_discover: false` to turn it off entirely.
 
 Add a room override only where discovery needs help:
 
@@ -244,12 +312,19 @@ rooms:
     humidity: sensor.stue_humidity
     lights: [light.stue]
     openings: [binary_sensor.stue_window]
+  garage:
+    name: Garage
+    kind: outdoor
+    icon: shed
+    wide: true
+    covers: [cover.garage_door]
+    lock: lock.garage_door
   kokken:
     name: Køkken
     tint: "#c98a5e"
 ```
 
-Room keys: `temp`, `humidity`, `co2`, `pm25`, `lights`, `openings`, `climate`, `media`, `leak`, `battery`, `name`, and `tint`. `openings` accepts entity IDs or `{ id, name, kind }` objects.
+Room keys: `temp`, `humidity`, `co2`, `pm25`, `lights`, `openings`, `covers`, `lock`, `climate`, `media`, `leak`, `battery`, `name`, `tint`, `icon`, `kind`, and `wide`. `openings` accepts entity IDs or `{ id, name, kind }` objects; `kind` is `indoor`, `outdoor`, or `utility`.
 
 ### Chapters
 
@@ -259,9 +334,11 @@ Chapters appear automatically when they have data. Force one off or on with:
 chapters:
   sol: false
   alarmer: true
+chapter_order: [energi, sol, lys, varme]
 ```
 
 The keys are `energi`, `sol`, `vand`, `sikkerhed`, `ventilation`, `teknik`, `oekonomi`, `lys`, `varme`, and `alarmer`.
+
 
 ### Quick actions
 
@@ -298,7 +375,7 @@ Supported actions are `perform-action` (and the older `call-service`), `toggle`,
 
 ### Visual editor
 
-The card editor exposes the title, subtitle, language, appearance, atmosphere, density, area selection, and the global entity fields. Quick actions, room overrides, and chapters live in the advanced JSON block. The strategy editor adds the dashboard and view titles and embeds the same card editor, so there is one implementation for both entry points.
+The card editor exposes the title, subtitle, language, appearance, atmosphere, density, auto-discovery and floor toggles, unit overrides, chapter toggles, area selection, and the global entity fields. Entity inputs autocomplete from the live Home Assistant state list, and auto-discovered values appear as placeholders, so most homes only need to review what Arcus already found. Quick actions and detailed room overrides still live in the advanced JSON block. The strategy editor adds the dashboard and view titles and embeds the same card editor, so there is one implementation for both entry points.
 
 ## Troubleshooting
 
@@ -308,7 +385,7 @@ The card editor exposes the title, subtitle, language, appearance, atmosphere, d
 
 **The card or strategy does not appear after an update.** Hard refresh the browser. The Marketplace adds the resource with a version query such as `?v=...`; a cached module can survive a normal reload. Check **Settings → Dashboards → Resources** for one Arcus entry and remove duplicates. If the `www` folder did not exist when Home Assistant started, restart Home Assistant once so the Marketplace can create it.
 
-**The strategy is not in the picker.** Reload the browser and check the browser console for `Arcus v0.3.1`. If the module did not load, verify the resource URL and that its type is **JavaScript module**. You can always paste the strategy YAML into the raw dashboard editor.
+**The strategy is not in the picker.** Reload the browser and check the browser console for `Arcus v0.4.0`. If the module did not load, verify the resource URL and that its type is **JavaScript module**. You can always paste the strategy YAML into the raw dashboard editor.
 
 **A configuration error appears.** Arcus reports the field that failed, for example `areas.include must be an array of strings`. Check that lists are lists, booleans are `true` or `false`, and enum values are spelled as shown above.
 

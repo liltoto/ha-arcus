@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import type { HistoryCache } from "../../../src/data/history";
@@ -7,6 +7,7 @@ import { SecurityBody } from "../../../src/ui/organisms/layers/SecurityBody";
 import { ArcusProvider } from "../../../src/ui/providers/ArcusProvider";
 import type { ArcusHass } from "../../../src/types";
 import type { ArcusRoute } from "../../../src/ui/types";
+import { makeConfig } from "../../fixtures/home";
 import { makeArcusProps } from "../home-test-utils";
 import { renderLayer } from "../layer-test-utils";
 
@@ -26,6 +27,33 @@ function hassWithStates(
 
 function defaultHass() {
   return makeArcusProps().hass;
+}
+
+function hassWithEntity(
+  base: ArcusHass,
+  entityId: string,
+  state: string,
+  attributes: Record<string, unknown> = {},
+): ArcusHass {
+  return {
+    ...base,
+    states: {
+      ...base.states,
+      [entityId]: {
+        entity_id: entityId,
+        state,
+        attributes,
+        last_changed: "2026-11-13T00:00:00.000Z",
+        last_updated: "2026-11-13T00:00:00.000Z",
+      },
+    },
+  };
+}
+
+function block(container: HTMLElement, label: string): HTMLElement {
+  return [...container.querySelectorAll<HTMLElement>(".block")].find(
+    (entry) => entry.querySelector(".block-label")?.textContent === label,
+  )!;
 }
 
 describe("security sheet", () => {
@@ -88,6 +116,114 @@ describe("security sheet", () => {
     expect(batteryBar?.querySelector("i")).toHaveStyle({ width: "17%" });
     expect(batteryBar?.closest(".row")).toHaveTextContent("skift snart");
     expect(batteryBar?.closest(".row")).toHaveTextContent("17%");
+  });
+
+  test("lists locks and unlocks a locked door", () => {
+    const lockId = "lock.front_door";
+    const base = defaultHass();
+    const hass: ArcusHass = {
+      ...hassWithEntity(base, lockId, "locked", {
+        friendly_name: "Hoveddør",
+      }),
+      entities: {
+        ...base.entities,
+        [lockId]: { entity_id: lockId, area_id: "stue" },
+      },
+    };
+    const config = makeConfig({ security: { locks: [lockId] } });
+    const { container, props } = renderLayer(SecurityBody, {
+      hass,
+      config,
+      route: SECURITY_ROUTE,
+    });
+
+    const lockBlock = block(container, "Låse");
+    const row = within(lockBlock)
+      .getByText("Hoveddør", { selector: ".row-name" })
+      .closest(".row") as HTMLElement;
+    expect(row.querySelector(".row-sub")).toHaveTextContent("Stue");
+    expect(row.querySelector(".chip")).toHaveTextContent("LÅST");
+
+    fireEvent.click(within(row).getByRole("button", { name: "Hoveddør" }));
+    expect(props.actions.callService).toHaveBeenCalledWith(
+      "lock",
+      "unlock",
+      {},
+      { entity_id: lockId },
+    );
+  });
+
+  test("maps the alarm panel state labels", () => {
+    const alarmId = "alarm_control_panel.home";
+    const config = makeConfig({ security: { alarm: alarmId } });
+    const cases = [
+      ["armed_home", "Tilkoblet hjemme"],
+      ["armed_away", "Tilkoblet ude"],
+      ["disarmed", "Frakoblet"],
+    ] as const;
+
+    for (const [state, label] of cases) {
+      const hass = hassWithEntity(defaultHass(), alarmId, state, {
+        friendly_name: "Alarmanlæg",
+      });
+      const { container, unmount } = renderLayer(SecurityBody, {
+        hass,
+        config,
+        route: SECURITY_ROUTE,
+      });
+
+      expect(
+        block(container, "Alarmanlæg").querySelector(".block-head b"),
+      ).toHaveTextContent(label);
+      unmount();
+    }
+  });
+
+  test("arms and disarms the alarm panel", () => {
+    const alarmId = "alarm_control_panel.home";
+    const hass = hassWithEntity(defaultHass(), alarmId, "disarmed", {
+      friendly_name: "Alarmanlæg",
+    });
+    const config = makeConfig({ security: { alarm: alarmId } });
+    const { container, props } = renderLayer(SecurityBody, {
+      hass,
+      config,
+      route: SECURITY_ROUTE,
+    });
+
+    fireEvent.click(
+      container.querySelector<HTMLButtonElement>(
+        '[data-act="alarm-arm-home"]',
+      )!,
+    );
+    expect(props.actions.callService).toHaveBeenCalledWith(
+      "alarm_control_panel",
+      "alarm_arm_home",
+      {},
+      { entity_id: alarmId },
+    );
+
+    fireEvent.click(
+      container.querySelector<HTMLButtonElement>(
+        '[data-act="alarm-arm-away"]',
+      )!,
+    );
+    expect(props.actions.callService).toHaveBeenCalledWith(
+      "alarm_control_panel",
+      "alarm_arm_away",
+      {},
+      { entity_id: alarmId },
+    );
+
+    fireEvent.click(
+      container.querySelector<HTMLButtonElement>('[data-act="alarm-disarm"]')!,
+    );
+    expect(props.actions.callService).toHaveBeenCalledWith(
+      "alarm_control_panel",
+      "alarm_disarm",
+      {},
+      { entity_id: alarmId },
+    );
   });
 
   test("toggles the window alert without confirmation when it is off", async () => {
@@ -224,5 +360,30 @@ describe("heating sheet", () => {
     expect(container.querySelector("[data-spark]")).toBeNull();
     expect(graph?.querySelector("path")?.getAttribute("d")).not.toBe("");
     expect(container.querySelector(".chart-box")).not.toHaveClass("no-data");
+  });
+
+  test("treats a cool climate zone as a valid zone", () => {
+    const climateId = "climate.loft_aircon";
+    const hass = hassWithEntity(defaultHass(), climateId, "cool", {
+      friendly_name: "Loft",
+      current_temperature: 24.2,
+      temperature: 22,
+      min_temp: 16,
+      max_temp: 30,
+      hvac_modes: ["off", "cool", "heat_cool"],
+      hvac_action: "cooling",
+    });
+    const { container } = renderLayer(HeatingBody, {
+      route: HEATING_ROUTE,
+      hass,
+    });
+
+    expect(container.querySelector(".sheet-sum")).toHaveTextContent(
+      "9 zoner · 0 med åbne vinduer",
+    );
+    const row = screen
+      .getByText("Loft", { selector: ".list .row-name" })
+      .closest(".row") as HTMLElement;
+    expect(row.querySelector(".row-sub")).toHaveTextContent("24,2° nu · køler");
   });
 });

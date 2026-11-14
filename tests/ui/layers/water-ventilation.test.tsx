@@ -163,6 +163,38 @@ describe("WaterBody", () => {
     );
   });
 
+  test("names an unnamed leak sensor after its area", () => {
+    const base = makeArcusProps();
+    const leakId = "binary_sensor.utility_leak";
+    const hass = {
+      ...base.hass,
+      states: {
+        ...base.hass.states,
+        [leakId]: {
+          state: "off",
+          attributes: {},
+          last_changed: "2026-11-13T00:00:00+01:00",
+          last_updated: "2026-11-13T00:00:00+01:00",
+        },
+      },
+      entities: {
+        ...base.hass.entities,
+        [leakId]: { entity_id: leakId, area_id: "bryggers" },
+      },
+    };
+    const config = makeConfig({
+      security: { ...base.config.security, leaks: [leakId] },
+    });
+
+    const { container } = renderLayer(WaterBody, {
+      route: WATER_ROUTE,
+      hass,
+      config,
+    });
+
+    expect(container).toHaveTextContent("Bryggers");
+  });
+
   test("falls back to an empty state without water data", () => {
     const base = buildModel(makeHass(), makeConfig());
     const model = { ...base, water: undefined };
@@ -254,6 +286,47 @@ describe("VentilationBody", () => {
     ).toEqual(["4,5°", "22,8°", "23,2°", "23,2°", "10,8°"]);
     expect(svg.querySelectorAll("circle")).toHaveLength(5);
     expect(svg.querySelectorAll("path[marker-end]")).toHaveLength(4);
+  });
+
+  test("uses a configured system name in the airflow and controls", () => {
+    const config = makeConfig({ ventilation: { name: "Vallox" } });
+    const { container } = renderLayer(VentilationBody, {
+      route: VENT_ROUTE,
+      config,
+    });
+
+    const svg = container.querySelector(".air-flow svg")!;
+    expect(svg).toHaveTextContent("VALLOX · LUFTENS VEJ GENNEM HUSET");
+    expect(screen.getByText("Vallox · automatisk drift")).toBeInTheDocument();
+  });
+
+  test("hides the airflow diagram when the ducts have no sensors", () => {
+    const base = buildModel(makeHass(), makeConfig());
+    const config = makeConfig();
+    const ventilationConfig = { ...config.ventilation };
+    delete ventilationConfig.outdoor;
+    delete ventilationConfig.inlet;
+    delete ventilationConfig.exhaust;
+    delete ventilationConfig.outlet;
+    const model = {
+      ...base,
+      ventilation: {
+        ...base.ventilation!,
+        outdoor: null,
+        inlet: null,
+        exhaust: null,
+        outlet: null,
+      },
+    };
+
+    const { container } = renderLayer(VentilationBody, {
+      route: VENT_ROUTE,
+      model,
+      config: { ...config, ventilation: ventilationConfig },
+    });
+
+    expect(container.querySelector(".air-flow")).toBeNull();
+    expect(screen.queryByText("UDE")).not.toBeInTheDocument();
   });
 
   test("fan, mode and setpoint controls call the climate services", () => {

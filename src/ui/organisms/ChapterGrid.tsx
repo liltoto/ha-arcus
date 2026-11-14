@@ -1,6 +1,12 @@
 import type { ChapterKey } from "../../types";
 import { Icon } from "../atoms/Icon";
-import { useActions, useBindings, useModel, useTranslator } from "../hooks";
+import {
+  useActions,
+  useBindings,
+  useConfig,
+  useModel,
+  useTranslator,
+} from "../hooks";
 import { ChapterArt } from "./ChapterArt";
 import { c } from "../styles/classes";
 
@@ -79,13 +85,25 @@ export interface ChapterGridProps {
  */
 export function ChapterGrid({ className }: ChapterGridProps = {}) {
   const model = useModel();
+  const config = useConfig();
   const bindings = useBindings();
   const t = useTranslator();
   const actions = useActions();
 
-  const enabled = CHAPTERS.map((chapter, index) => ({ chapter, index })).filter(
-    ({ chapter }) => model.chapters[chapter.key],
-  );
+  const order = config.chapter_order ?? [];
+  const chapters = order.length
+    ? [
+        ...order.flatMap((key) => {
+          const chapter = CHAPTERS.find((item) => item.key === key);
+          return chapter ? [chapter] : [];
+        }),
+        ...CHAPTERS.filter((chapter) => !order.includes(chapter.key)),
+      ]
+    : CHAPTERS;
+
+  const enabled = chapters
+    .map((chapter, index) => ({ chapter, index }))
+    .filter(({ chapter }) => model.chapters[chapter.key]);
 
   if (!enabled.length) return null;
 

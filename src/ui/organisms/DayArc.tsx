@@ -1,6 +1,13 @@
 import { formatTime } from "../../format";
 import { resolveLanguage } from "../../localize";
 import { arcPoint, priceColor } from "../../render/charts";
+import type {
+  ArcusConfig,
+  HomeModel,
+  Language,
+  Translator,
+} from "../../types";
+import type { HistoryCache } from "../../data/history";
 import {
   useConfig,
   useHass,
@@ -14,6 +21,25 @@ import { c } from "../styles/classes";
 
 const WIDTH = 1000;
 const FULL_ARC = "M40,210 Q500,-90 960,210";
+const DAY_MS = 86_400_000;
+const BUCKETS = 96;
+/** Height in SVG units that a full-scale solar reading rises above the arc. */
+const PEAK_HEIGHT = 72;
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface ArcLabel {
+  id: string;
+  name: string;
+  time: string;
+  position: Point;
+  next: boolean;
+  sun: boolean;
+  offset: number;
+}
 
 function dayFraction(date: Date): number {
   return (
@@ -23,6 +49,138 @@ function dayFraction(date: Date): number {
 
 function positionStyle(x: number, y: number): { left: string; top: string } {
   return { left: `${x / 10}%`, top: `${y / 3}%` };
+}
+
+function pathFrom(points: Point[]): string {
+  if (!points.length) return "";
+  return `M${points
+    .map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`)
+    .join("L")}`;
+}
+
+function lift(point: Point, value: number, max: number): Point {
+  return { x: point.x, y: point.y - (value / max) * PEAK_HEIGHT };
+}
+
+interface DaySeries {
+  solarLine: string;
+  solarArea: string;
+  actualLine: string;
+}
+
+function buildSeries(
+  history: HistoryCache,
+  config: ArcusConfig,
+  model: HomeModel,
+  current: Date,
+): DaySeries {
+  const solar = model.solar?.forecastSeries ?? [];
+  const dayStart = new Date(
+    current.getFullYear(),
+    current.getMonth(),
+    current.getDate(),
+  ).getTime();
+  const actualRaw = config.solar?.power
+    ? history.series(config.solar.power, {
+        start: dayStart,
+        end: dayStart + DAY_MS,
+        buckets: BUCKETS,
+        fill: 0,
+      })
+    : [];
+  const cutoff = Math.floor(
+    ((current.getTime() - dayStart) / DAY_MS) * BUCKETS,
+  );
+  const actual = actualRaw.map((value, index) =>
+    index <= cutoff ? value : null,
+  );
+  const max = Math.max(
+    3000,
+    ...solar.map((item) => item.v),
+    ...actual.map((value) => value ?? 0),
+    1,
+  );
+  const fraction = dayFraction(current);
+
+  const solarLine = pathFrom(
+    solar.map((item) => lift(arcPoint(dayFraction(item.t)), item.v, max)),
+  );
+  const actualPoints = actual
+    .map((value, index) => {
+      const progress = (index + 1) / actual.length;
+      if (progress > fraction) return null;
+      return lift(arcPoint(progress), value ?? 0, max);
+    })
+    .filter((value): value is Point => value !== null);
+
+  return {
+    solarLine,
+    solarArea: solarLine ? `${solarLine}L960,210L40,210Z` : "",
+    actualLine: pathFrom(actualPoints),
+  };
+}
+
+function sunLabel(
+  id: string,
+  name: string,
+  date: Date,
+  offset: number,
+  language: Language,
+): ArcLabel {
+  return {
+    id,
+    name,
+    time: formatTime(date, language),
+    position: arcPoint(dayFraction(date)),
+    next: false,
+    sun: true,
+    offset,
+  };
+}
+
+/**
+ * Prayer labels win when prayers are configured. Otherwise the arc still
+ * shows the sun's rising and setting, so homes without prayer times keep a
+ * meaningful day rhythm.
+ */
+function buildLabels(
+  model: HomeModel,
+  t: Translator,
+  language: Language,
+): ArcLabel[] {
+  const prayerTimes = model.prayers?.times ?? [];
+  const next = model.prayers?.next ?? null;
+  const sunrise = model.prayers?.sunrise ?? null;
+  const labels: ArcLabel[] = [];
+
+  if (sunrise) {
+    labels.push(sunLabel("sunrise", t("prayers.sunrise"), sunrise, 5, language));
+  }
+
+  prayerTimes.forEach((prayer, index) => {
+    labels.push({
+      id: prayer.id,
+      name: prayer.name,
+      time: formatTime(prayer.time, language),
+      position: arcPoint(prayer.minutes / 1440),
+      next: next?.id === prayer.id,
+      sun: false,
+      offset: index % 2 ? 9 : 5,
+    });
+  });
+
+  if (prayerTimes.length === 0) {
+    const rising = model.sun?.nextRising;
+    const setting = model.sun?.nextSetting;
+    if (rising && !sunrise) {
+      labels.push(sunLabel("sunrise", t("prayers.sunrise"), rising, 5, language));
+    }
+    if (setting) {
+      labels.push(sunLabel("sunset", t("prayers.sunset"), setting, 9, language));
+    }
+  }
+
+  return labels;
 }
 
 /**
@@ -43,96 +201,13 @@ export function DayArc() {
 
   const current = now();
   const language = resolveLanguage(hass.language, config);
-  const fraction = dayFraction(current);
-  const point = arcPoint(fraction);
-
-  const solar = model.solar?.forecastSeries ?? [];
-  const dayStart = new Date(
-    current.getFullYear(),
-    current.getMonth(),
-    current.getDate(),
-  ).getTime();
-  const actualRaw = config.solar?.power
-    ? history.series(config.solar.power, {
-        start: dayStart,
-        end: dayStart + 86_400_000,
-        buckets: 96,
-        fill: 0,
-      })
-    : [];
-  const actualCutoff = Math.floor(
-    ((current.getTime() - dayStart) / 86_400_000) * 96,
-  );
-  const actual = actualRaw.map((value, index) =>
-    index <= actualCutoff ? value : null,
-  );
-  const max = Math.max(
-    3000,
-    ...solar.map((item) => item.v),
-    ...actual.map((value) => value ?? 0),
-    1,
-  );
-
-  const solarPoints = solar.map((item) => {
-    const position = arcPoint(dayFraction(item.t));
-    return {
-      x: position.x,
-      y: position.y - (item.v / max) * 72,
-    };
-  });
-  const solarLine = solarPoints.length
-    ? `M${solarPoints
-        .map((item) => `${item.x.toFixed(1)},${item.y.toFixed(1)}`)
-        .join("L")}`
-    : "";
-  const solarArea = solarLine ? `${solarLine}L960,210L40,210Z` : "";
-
-  const actualPoints = actual
-    .map((value, index) => {
-      const progress = (index + 1) / actual.length;
-      if (progress > fraction) return null;
-      const position = arcPoint(progress);
-      return {
-        x: position.x,
-        y: position.y - ((value ?? 0) / max) * 72,
-      };
-    })
-    .filter((value): value is { x: number; y: number } => value !== null);
-  const actualLine = actualPoints.length
-    ? `M${actualPoints
-        .map((item) => `${item.x.toFixed(1)},${item.y.toFixed(1)}`)
-        .join("L")}`
-    : "";
-
+  const point = arcPoint(dayFraction(current));
+  const series = buildSeries(history, config, model, current);
   const price = model.price;
   const hour = current.getHours();
   const prayerTimes = model.prayers?.times ?? [];
   const next = model.prayers?.next ?? null;
-  const sunrise = model.prayers?.sunrise ?? null;
-  const labels = [
-    ...(sunrise
-      ? [
-          {
-            id: "sunrise",
-            name: t("prayers.sunrise"),
-            time: formatTime(sunrise, language),
-            position: arcPoint(dayFraction(sunrise)),
-            next: false,
-            sun: true,
-            offset: 5,
-          },
-        ]
-      : []),
-    ...prayerTimes.map((prayer, index) => ({
-      id: prayer.id,
-      name: prayer.name,
-      time: formatTime(prayer.time, language),
-      position: arcPoint(prayer.minutes / 1440),
-      next: next?.id === prayer.id,
-      sun: false,
-      offset: index % 2 ? 9 : 5,
-    })),
-  ];
+  const labels = buildLabels(model, t, language);
 
   return (
     <div className={c("arc-wrap")} data-arc>
@@ -187,14 +262,14 @@ export function DayArc() {
         <path
           className={c("solar-area")}
           data-solar-area
-          d={solarArea}
+          d={series.solarArea}
           fill="url(#solarFill)"
           stroke="none"
         />
         <path
           className={c("solar-line")}
           data-solar-line
-          d={solarLine}
+          d={series.solarLine}
           fill="none"
           stroke="var(--amber)"
           strokeWidth="1.4"
@@ -203,7 +278,7 @@ export function DayArc() {
         />
         <path
           data-solar-actual
-          d={actualLine}
+          d={series.actualLine}
           fill="none"
           stroke="var(--text)"
           strokeWidth="1.2"

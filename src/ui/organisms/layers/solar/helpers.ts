@@ -35,6 +35,8 @@ const SOLAR_VALUE_KEYS = [
   "load",
   "grid",
   "batteryPower",
+  "pv1",
+  "pv2",
   "pv3",
   "pv4",
   "totalProduction",
@@ -61,6 +63,10 @@ const SOLAR_VALUE_KEYS = [
   "gridL1",
   "gridL2",
   "gridL3",
+  "pv1Voltage",
+  "pv1Current",
+  "pv2Voltage",
+  "pv2Current",
   "pv3Voltage",
   "pv3Current",
   "pv4Voltage",
@@ -358,6 +364,8 @@ export function ensureHistory(
   add(config.load);
   add(config.grid);
   add(config.batteryPower);
+  add(config.pv1);
+  add(config.pv2);
   add(config.pv3);
   add(config.pv4);
   add(config.gridL1);

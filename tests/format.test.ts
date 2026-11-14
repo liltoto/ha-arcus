@@ -7,6 +7,9 @@ import {
   formatTime,
   formatUnit,
   greeting,
+  resolveCurrency,
+  resolvePriceUnit,
+  resolveTempUnit,
 } from "../src/format";
 
 // The exact ISO-time assertion below is written from the user's Danish
@@ -147,5 +150,44 @@ describe("formatUnit", () => {
   test("returns an en dash without a unit when missing", () => {
     expect(formatUnit(null, "°C", "da", 1)).toBe("–");
     expect(formatUnit(undefined, "kWh", "en", 1)).toBe("–");
+  });
+});
+
+describe("resolveCurrency, resolvePriceUnit, and resolveTempUnit", () => {
+  test("resolves defaults, hass config, and explicit unit overrides", () => {
+    expect(resolveCurrency(null, null, "da")).toBe("kr");
+    expect(resolveCurrency(null, null, "en")).toBe("DKK");
+    expect(resolveCurrency({ config: { currency: "DKK" } }, null, "da")).toBe(
+      "kr",
+    );
+    expect(resolveCurrency({ config: { currency: "EUR" } }, null, "da")).toBe(
+      "EUR",
+    );
+    expect(
+      resolveCurrency(
+        { config: { currency: "EUR" } },
+        { units: { currency: "$" } },
+        "en",
+      ),
+    ).toBe("$");
+
+    expect(resolvePriceUnit(null, null, "da")).toBe("kr/kWh");
+    expect(resolvePriceUnit({ config: { currency: "EUR" } }, null, "en")).toBe(
+      "EUR/kWh",
+    );
+    expect(
+      resolvePriceUnit(null, { units: { price_unit: "¢/kWh" } }, "en"),
+    ).toBe("¢/kWh");
+
+    expect(resolveTempUnit(null, null)).toBe("°C");
+    expect(
+      resolveTempUnit({ config: { unit_system: { temperature: "°F" } } }, null),
+    ).toBe("°F");
+    expect(
+      resolveTempUnit(
+        { config: { unit_system: { temperature: "°C" } } },
+        { units: { temperature: "°F" } },
+      ),
+    ).toBe("°F");
   });
 });

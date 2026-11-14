@@ -95,6 +95,25 @@ describe("RoomBody", () => {
     );
   });
 
+  test("toggles the room climate from the hvac button", () => {
+    const { container, props } = renderLayer(RoomBody, {
+      route: { base: "rum", sub: "stue" },
+    });
+    const toggle = container.querySelector<HTMLButtonElement>(
+      '[data-act="hvac-toggle"][data-entity="climate.wavin_stue"]',
+    );
+
+    expect(toggle).not.toBeNull();
+    fireEvent.click(toggle!);
+
+    expect(props.actions.callService).toHaveBeenCalledWith(
+      "climate",
+      "set_hvac_mode",
+      { hvac_mode: "off" },
+      { entity_id: "climate.wavin_stue" },
+    );
+  });
+
   test("renders opening, battery, and media rows", () => {
     const { container } = renderLayer(RoomBody, {
       route: { base: "rum", sub: "stue" },
@@ -147,6 +166,63 @@ describe("RoomBody", () => {
     });
 
     expect(container.querySelector(".sheet-title")).toHaveTextContent("Stue");
+  });
+
+  test("renders covers and a lock with working toggles", () => {
+    const base = makeArcusProps();
+    const hass = {
+      ...base.hass,
+      states: {
+        ...base.hass.states,
+        "cover.stue_blind": {
+          state: "open",
+          attributes: { friendly_name: "Stueblind" },
+          last_changed: "2026-11-13T00:00:00+01:00",
+          last_updated: "2026-11-13T00:00:00+01:00",
+        },
+        "lock.stue_door": {
+          state: "locked",
+          attributes: { friendly_name: "Stuedør" },
+          last_changed: "2026-11-13T00:00:00+01:00",
+          last_updated: "2026-11-13T00:00:00+01:00",
+        },
+      },
+      entities: {
+        ...base.hass.entities,
+        "cover.stue_blind": { entity_id: "cover.stue_blind", area_id: "stue" },
+        "lock.stue_door": { entity_id: "lock.stue_door", area_id: "stue" },
+      },
+    };
+
+    const { container, props } = renderLayer(RoomBody, {
+      route: { base: "rum", sub: "stue" },
+      hass,
+    });
+
+    const cover = container.querySelector<HTMLButtonElement>(
+      '[data-act="toggle-cover"][data-entity="cover.stue_blind"]',
+    );
+    expect(cover).not.toBeNull();
+    expect(cover).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(cover!);
+    expect(props.actions.callService).toHaveBeenCalledWith(
+      "cover",
+      "close_cover",
+      {},
+      { entity_id: "cover.stue_blind" },
+    );
+
+    const lock = container.querySelector<HTMLButtonElement>(
+      '[data-act="toggle-lock"][data-entity="lock.stue_door"]',
+    );
+    expect(lock).not.toBeNull();
+    fireEvent.click(lock!);
+    expect(props.actions.callService).toHaveBeenCalledWith(
+      "lock",
+      "unlock",
+      {},
+      { entity_id: "lock.stue_door" },
+    );
   });
 
   test("charts expose the graph hover metadata when history has data", () => {

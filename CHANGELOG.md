@@ -2,6 +2,32 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.0 - 2026-11-14
+
+Configurability release: Arcus can now fit homes that look nothing like the development home, without hand-writing a 100-line YAML block.
+
+### Added
+
+- `src/model/discover-systems.ts`: opt-out auto-discovery (`auto_discover`) for weather, electricity price, solar (including PV strings and home batteries), water meters and softeners, ventilation units, prayer times, moisture leaks, locks, alarm panels, and sensor batteries. Explicit config always wins.
+- Units: `units.currency`, `units.price_unit`, `units.temperature`, and `units.water`, with fallbacks to `hass.config.currency`/`unit_system`. `resolveCurrency`, `resolvePriceUnit`, and `resolveTempUnit` are the single helpers.
+- Adaptive hero: `vitals` presets (`indoor`, `outdoor`, `price`, `battery`, `solar`, `power`, `humidity`, `co2`, `water`, `security`, `lights`) plus custom `{ label, entity, unit, route }` tiles, and a sun-based day arc when prayer times are not configured.
+- Room model: `kind` (`indoor`/`outdoor`/`utility`), `wide`, `icon`, floor metadata (`floorId`/`floorName`/`floorLevel`), `covers`, and `lock`; outdoor rooms are excluded from indoor averages and rendered last.
+- Layout: `group_by_floor` groups the room grid by Home Assistant floors; `chapter_order` reorders the chapter grid; `person` pins the presence pill.
+- Systems: `solar.pv1`/`pv2` (plus voltages/currents) and 1-phase grids; solar-without-battery summary and hidden battery tab; water meter without a softener; `water.softenerName` and `ventilation.name` renames; `heating.include`/`exclude`/`reserve`; multi-mode climate (`heat`, `cool`, `heat_cool`).
+- Security: `security.alarm` (arm home/away/disarm) and `security.locks`, shown in the Security sheet and per-room.
+- Energy: optional `energy.ev` (plug, power, session, total, SoC) and `energy.standby`/`energy.appliances` blocks.
+- Visual editor: auto-discovery and floor toggles, units section, chapter toggles, `<datalist>` entity autocomplete, and entity placeholders.
+- Tests: `tests/discover-systems.test.ts` and three archetype homes (urban apartment, multi-floor US home, minimal auto-discovery home) in `tests/archetypes.test.tsx`.
+
+### Changed
+
+- Opening kinds, system-card labels, leak alerts, and brand names are localized instead of Danish or vendor-specific.
+- `buildModel` resolves `discoverSystems` once, so every builder and binding sees the same effective config.
+
+### Verified
+
+- Typecheck, full Vitest suite, build, size budget, and Storybook build.
+
 ## 0.3.1 - 2026-11-14
 
 Internal cleanup and guardrail release. The dashboard, sheets, and Home Assistant contract are unchanged.

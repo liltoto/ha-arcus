@@ -1,9 +1,10 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
 import { parseGraph } from "../../../src/render/graph";
 import { EnergyBody } from "../../../src/ui/organisms/layers/EnergyBody";
 import { renderLayer } from "../layer-test-utils";
 import { makeArcusProps } from "../home-test-utils";
+import { makeConfig } from "../../fixtures/home";
 
 // The fixture price curve is in Europe/Copenhagen. Pin the zone so the "now"
 // bar and the cheapest window are deterministic on CI, which usually runs UTC.
@@ -89,6 +90,91 @@ describe("EnergyBody", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Teknik" }));
     expect(props.actions.openSheet).toHaveBeenCalledWith("teknik");
+  });
+
+  test("uses a configured currency for prices and units", () => {
+    const { container } = renderLayer(EnergyBody, {
+      config: makeConfig({ units: { currency: "EUR" } }),
+    });
+
+    expect(container.querySelector(".sheet-sum")).toHaveTextContent(
+      "1,75 EUR/kWh",
+    );
+    const big = container.querySelector(".big-read");
+    expect(big).toHaveTextContent("1,75");
+    expect(big?.querySelector("small")).toHaveTextContent("EUR/kWh");
+    expect(container.querySelector(".big-read + .block-note")).toHaveTextContent(
+      "salgspris 1,10 EUR",
+    );
+
+    const readings = container.querySelectorAll(".readings .reading");
+    expect(readings[0]).toHaveTextContent("EUR");
+    expect(readings[3]).toHaveTextContent("EUR");
+    expect(container.querySelector(".bar-chart")).toHaveAttribute(
+      "data-gu",
+      "EUR",
+    );
+  });
+
+  test("supports a currency symbol", () => {
+    const { container } = renderLayer(EnergyBody, {
+      config: makeConfig({ units: { currency: "$" } }),
+    });
+
+    expect(container.querySelector(".sheet-sum")).toHaveTextContent(
+      "1,75 $/kWh",
+    );
+    expect(container.querySelector(".big-read small")).toHaveTextContent(
+      "$/kWh",
+    );
+    expect(container.querySelector(".bar-chart")).toHaveAttribute("data-gu", "$");
+  });
+
+  test("renders the optional EV and appliance blocks", () => {
+    const { container } = renderLayer(EnergyBody, {
+      config: makeConfig({
+        energy: {
+          ev: {
+            name: "Tesla",
+            plugged: "binary_sensor.tesla_wall_connector_koretoj_tilsluttet",
+            power: "sensor.tesla_wall_connector_total_power",
+            session: "sensor.tesla_wall_connector_energi_til_sessionen",
+            total: "sensor.tesla_wall_connector_energi",
+          },
+          standby: "sensor.all_standby_power",
+          appliances: [
+            {
+              name: "Fryser",
+              entity: "sensor.grillplats_plug_effekt",
+              icon: "snow",
+            },
+            { name: "Server", entity: "sensor.grillplats_plug_effekt_2" },
+          ],
+        },
+      }),
+    });
+
+    expect(screen.getByText("Tesla")).toBeInTheDocument();
+    expect(screen.getByText("ikke tilsluttet")).toBeInTheDocument();
+
+    const ev = screen.getByText("Tesla").closest(".block") as HTMLElement;
+    expect(within(ev).getByText("Effekt")).toBeInTheDocument();
+    expect(within(ev).getByText("Session")).toBeInTheDocument();
+    expect(within(ev).getByText("Total")).toBeInTheDocument();
+    expect(ev).toHaveTextContent("1.420");
+
+    expect(screen.getByText("Apparater")).toBeInTheDocument();
+    expect(screen.getByText("3,2 kWh standby")).toBeInTheDocument();
+    expect(screen.getByText("Fryser")).toBeInTheDocument();
+    expect(screen.getByText("Server")).toBeInTheDocument();
+
+    const appliances = screen
+      .getByText("Apparater")
+      .closest(".block") as HTMLElement;
+    expect(appliances.querySelectorAll(".row")).toHaveLength(2);
+    expect(appliances).toHaveTextContent("24");
+    expect(appliances).toHaveTextContent("69");
+    expect(appliances.querySelectorAll(".row svg.ico")).toHaveLength(2);
   });
 
   test("renders the calm empty state when the price model is missing", () => {

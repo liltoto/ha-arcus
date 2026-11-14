@@ -1,5 +1,5 @@
 import { useEffect, useId } from "react";
-import { formatNumber, numberFrom } from "../../../format";
+import { formatNumber, numberFrom, resolveTempUnit } from "../../../format";
 import { areaPath, sparkPath } from "../../../render/charts";
 import type {
   ArcusConfig,
@@ -8,6 +8,7 @@ import type {
   HeatingModel,
   HeatingReserveModel,
   HomeModel,
+  TemperatureUnit,
 } from "../../../types";
 import {
   useActions,
@@ -45,8 +46,14 @@ function languageOf(model: HomeModel, config: ArcusConfig): "da" | "en" {
   return model.language === "en" || config.language === "en" ? "en" : "da";
 }
 
-function temperature(value: number | null, language: "da" | "en"): string {
-  return value === null ? "–" : `${formatNumber(value, 1, language)}°`;
+function temperature(
+  value: number | null,
+  language: "da" | "en",
+  unit: TemperatureUnit = "°C",
+): string {
+  return value === null
+    ? "–"
+    : `${formatNumber(value, 1, language)}${unit === "°F" ? "°F" : "°"}`;
 }
 
 function liveState(hass: ArcusHass, entity: EntityRef): string | undefined {
@@ -124,6 +131,7 @@ interface SetpointProps {
   max: number;
   label: string;
   language: "da" | "en";
+  unit: TemperatureUnit;
   dataAct: string;
   onChange: (value: number) => void;
 }
@@ -136,6 +144,7 @@ function Setpoint({
   max,
   label,
   language,
+  unit,
   dataAct,
   onChange,
 }: SetpointProps) {
@@ -152,7 +161,7 @@ function Setpoint({
         min={min}
         max={max}
         step={0.5}
-        unit="°"
+        unit={unit === "°F" ? "°F" : "°"}
         label={label}
         formatValue={(next) => formatNumber(next, 1, language)}
         onChange={onChange}
@@ -174,6 +183,7 @@ export function HeatingBody(_props: LayerBodyProps) {
   const gradientId = `heat-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   const language = languageOf(model, config);
+  const tempUnit = resolveTempUnit(hass, config);
   const zones = model.heating;
   const reserve = model.heatingReserve;
   const openCount = zones.filter((zone) =>
@@ -234,7 +244,14 @@ export function HeatingBody(_props: LayerBodyProps) {
     const target = numberFrom(attributes.temperature);
     const min = numberFrom(attributes.min_temp) ?? 5;
     const max = numberFrom(attributes.max_temp) ?? 35;
-    const on = liveState(hass, zone.entity) !== "off";
+    const mode = liveState(hass, zone.entity);
+    const on = mode !== "off";
+    const activity =
+      mode === "cool" || attributes.hvac_action === "cooling"
+        ? t("room.cooling")
+        : attributes.hvac_action === "heating"
+          ? t("room.heatingActive")
+          : t("room.heatingHolding");
     const opening = isOpeningOn(hass, zone.opening ?? null);
 
     return (
@@ -253,12 +270,9 @@ export function HeatingBody(_props: LayerBodyProps) {
           </div>
           <div className={c("row-sub")}>
             {t("room.heatingNow", {
-              temp: temperature(current, language),
+              temp: temperature(current, language, tempUnit),
             })}{" "}
-            ·{" "}
-            {attributes.hvac_action === "heating"
-              ? t("room.heatingActive")
-              : t("room.heatingHolding")}
+            · {activity}
             {opening ? ` · ${t("heating.windowOpen")}` : ""}
           </div>
         </div>
@@ -269,6 +283,7 @@ export function HeatingBody(_props: LayerBodyProps) {
           max={max}
           label={zone.name}
           language={language}
+          unit={tempUnit}
           dataAct="temp-step"
           onChange={(next) => setTemperature(entityId, next)}
         />
@@ -300,7 +315,7 @@ export function HeatingBody(_props: LayerBodyProps) {
           <div className={c("row-name")}>{zone.name}</div>
           <div className={c("row-sub")}>
             {t("room.heatingNow", {
-              temp: temperature(current, language),
+              temp: temperature(current, language, tempUnit),
             })}
           </div>
         </div>
@@ -311,6 +326,7 @@ export function HeatingBody(_props: LayerBodyProps) {
           max={max}
           label={zone.name}
           language={language}
+          unit={tempUnit}
           dataAct="temp-step"
           onChange={(next) => setTemperature(entityId, next)}
         />
@@ -338,6 +354,7 @@ export function HeatingBody(_props: LayerBodyProps) {
           max={max}
           label={label}
           language={language}
+          unit={tempUnit}
           dataAct="input-step"
           onChange={(next) => setLimit(entity.entityId, next)}
         />
@@ -438,7 +455,7 @@ export function HeatingBody(_props: LayerBodyProps) {
               aria-hidden="true"
               data-graph="line"
               data-gv={hasData ? encodeValues(values) : undefined}
-              data-gu="°C"
+              data-gu={tempUnit}
               data-gd="1"
               data-gt0={String(start)}
               data-gt1={String(end)}

@@ -339,4 +339,104 @@ describe("signature and validation", () => {
       /Arcus: configuration/,
     );
   });
+
+  test("normalizes units, vitals, chapter_order, heating, energy, and new room/security fields", () => {
+    const c = normalizeConfig({
+      ...card,
+      auto_discover: false,
+      group_by_floor: true,
+      person: "person.alex",
+      units: {
+        currency: "EUR",
+        price_unit: "€/kWh",
+        temperature: "°F",
+        water: "gal",
+      },
+      vitals: [
+        "indoor",
+        {
+          label: "Grid",
+          entity: "sensor.grid_power",
+          unit: "W",
+          route: "sol",
+          decimals: 0,
+          color: "var(--amber)",
+        },
+      ],
+      chapter_order: ["lys", "varme", "lys"],
+      heating: {
+        include: ["climate.living"],
+        exclude: ["climate.tesla"],
+        reserve: ["climate.reserve_1"],
+      },
+      energy: {
+        standby: "sensor.standby_power",
+        ev: {
+          name: "Polestar",
+          plugged: "binary_sensor.ev_plugged",
+          power: "sensor.ev_power",
+          session: "sensor.ev_session",
+          total: "sensor.ev_total",
+          soc: "sensor.ev_soc",
+        },
+        appliances: [
+          { name: "Freezer", entity: "sensor.freezer_power", icon: "snow" },
+        ],
+      },
+      security: {
+        locks: ["lock.front_door"],
+        alarm: "alarm_control_panel.home",
+      },
+      rooms: {
+        garage: {
+          kind: "outdoor",
+          wide: true,
+          icon: "shed",
+          covers: "cover.garage_door",
+          lock: "lock.garage_door",
+        },
+      },
+    });
+    expect(c.auto_discover).toBe(false);
+    expect(c.group_by_floor).toBe(true);
+    expect(c.person).toBe("person.alex");
+    expect(c.units).toEqual({
+      currency: "EUR",
+      price_unit: "€/kWh",
+      temperature: "°F",
+      water: "gal",
+    });
+    expect(c.vitals).toEqual([
+      "indoor",
+      {
+        label: "Grid",
+        entity: "sensor.grid_power",
+        unit: "W",
+        route: "sol",
+        decimals: 0,
+        color: "var(--amber)",
+      },
+    ]);
+    expect(c.chapter_order).toEqual(["lys", "varme"]);
+    expect(c.heating).toEqual({
+      include: ["climate.living"],
+      exclude: ["climate.tesla"],
+      reserve: ["climate.reserve_1"],
+    });
+    expect(c.energy?.ev?.name).toBe("Polestar");
+    expect(c.energy?.appliances).toEqual([
+      { name: "Freezer", entity: "sensor.freezer_power", icon: "snow" },
+    ]);
+    expect(c.security).toEqual({
+      locks: ["lock.front_door"],
+      alarm: "alarm_control_panel.home",
+    });
+    expect(c.rooms.garage).toEqual({
+      kind: "outdoor",
+      wide: true,
+      icon: "shed",
+      covers: ["cover.garage_door"],
+      lock: "lock.garage_door",
+    });
+  });
 });

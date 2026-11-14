@@ -1,11 +1,17 @@
 import { Fragment, useEffect, type CSSProperties } from "react";
-import { formatNumber, formatUnit, numberFrom } from "../../../format";
+import {
+  formatNumber,
+  formatUnit,
+  numberFrom,
+  resolveTempUnit,
+} from "../../../format";
 import type {
   ArcusHass,
   EntityRef,
   Language,
   Translator,
 } from "../../../types";
+import type { ArcusActions } from "../../types";
 import { EmptyState } from "../../atoms/EmptyState";
 import { Icon } from "../../atoms/Icon";
 import { Readout } from "../../molecules/Readout";
@@ -88,6 +94,119 @@ function airSummary(
   return `${t("room.air")} –`;
 }
 
+interface CoverRowProps {
+  cover: EntityRef;
+  hass: ArcusHass;
+  t: Translator;
+  actions: ArcusActions;
+}
+
+function CoverRow({ cover, hass, t, actions }: CoverRowProps) {
+  const entity = refEntity(hass, cover);
+  const isOpen = entity?.state === "open" || entity?.state === "opening";
+  const name = entityName(entity, cover.name ?? cover.entityId);
+  return (
+    <div className={c("row", isOpen && "on")}>
+      <Icon name="wind" />
+      <div className={c("row-main")}>
+        <div className={c("row-name")}>{name}</div>
+        <div className={c("row-sub")}>
+          {isOpen ? t("room.coverOpen") : t("room.coverClosed")}
+        </div>
+      </div>
+      <button
+        type="button"
+        className={c("toggle", isOpen && "on")}
+        data-act="toggle-cover"
+        data-entity={cover.entityId}
+        aria-label={name}
+        aria-pressed={isOpen}
+        onClick={() =>
+          actions.callService(
+            "cover",
+            isOpen ? "close_cover" : "open_cover",
+            {},
+            { entity_id: cover.entityId },
+          )
+        }
+      />
+    </div>
+  );
+}
+
+interface CoversBlockProps {
+  covers: EntityRef[];
+  hass: ArcusHass;
+  t: Translator;
+  actions: ArcusActions;
+}
+
+function CoversBlock({ covers, hass, t, actions }: CoversBlockProps) {
+  return (
+    <div className={c("block")}>
+      <div className={c("block-head")}>
+        <div className={c("block-label")}>{t("room.covers")}</div>
+      </div>
+      <div className={c("list")}>
+        {covers.map((cover) => (
+          <CoverRow
+            key={cover.entityId}
+            cover={cover}
+            hass={hass}
+            t={t}
+            actions={actions}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface LockBlockProps {
+  lock: EntityRef;
+  hass: ArcusHass;
+  t: Translator;
+  actions: ArcusActions;
+}
+
+function LockBlock({ lock, hass, t, actions }: LockBlockProps) {
+  const entity = refEntity(hass, lock);
+  const isLocked = entity?.state === "locked";
+  const name = entityName(entity, lock.name ?? t("room.lock"));
+  return (
+    <div className={c("block")}>
+      <div className={c("block-head")}>
+        <div className={c("block-label")}>{t("room.lock")}</div>
+      </div>
+      <div className={c("row", isLocked && "on")}>
+        <Icon name="shield" />
+        <div className={c("row-main")}>
+          <div className={c("row-name")}>{name}</div>
+          <div className={c("row-sub")}>
+            {isLocked ? t("room.locked") : t("room.unlocked")}
+          </div>
+        </div>
+        <button
+          type="button"
+          className={c("toggle", isLocked && "on")}
+          data-act="toggle-lock"
+          data-entity={lock.entityId}
+          aria-label={name}
+          aria-pressed={isLocked}
+          onClick={() =>
+            actions.callService(
+              "lock",
+              isLocked ? "unlock" : "lock",
+              {},
+              { entity_id: lock.entityId },
+            )
+          }
+        />
+      </div>
+    </div>
+  );
+}
+
 /**
  * The room sheet, ported from `views/layers/room.ts`.
  *
@@ -107,6 +226,7 @@ export function RoomBody({ route }: LayerBodyProps) {
 
   const room = resolveRoom(model, route);
   const language = languageOf(model, config, t);
+  const tempUnit = resolveTempUnit(hass, config);
   const nowMs = now().getTime();
 
   useEffect(() => {
@@ -238,11 +358,20 @@ export function RoomBody({ route }: LayerBodyProps) {
   };
 
   const toggleClimate = (ref: EntityRef): void => {
-    const mode = refEntity(hass, ref)?.state;
+    const entity = refEntity(hass, ref);
+    const mode = entity?.state;
+    const hvacModes = Array.isArray(entity?.attributes?.hvac_modes)
+      ? entity.attributes.hvac_modes.map(String)
+      : ["heat"];
+    const nextOnMode = hvacModes.includes("heat")
+      ? "heat"
+      : hvacModes.includes("cool")
+        ? "cool"
+        : "heat_cool";
     actions.callService(
       "climate",
       "set_hvac_mode",
-      { hvac_mode: mode === "off" ? "heat" : "off" },
+      { hvac_mode: mode === "off" ? nextOnMode : "off" },
       { entity_id: ref.entityId },
     );
   };
@@ -286,7 +415,7 @@ export function RoomBody({ route }: LayerBodyProps) {
           <Readout
             label={t("room.temperature")}
             value={formatNumber(temp, 1, language)}
-            unit="°C"
+            unit={tempUnit}
           />
           <Readout
             label={t("room.humidity")}
@@ -321,7 +450,7 @@ export function RoomBody({ route }: LayerBodyProps) {
             entityId={tempChartId}
             color="var(--sky)"
             height={120}
-            unit="°C"
+            unit={tempUnit}
             decimals={1}
             emptyLabel={t("empty.chart")}
             now={now}
@@ -471,6 +600,17 @@ export function RoomBody({ route }: LayerBodyProps) {
             </div>
           </div>
         ) : null}
+        {room.covers?.length ? (
+          <CoversBlock
+            covers={room.covers}
+            hass={hass}
+            t={t}
+            actions={actions}
+          />
+        ) : null}
+        {room.lock ? (
+          <LockBlock lock={room.lock} hass={hass} t={t} actions={actions} />
+        ) : null}
         {climateRef && climate ? (
           <div className={c("block")}>
             <div className={c("block-head")}>
@@ -492,7 +632,10 @@ export function RoomBody({ route }: LayerBodyProps) {
                   })} · ${
                     climate?.attributes?.hvac_action === "heating"
                       ? t("room.heatingActive")
-                      : t("room.heatingHolding")
+                      : climateMode === "cool" ||
+                          climate?.attributes?.hvac_action === "cooling"
+                        ? t("room.cooling")
+                        : t("room.heatingHolding")
                   }`}
                 </div>
               </span>
