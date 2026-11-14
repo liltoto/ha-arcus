@@ -33,8 +33,16 @@ export class ArcusStrategyEditor extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
+    this.shadowRoot?.addEventListener("keydown", this.onKeyDown);
     this.render();
   }
+
+  /** Keep Backspace/Delete from triggering Home Assistant's card removal. */
+  private onKeyDown = (event: Event): void => {
+    if (!(event instanceof KeyboardEvent)) return;
+    if (event.key !== "Backspace" && event.key !== "Delete") return;
+    if (event.target instanceof HTMLInputElement) event.stopPropagation();
+  };
 
   /** Home Assistant frontend object, forwarded to the embedded card editor. */
   set hass(value: ArcusHass | undefined) {
@@ -48,12 +56,20 @@ export class ArcusStrategyEditor extends HTMLElement {
 
   /** Set the strategy configuration. The object is copied, never mutated. */
   setConfig(config: unknown): void {
-    this._config = isRecord(config) ? clone(config) : {};
-    if (!isRecord(this._config.card)) {
-      this._config.card = { type: "custom:arcus-card" };
+    const incoming = isRecord(config) ? clone(config) : {};
+    if (!isRecord(incoming.card)) {
+      incoming.card = { type: "custom:arcus-card" };
     }
+    const signature = JSON.stringify(incoming);
+    // Home Assistant echoes the config this editor just emitted. Ignore it;
+    // rebuilding the card editor would drop focus, caret, and open sections.
+    if (signature === this._lastEmitted) return;
+    if (signature === JSON.stringify(this._config)) return;
+
+    this._config = incoming;
     this._lastEmitted = "";
-    this.render();
+    this.syncTitles();
+    this._cardEditor?.setConfig(incoming.card);
   }
 
   /** The current (uncommitted) strategy configuration. */
@@ -100,8 +116,10 @@ export class ArcusStrategyEditor extends HTMLElement {
     const slot = root.querySelector<HTMLElement>(".card-editor-slot");
     if (!slot) return;
 
-    const cardEditor = new ArcusConfigEditor();
-    cardEditor.addEventListener("config-changed", this.onCardChanged);
+    const cardEditor = this._cardEditor ?? new ArcusConfigEditor();
+    if (!this._cardEditor) {
+      cardEditor.addEventListener("config-changed", this.onCardChanged);
+    }
     cardEditor.setConfig(
       isRecord(this._config.card)
         ? this._config.card
@@ -135,6 +153,28 @@ export class ArcusStrategyEditor extends HTMLElement {
       : { type: "custom:arcus-card" };
     this.commit();
   };
+
+  /**
+   * Refresh only the two title inputs. Used for external config changes so a
+   * title that is currently being typed into is never replaced mid-keystroke.
+   */
+  private syncTitles(): void {
+    const root = this.shadowRoot;
+    if (!root) return;
+    const active = root.activeElement;
+    const fields: Array<[string, string]> = [
+      ["dashboard_title", "dashboard_title"],
+      ["view_title", "view_title"],
+    ];
+    for (const [name, key] of fields) {
+      const input = root.querySelector<HTMLInputElement>(
+        `input[name="${name}"]`,
+      );
+      if (!input || input === active) continue;
+      const value = this._config[key];
+      input.value = typeof value === "string" ? value : "";
+    }
+  }
 
   private onTitleChanged = (event: Event): void => {
     const target = event.target;

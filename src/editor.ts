@@ -408,6 +408,90 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+/** Stable signature of a raw config, safe for non-serialisable values. */
+function rawSignature(value: unknown): string {
+  try {
+    return JSON.stringify(value ?? {});
+  } catch {
+    return "";
+  }
+}
+
+/** Stable signature of a normalized config; falls back to the raw value. */
+function normalizedSignature(value: unknown): string {
+  try {
+    return JSON.stringify(normalizeConfig(value));
+  } catch {
+    return rawSignature(value);
+  }
+}
+
+interface FieldFocus {
+  name: string;
+  start: number | null;
+  end: number | null;
+}
+
+interface EditorViewState {
+  openSections: boolean[];
+  focus: FieldFocus | null;
+}
+
+function captureViewState(root: ShadowRoot): EditorViewState {
+  const sections = Array.from(root.querySelectorAll("details"));
+  const active = root.activeElement;
+  let focus: FieldFocus | null = null;
+  if (
+    active instanceof HTMLInputElement ||
+    active instanceof HTMLTextAreaElement ||
+    active instanceof HTMLSelectElement
+  ) {
+    const name = active.getAttribute("name");
+    if (name) {
+      const isText =
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement;
+      focus = {
+        name,
+        start: isText ? active.selectionStart : null,
+        end: isText ? active.selectionEnd : null,
+      };
+    }
+  }
+  return {
+    openSections: sections.map((section) => section.open),
+    focus,
+  };
+}
+
+function restoreViewState(root: ShadowRoot, state: EditorViewState): void {
+  if (state.openSections.length) {
+    const sections = Array.from(root.querySelectorAll("details"));
+    sections.forEach((section, index) => {
+      if (state.openSections[index] !== undefined) {
+        section.open = state.openSections[index];
+      }
+    });
+  }
+  if (!state.focus) return;
+  const target = root.querySelector<HTMLElement>(
+    `[name="${state.focus.name}"]`,
+  );
+  if (!target) return;
+  target.focus();
+  if (
+    (target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement) &&
+    state.focus.start !== null
+  ) {
+    try {
+      target.setSelectionRange(state.focus.start, state.focus.end ?? state.focus.start);
+    } catch {
+      /* Some input types reject selection ranges. */
+    }
+  }
+}
+
 function areasSignature(hass?: ArcusHass): string {
   if (!hass?.areas) return "";
   return Object.values(hass.areas)
@@ -491,6 +575,7 @@ export class ArcusConfigEditor extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
+    this.shadowRoot?.addEventListener("keydown", this.onKeyDown);
     this.render();
   }
 
@@ -515,9 +600,27 @@ export class ArcusConfigEditor extends HTMLElement {
   /**
    * Set the card configuration. The object is copied, so the editor never
    * mutates Home Assistant's in-memory dashboard config.
+   *
+   * Home Assistant calls this again with the config the editor just emitted.
+   * That echo must not rebuild the form: rebuilding drops focus, caret, the
+   * open `<details>` sections, and the dialog scroll position. Only a real
+   * external change re-renders.
    */
   setConfig(config: unknown): void {
-    this._config = isRecord(config) ? clone(config) : {};
+    const incoming = isRecord(config) ? clone(config) : {};
+    const nextRaw = rawSignature(incoming);
+    if (nextRaw === rawSignature(this._config)) return;
+
+    const echo =
+      nextRaw === this._lastEmitted ||
+      normalizedSignature(incoming) === this._lastEmitted;
+    this._config = incoming;
+
+    if (echo) {
+      this.syncAdvancedJson();
+      return;
+    }
+
     this._lastEmitted = "";
     this.render();
     try {
@@ -526,6 +629,24 @@ export class ArcusConfigEditor extends HTMLElement {
       this.showError(`Invalid configuration: ${errorMessage(error)}`);
     }
   }
+
+  /**
+   * Keep Backspace/Delete inside the editor. Home Assistant's dashboard edit
+   * mode listens for those keys at the document level and otherwise treats
+   * them as "remove the selected card", which closes the dialog and scrolls
+   * the page to the top.
+   */
+  private onKeyDown = (event: Event): void => {
+    if (!(event instanceof KeyboardEvent)) return;
+    if (event.key !== "Backspace" && event.key !== "Delete") return;
+    const target = event.target;
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement
+    ) {
+      event.stopPropagation();
+    }
+  };
 
   /** The current (uncommitted) configuration. */
   getConfig(): ArcusConfigInput {
@@ -586,6 +707,7 @@ export class ArcusConfigEditor extends HTMLElement {
     ).join("");
 
     const areaOrder = areaConfig.order.join(", ");
+    const view = captureViewState(root);
 
     root.innerHTML = `<style>${EDITOR_STYLES}</style>
       <div class="wrap">
@@ -673,6 +795,8 @@ export class ArcusConfigEditor extends HTMLElement {
         control.addEventListener("change", this.onFieldEvent);
         control.addEventListener("click", this.onCheckboxClick);
       });
+
+    restoreViewState(root, view);
   }
 
   private onCheckboxClick = (event: Event): void => {

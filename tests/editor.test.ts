@@ -426,3 +426,155 @@ describe("ArcusStrategyEditor", () => {
     });
   });
 });
+
+describe("editor focus and key handling", () => {
+  test("an echoed config does not rebuild the form or collapse open sections", () => {
+    const editor = new ArcusConfigEditor();
+    editor.setConfig({ type: "custom:arcus-card" });
+    editor.hass = makeHass();
+    document.body.appendChild(editor);
+
+    const advanced = editor.shadowRoot!.querySelector<HTMLDetailsElement>(
+      "details.advanced",
+    )!;
+    advanced.open = true;
+    const input = field<HTMLInputElement>(editor.shadowRoot!, "title");
+    input.focus();
+    input.value = "Mit hjem";
+    input.dispatchEvent(
+      new Event("input", { bubbles: true, composed: true }),
+    );
+
+    // Home Assistant echoes the emitted config back into setConfig.
+    editor.setConfig(editor.getConfig());
+
+    expect(editor.shadowRoot!.querySelector("details.advanced")).toBe(
+      advanced,
+    );
+    expect(advanced.open).toBe(true);
+    expect(field(editor.shadowRoot!, "title")).toBe(input);
+  });
+
+  test("a real external change preserves open sections and focus", () => {
+    const editor = new ArcusConfigEditor();
+    editor.setConfig({ type: "custom:arcus-card", title: "Mit hjem" });
+    editor.hass = makeHass();
+    document.body.appendChild(editor);
+
+    const advanced = editor.shadowRoot!.querySelector<HTMLDetailsElement>(
+      "details.advanced",
+    )!;
+    advanced.open = true;
+    const input = field<HTMLInputElement>(editor.shadowRoot!, "title");
+    input.focus();
+    input.setSelectionRange(2, 2);
+
+    editor.setConfig({
+      type: "custom:arcus-card",
+      title: "Mit hjem",
+      subtitle: "Neu",
+    });
+
+    const nextAdvanced = editor.shadowRoot!.querySelector<HTMLDetailsElement>(
+      "details.advanced",
+    )!;
+    expect(nextAdvanced.open).toBe(true);
+    const nextInput = field<HTMLInputElement>(editor.shadowRoot!, "title");
+    expect(nextInput.value).toBe("Mit hjem");
+    expect(nextInput).toBe(editor.shadowRoot!.activeElement);
+    expect(nextInput.selectionStart).toBe(2);
+  });
+
+  test("stops Backspace and Delete from reaching the page", () => {
+    const editor = new ArcusConfigEditor();
+    editor.setConfig({ type: "custom:arcus-card" });
+    editor.hass = makeHass();
+    document.body.appendChild(editor);
+
+    const input = field<HTMLInputElement>(editor.shadowRoot!, "title");
+    const observed: string[] = [];
+    const onKey = (event: Event): void => {
+      observed.push((event as KeyboardEvent).key);
+    };
+    document.addEventListener("keydown", onKey);
+    try {
+      for (const key of ["Backspace", "Delete"]) {
+        input.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key,
+            bubbles: true,
+            composed: true,
+          }),
+        );
+      }
+    } finally {
+      document.removeEventListener("keydown", onKey);
+    }
+
+    expect(observed).toEqual([]);
+  });
+
+  test("the strategy editor stops Backspace and Delete from reaching the page", () => {
+    const editor = new ArcusStrategyEditor();
+    editor.setConfig({ type: "custom:arcus" });
+    document.body.appendChild(editor);
+
+    const input = field<HTMLInputElement>(
+      editor.shadowRoot!,
+      "dashboard_title",
+    );
+    const observed: string[] = [];
+    const onKey = (event: Event): void => {
+      observed.push((event as KeyboardEvent).key);
+    };
+    document.addEventListener("keydown", onKey);
+    try {
+      for (const key of ["Backspace", "Delete", "a"]) {
+        input.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key,
+            bubbles: true,
+            composed: true,
+          }),
+        );
+      }
+    } finally {
+      document.removeEventListener("keydown", onKey);
+    }
+
+    // The editor stops Backspace/Delete; ordinary keys still bubble.
+    expect(observed).toEqual(["a"]);
+  });
+
+  test("the strategy editor keeps its card editor across an echo", () => {
+    const editor = new ArcusStrategyEditor();
+    editor.setConfig({
+      type: "custom:arcus",
+      dashboard_title: "Hjem",
+      card: { type: "custom:arcus-card" },
+    });
+    document.body.appendChild(editor);
+
+    const cardEditor = editor.shadowRoot!.querySelector(
+      "arcus-config-editor",
+    );
+    const title = field<HTMLInputElement>(
+      editor.shadowRoot!,
+      "dashboard_title",
+    );
+    title.focus();
+    title.value = "Hjemme";
+    title.dispatchEvent(
+      new Event("input", { bubbles: true, composed: true }),
+    );
+
+    editor.setConfig(editor.getConfig());
+
+    expect(
+      editor.shadowRoot!.querySelector("arcus-config-editor"),
+    ).toBe(cardEditor);
+    expect(
+      field<HTMLInputElement>(editor.shadowRoot!, "dashboard_title"),
+    ).toBe(title);
+  });
+});
