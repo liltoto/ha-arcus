@@ -119,6 +119,9 @@ describe("SolarBody", () => {
     ).not.toBeNull();
     expect(chart.querySelector("[data-chart-line]")).not.toBeNull();
     expect(chart.getAttribute("data-gs")).toContain("Faktisk");
+    const midnight = new Date("2026-11-13T00:00:00+01:00").getTime();
+    expect(chart).toHaveAttribute("data-gt0", String(midnight));
+    expect(chart).toHaveAttribute("data-gt1", String(midnight + 86_400_000));
 
     const bars = container.querySelector(
       '[data-bars="solarWeek"]',

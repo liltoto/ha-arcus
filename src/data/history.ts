@@ -27,8 +27,12 @@ export interface HistoryWsRequest {
 export interface SeriesOptions {
   /** Number of time buckets across the window. */
   buckets?: number;
-  /** Explicit window in hours; defaults to the cached fetch window. */
+  /** Explicit window in hours; defaults to the last 24 hours. */
   hours?: number;
+  /** Explicit window start in epoch milliseconds. */
+  start?: number;
+  /** Explicit window end in epoch milliseconds. */
+  end?: number;
   /** Value for empty time buckets. Null keeps a visible gap. */
   fill?: number | null;
 }
@@ -180,10 +184,14 @@ export class HistoryCache {
   ): Array<number | null> {
     const entry = this.cache.get(entityId);
     if (!entry) return [];
+    const now = this.now().getTime();
+    const end = options.end ?? now;
+    const start =
+      options.start ?? end - (options.hours ?? 24) * 60 * 60 * 1000;
     return this.bucket(
       entry.rows,
-      this.now().getTime() - (options.hours ?? entry.hours) * 60 * 60 * 1000,
-      this.now().getTime(),
+      start,
+      end,
       options.buckets ?? 90,
       options.fill ?? null,
     );

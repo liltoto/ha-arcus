@@ -386,6 +386,38 @@ export function ensureHistory(
   request([...ids], 24 * 7);
 }
 
+/** Local calendar-day bounds for the day containing `now`. */
+export function dayWindow(now: Date): { start: number; end: number } {
+  const start = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).getTime();
+  return { start, end: start + DAY_MS };
+}
+
+/**
+ * History series bucketed across the local calendar day. Buckets after `now`
+ * are nulled so an actual line stops at the present instead of dropping to
+ * zero across the rest of the day.
+ */
+export function historyDaySeries(
+  history: HistoryCache,
+  id: string | undefined,
+  now: Date,
+  fill: number | null = null,
+): Array<number | null> {
+  if (!id) return [];
+  const { start, end } = dayWindow(now);
+  try {
+    const values = history.series(id, { start, end, buckets: 96, fill }) ?? [];
+    const cutoff = Math.floor(((now.getTime() - start) / DAY_MS) * 96);
+    return values.map((value, index) => (index <= cutoff ? value : null));
+  } catch {
+    return [];
+  }
+}
+
 /** Fraction of the local day for an instant, 0 at midnight and 1 at 24:00. */
 export function dayFraction(date: Date): number {
   return (

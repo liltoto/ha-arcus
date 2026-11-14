@@ -2,6 +2,16 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.4 - 2026-11-14
+
+### Fixed
+
+- Solar production, forecast, grid, and strings charts now share one local **calendar-day** x-axis. Previously today's forecast was aligned to midnight while the actual history used a rolling 24-hour window, so the two curves were shifted by the current time.
+- The actual solar line stops at the current time instead of dropping to zero across the rest of the day.
+- The home "Sol lige nu" sparkline explicitly uses 24 hours. Opening the solar sheet caches seven days for the same sensor, which used to stretch the home sparkline to a week while its hover labels still said 24 hours.
+- The day arc's actual solar line now uses the local calendar day and stops at the current time.
+- The 48-hour forecast chart starts at local midnight so its forecast points line up with the axis.
+
 ## 0.2.3 - 2026-11-14
 
 ### Fixed
