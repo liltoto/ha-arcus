@@ -2,6 +2,31 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.1 - 2026-11-14
+
+Internal cleanup and guardrail release. The dashboard, sheets, and Home Assistant contract are unchanged.
+
+### Security
+
+- `url` actions now open only absolute `http:`/`https:` URLs; `javascript:`, `data:`, `blob:`, protocol-relative, relative, and malformed targets are ignored.
+
+### Changed
+
+- Shared the economy/tech history chart, light rows, light-ID flattening, story frame, row activation, and vital text across the UI.
+- Split `renderChapterArt`, `WaterBody`, `VentilationBody`, `chapterSummaries`, and `buildAlerts`/`parseWatts` into smaller functions without changing output.
+- Moved `SheetFrame` to the page layer and documented the atomic-design import boundaries.
+
+### Added
+
+- Fallow dead-code, architecture-boundary, duplication, health-score, and changed-file audit gates.
+- Istanbul coverage (`npm run test:coverage`) feeding the Fallow health score.
+- `fallow:arch`, `fallow:audit`, and `fallow:health` scripts.
+
+### Verified
+
+- 279 tests, typecheck, build, size, Storybook, and CI Visual pass.
+- The dashboard and every sheet remain pixel-identical to 0.3.0.
+
 ## 0.3.0 - 2026-11-14
 
 Panda CSS migration. The visual design, class hooks, and Home Assistant contract are unchanged.

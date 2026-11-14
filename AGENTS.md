@@ -2,7 +2,7 @@
 
 Arcus is a Home Assistant Marketplace Dashboard plugin: one self-contained
 frontend bundle, a dashboard strategy, and visual editors. Single package,
-no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.0`.
+no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.1`.
 
 ## Commands
 
