@@ -2,6 +2,14 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.6 - 2026-11-14
+
+### Added
+
+- Chart readouts now work on touch screens. Tap or press a graph to show the same values and timestamp the desktop hover readout shows, drag along the graph to move the readout, and it stays visible for 2.5 seconds after release.
+- A touch on a graph no longer triggers the card or sheet action underneath it, so tapping “Sol lige nu” shows its numbers instead of opening the solar sheet. Tapping elsewhere hides the readout.
+- Added a mobile Playwright test for the vital spark and energy bar readouts.
+
 ## 0.2.5 - 2026-11-14
 
 ### Fixed

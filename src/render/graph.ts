@@ -367,14 +367,17 @@ function fillTip(
   tip.replaceChildren(fragment);
 }
 
-/** Bind one hover readout for every chart inside `root`. */
+/** Bind one hover/touch readout for every chart inside `root`. */
 export function mountGraphTips(
   root: ShadowRoot,
   language: () => Language | string,
 ): { destroy(): void } {
   let active = false;
+  let touchChart: HTMLElement | null = null;
+  let hideTimer: ReturnType<typeof setTimeout> | null = null;
+  let suppressClick = false;
 
-  const hide = (): void => {
+  const hideNow = (): void => {
     if (!active) return;
     active = false;
     const tip = root.querySelector<HTMLElement>("[data-graph-tip]");
@@ -383,35 +386,32 @@ export function mountGraphTips(
     cursor?.classList.remove("show");
   };
 
-  const onMove = (event: Event): void => {
-    const pointer = event as PointerEvent;
-    if (pointer.pointerType && pointer.pointerType !== "mouse") {
-      hide();
-      return;
-    }
-    const target = event.target as Element | null;
-    const chart = target?.closest?.("[data-graph]") as HTMLElement | null;
-    if (!chart) {
-      hide();
-      return;
-    }
+  const clearHide = (): void => {
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = null;
+  };
+
+  const scheduleHide = (): void => {
+    clearHide();
+    hideTimer = setTimeout(() => {
+      hideTimer = null;
+      hideNow();
+    }, 2500);
+  };
+
+  const showAt = (chart: HTMLElement, clientX: number): boolean => {
     const graph = parseGraph(chart);
-    if (!graph) {
-      hide();
-      return;
-    }
+    if (!graph) return false;
     const rect = chart.getBoundingClientRect();
-    if (rect.width < 4 || rect.height < 2) {
-      hide();
-      return;
-    }
+    if (rect.width < 4 || rect.height < 2) return false;
 
     const elements = tipElements(root);
-    if (!elements) return;
+    if (!elements) return false;
+    clearHide();
 
     const fraction = Math.min(
       1,
-      Math.max(0, (pointer.clientX - rect.left) / rect.width),
+      Math.max(0, (clientX - rect.left) / rect.width),
     );
     const primary = graph.series[0];
     let index: number;
@@ -470,20 +470,105 @@ export function mountGraphTips(
     elements.cursor.style.height = `${Math.round(rect.height)}px`;
     elements.cursor.classList.add("show");
     active = true;
+    return true;
   };
 
-  root.addEventListener("pointermove", onMove);
-  root.addEventListener("pointerdown", hide);
-  root.host.addEventListener("pointerleave", hide);
-  window.addEventListener("scroll", hide, true);
+  const onMove = (event: Event): void => {
+    const pointer = event as PointerEvent;
+    if (pointer.pointerType && pointer.pointerType !== "mouse") {
+      if (touchChart) showAt(touchChart, pointer.clientX);
+      return;
+    }
+    const target = event.target as Element | null;
+    const chart = target?.closest?.("[data-graph]") as HTMLElement | null;
+    if (!chart) {
+      hideNow();
+      return;
+    }
+    showAt(chart, pointer.clientX);
+  };
+
+  const onPointerDown = (event: Event): void => {
+    const pointer = event as PointerEvent;
+    const target = event.target as Element | null;
+
+    if (pointer.pointerType && pointer.pointerType !== "mouse") {
+      const chart = target?.closest?.("[data-graph]") as HTMLElement | null;
+      if (!chart) {
+        touchChart = null;
+        suppressClick = false;
+        hideNow();
+        return;
+      }
+      touchChart = chart;
+      suppressClick = true;
+      if (showAt(chart, pointer.clientX)) event.preventDefault();
+      return;
+    }
+
+    // A mouse click hides the hover readout, as before.
+    suppressClick = false;
+    hideNow();
+  };
+
+  const endTouch = (): void => {
+    if (!touchChart) return;
+    touchChart = null;
+    scheduleHide();
+  };
+
+  const cancelTouch = (): void => {
+    touchChart = null;
+    suppressClick = false;
+    scheduleHide();
+  };
+
+  const onClickCapture = (event: Event): void => {
+    if (!suppressClick) return;
+    suppressClick = false;
+    // The tap was used to reveal the chart readout; do not also activate the
+    // card/button that contains the chart.
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const onHostLeave = (): void => {
+    // Touch taps release the finger and then emit pointerleave. Keep the
+    // readout visible for the short touch-hide window instead of clearing it
+    // the moment the tap lands.
+    if (touchChart || hideTimer) return;
+    hideNow();
+  };
+
+  const onScroll = (): void => {
+    touchChart = null;
+    suppressClick = false;
+    hideNow();
+  };
+
+  root.addEventListener("pointermove", onMove, { passive: false });
+  root.addEventListener("pointerdown", onPointerDown);
+  root.addEventListener("pointerup", endTouch);
+  root.addEventListener("pointercancel", cancelTouch);
+  window.addEventListener("pointerup", endTouch, true);
+  window.addEventListener("pointercancel", cancelTouch, true);
+  root.addEventListener("click", onClickCapture, true);
+  root.host.addEventListener("pointerleave", onHostLeave);
+  window.addEventListener("scroll", onScroll, true);
 
   return {
     destroy(): void {
+      clearHide();
       root.removeEventListener("pointermove", onMove);
-      root.removeEventListener("pointerdown", hide);
-      root.host.removeEventListener("pointerleave", hide);
-      window.removeEventListener("scroll", hide, true);
-      hide();
+      root.removeEventListener("pointerdown", onPointerDown);
+      root.removeEventListener("pointerup", endTouch);
+      root.removeEventListener("pointercancel", cancelTouch);
+      window.removeEventListener("pointerup", endTouch, true);
+      window.removeEventListener("pointercancel", cancelTouch, true);
+      root.removeEventListener("click", onClickCapture, true);
+      root.host.removeEventListener("pointerleave", onHostLeave);
+      window.removeEventListener("scroll", onScroll, true);
+      hideNow();
     },
   };
 }
