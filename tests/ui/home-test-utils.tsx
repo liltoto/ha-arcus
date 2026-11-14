@@ -45,7 +45,7 @@ export function makeActions(): ArcusActions {
   };
 }
 
-export function historyStub(): HistoryCache {
+function historyStub(): HistoryCache {
   return {
     ensure: async () => undefined,
     series: () => [],

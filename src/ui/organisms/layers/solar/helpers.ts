@@ -1,4 +1,8 @@
-import type { HistoryCache, HistoryRow } from "../../../../data/history";
+import {
+  rowValue,
+  type HistoryCache,
+  type HistoryRow,
+} from "../../../../data/history";
 import { formatNumber } from "../../../../format";
 import type {
   ArcusConfig,
@@ -14,7 +18,7 @@ import type {
 
 export const DAY_MS = 86_400_000;
 
-export const SOLAR_TABS: readonly SolarTab[] = [
+const SOLAR_TABS: readonly SolarTab[] = [
   "overblik",
   "produktion",
   "batteri",
@@ -70,16 +74,7 @@ const SOLAR_VALUE_KEYS = [
   "paybackPercent",
 ] as const;
 
-export function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-export function localeFor(language: Language): string {
+function localeFor(language: Language): string {
   return language === "da" ? "da-DK" : "en-GB";
 }
 
@@ -160,10 +155,7 @@ export function historySeries(
   }
 }
 
-export function safeRaw(
-  history: HistoryCache,
-  id: string | undefined,
-): HistoryRow[] {
+function safeRaw(history: HistoryCache, id: string | undefined): HistoryRow[] {
   if (!id) return [];
   try {
     return history.raw(id) ?? [];
@@ -172,7 +164,7 @@ export function safeRaw(
   }
 }
 
-export function rowTime(row: HistoryRow): number {
+function rowTime(row: HistoryRow): number {
   const raw = row.lu ?? row.last_updated ?? row.lc ?? row.last_changed;
   if (typeof raw === "number") {
     return raw < 1e12 ? raw * 1000 : raw;
@@ -188,19 +180,7 @@ export function rowTime(row: HistoryRow): number {
   return 0;
 }
 
-export function rowValue(row: HistoryRow): number | null {
-  const raw = row.s ?? row.state;
-  if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
-  if (typeof raw === "string") {
-    const value = raw.trim();
-    if (!value || value === "unavailable" || value === "unknown") return null;
-    const number = Number(value);
-    return Number.isFinite(number) ? number : null;
-  }
-  return null;
-}
-
-export function localDayKey(date: Date): string {
+function localDayKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
     2,
     "0",
@@ -213,7 +193,7 @@ export function pointDate(point: SolarPoint): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-export function sameLocalDay(a: Date, b: Date): boolean {
+function sameLocalDay(a: Date, b: Date): boolean {
   return (
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&

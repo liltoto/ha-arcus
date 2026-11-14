@@ -1,3 +1,4 @@
+import { numberFrom } from "../format";
 import { createTranslator, resolveLanguage } from "../localize";
 import type {
   AlertModel,
@@ -66,12 +67,6 @@ function attributesOf(
   entityId: string | undefined | null,
 ): Record<string, any> {
   return stateOf(hass, entityId)?.attributes ?? {};
-}
-
-function numberFrom(value: unknown): number | null {
-  if (value === null || value === undefined || value === "") return null;
-  const number = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(number) ? number : null;
 }
 
 function numState(

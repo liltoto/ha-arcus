@@ -39,11 +39,3 @@ export interface TabItem {
   label: string;
   route?: string;
 }
-
-export interface LightView {
-  id?: string;
-  name: string;
-  isOn: boolean;
-  brightness: number;
-  icon?: string;
-}

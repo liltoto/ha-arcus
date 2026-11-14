@@ -938,7 +938,7 @@ export function makeHass(overrides = {}) {
   return Object.assign(hass, overrides);
 }
 
-export function makeHistory(ids, start, end) {
+function makeHistory(ids, start, end) {
   const out = {};
   const span = end.getTime() - start.getTime();
   const step = span > 40 * DAY ? 12 * HOUR : span > 3 * DAY ? 2 * HOUR : 15 * 60e3;

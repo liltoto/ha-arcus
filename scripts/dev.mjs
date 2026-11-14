@@ -1,21 +1,13 @@
-import { execFileSync, spawn } from "node:child_process";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
+import { spawn } from "node:child_process";
+
 import { build, context } from "esbuild";
 
-const ROOT = process.cwd();
-const PANDA_CSS = path.join(ROOT, "styled-system", "styles.css");
-const PANDA_BIN = path.join(
-  ROOT,
-  "node_modules",
-  ".bin",
-  process.platform === "win32" ? "panda.cmd" : "panda",
-);
+import { PANDA_BIN, ROOT, cssInline, runPandaBuild } from "./panda.mjs";
 
 // Generate the helper modules and the first stylesheet before esbuild starts.
 // `cssgen --watch` then keeps the stylesheet fresh without rewriting the JS
 // helpers on every source edit.
-execFileSync(PANDA_BIN, ["build"], { cwd: ROOT, stdio: "inherit" });
+runPandaBuild();
 const pandaWatch = spawn(PANDA_BIN, ["cssgen", "--watch"], {
   cwd: ROOT,
   stdio: "inherit",
@@ -38,30 +30,6 @@ process.on("SIGTERM", () => {
   stopPanda();
   process.exit(0);
 });
-
-const cssInline = {
-  name: "css-inline",
-  setup(build) {
-    build.onResolve({ filter: /\.css\?inline$/ }, (args) => ({
-      path: path.resolve(
-        args.resolveDir,
-        args.path.slice(0, -"?inline".length),
-      ),
-      namespace: "css-inline",
-    }));
-    build.onLoad({ filter: /.*/, namespace: "css-inline" }, async (args) => {
-      const isPanda = path.basename(args.path) === "panda.css";
-      return {
-        contents: `export default ${JSON.stringify(
-          await readFile(isPanda ? PANDA_CSS : args.path, "utf8"),
-        )};`,
-        loader: "js",
-        // Rebuild the bundle when Panda writes the generated stylesheet.
-        watchFiles: isPanda ? [PANDA_CSS] : [],
-      };
-    });
-  },
-};
 
 await build({
   entryPoints: ["tests/fixtures/home.ts"],

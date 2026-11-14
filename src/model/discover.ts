@@ -155,7 +155,7 @@ export function entitiesForArea(
 }
 
 /** Map an HA area icon (`mdi:sofa`) onto one of the prototype icon names. */
-export function areaIconKey(icon: string | null | undefined): string {
+function areaIconKey(icon: string | null | undefined): string {
   if (!icon) return "home";
   const name = String(icon).trim().replace(/^mdi:/i, "").toLowerCase();
   if (AREA_ICON_KEYS[name]) return AREA_ICON_KEYS[name];
@@ -175,7 +175,7 @@ export function areaIconKey(icon: string | null | undefined): string {
  * require an area icon, and the current home has two icon-less areas (Entre
  * and Lille Gang) that should still read as a door and a staircase.
  */
-export function areaNameIcon(name: string): string {
+function areaNameIcon(name: string): string {
   const value = String(name).toLowerCase();
   if (/køkken|kokken|kitchen/.test(value)) return "counter";
   if (/stue|living|sofa/.test(value)) return "sofa";

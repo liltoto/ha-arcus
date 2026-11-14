@@ -10,9 +10,10 @@
  * Only the shape of the configuration is validated.
  */
 import { normalizeConfig } from "./config";
+import { clone, isRecord } from "./editor-utils";
+import type { ConfigRecord } from "./editor-utils";
+import { escapeHtml } from "./format";
 import type { ArcusConfigInput, ArcusHass, AreaRegistryEntry } from "./types";
-
-type ConfigRecord = Record<string, unknown>;
 
 interface EntityField {
   path: string;
@@ -297,24 +298,6 @@ export const EDITOR_STYLES = `
     * { scroll-behavior: auto !important; transition: none !important; }
   }
 `;
-
-function isRecord(value: unknown): value is ConfigRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function clone<T>(value: T): T {
-  if (value === undefined) return value;
-  return JSON.parse(JSON.stringify(value)) as T;
-}
-
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function getPath(source: unknown, path: string): unknown {
   let node: unknown = source;
@@ -817,10 +800,8 @@ export class ArcusConfigEditor extends HTMLElement {
   }
 }
 
-export default ArcusConfigEditor;
-
 /** The tag Home Assistant uses for the card configuration element. */
-export const ARCUS_CONFIG_EDITOR_TAG = "arcus-config-editor";
+const ARCUS_CONFIG_EDITOR_TAG = "arcus-config-editor";
 
 if (
   typeof customElements !== "undefined" &&

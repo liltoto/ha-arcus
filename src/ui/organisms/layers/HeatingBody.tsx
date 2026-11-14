@@ -1,5 +1,5 @@
 import { useEffect, useId } from "react";
-import { formatNumber } from "../../../format";
+import { formatNumber, numberFrom } from "../../../format";
 import { areaPath, sparkPath } from "../../../render/charts";
 import type {
   ArcusConfig,
@@ -43,12 +43,6 @@ const CHART_HEIGHT = 120;
 
 function languageOf(model: HomeModel, config: ArcusConfig): "da" | "en" {
   return model.language === "en" || config.language === "en" ? "en" : "da";
-}
-
-function numberFrom(value: unknown): number | null {
-  if (value === null || value === undefined || value === "") return null;
-  const number = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(number) ? number : null;
 }
 
 function temperature(value: number | null, language: "da" | "en"): string {

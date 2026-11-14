@@ -91,7 +91,7 @@ function rowTimestamp(row: HistoryRow): number {
 }
 
 /** State value -> number, preserving gaps as `null`. */
-function rowValue(row: HistoryRow): number | null {
+export function rowValue(row: HistoryRow): number | null {
   const raw = row.s ?? row.state;
   if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
   if (typeof raw === "string") {

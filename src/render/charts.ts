@@ -3,7 +3,6 @@
 export type ChartPoint = { x: number; y: number };
 export type ChartRange = { min: number; max: number };
 export type ChartValues = ReadonlyArray<number | null | undefined>;
-export type HistoryRowLike = { s?: unknown; state?: unknown };
 
 const clamp = (v: number, a: number, b: number): number => Math.max(a, Math.min(b, v));
 
@@ -88,15 +87,4 @@ export function downsample(values: ChartValues, target = 48): Array<number | nul
     out.push(n ? sum / n : null);
   }
   return out;
-}
-
-/** Map Home Assistant history rows (`s` or `state`) to a numeric series. */
-export function seriesFromHistory(rows: unknown): Array<number | null> {
-  if (!Array.isArray(rows)) return [];
-  return rows.map((row: HistoryRowLike) => {
-    const v = row?.s ?? row?.state;
-    if (v === "unavailable" || v === "unknown" || v === null || v === undefined) return null;
-    const n = Number(v);
-    return Number.isNaN(n) ? null : n;
-  });
 }

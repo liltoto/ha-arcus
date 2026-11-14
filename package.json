@@ -16,6 +16,9 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "size": "node scripts/check-size.mjs",
+    "fallow": "fallow",
+    "fallow:dead": "fallow dead-code",
+    "fallow:dupes": "fallow dupes",
     "prepare": "panda codegen"
   },
   "keywords": [
@@ -44,6 +47,7 @@
     "@vitejs/plugin-react": "^6.3.0",
     "esbuild": "^0.28.2",
     "eslint": "^10.14.0",
+    "fallow": "3.43.0",
     "happy-dom": "^21.0.4",
     "postcss": "^8.5.33",
     "prettier": "^3.10.1",
