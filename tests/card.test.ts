@@ -92,9 +92,12 @@ describe("ArcusCard", () => {
 
     expect(location.hash).toBe("#/rum/stue");
     expect(card.shadowRoot!.querySelector(".sheet.open")).not.toBeNull();
-    expect(card.shadowRoot!.querySelector("arcus-sheets")).not.toBeNull();
+    expect(card.shadowRoot!.querySelector("arcus-sheets")).toBeNull();
+    expect(card.shadowRoot!.querySelector(".sheet-title")).toHaveTextContent(
+      "Stue",
+    );
     expect(
-      card.shadowRoot!.querySelector("arcus-sheets [data-act='close']"),
+      card.shadowRoot!.querySelector(".sheet-close[data-act='close']"),
     ).not.toBeNull();
   });
 
@@ -162,9 +165,7 @@ describe("ArcusCard", () => {
     expect(card.shadowRoot!.querySelector(".sheet.open")).not.toBeNull();
 
     card
-      .shadowRoot!.querySelector<HTMLElement>(
-        "arcus-sheets [data-act='close']",
-      )!
+      .shadowRoot!.querySelector<HTMLElement>(".sheet-close[data-act='close']")!
       .click();
     await tick();
 
