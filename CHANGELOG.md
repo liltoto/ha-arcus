@@ -2,6 +2,17 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.1 - 2026-11-14
+
+Editor fix: typing in the visual configuration no longer makes the dialog jump to the top.
+
+### Fixed
+
+- `ArcusConfigEditor.setConfig` ignores Home Assistant's `config-changed` echo instead of rebuilding the form. Rebuilding collapsed every open `<details>` section, dropped input focus and caret, and scrolled the dialog to the top.
+- `ArcusStrategyEditor.setConfig` keeps its embedded card editor instance alive and refreshes only the title inputs that are not focused.
+- Legitimate external config updates now preserve open sections, focused control, caret position, and the page scroll position.
+- `Backspace` and `Delete` inside either editor are stopped at the shadow-root boundary, so Home Assistant's dashboard edit shortcuts cannot treat them as "remove the selected card".
+
 ## 0.4.0 - 2026-11-14
 
 Configurability release: Arcus can now fit homes that look nothing like the development home, without hand-writing a 100-line YAML block.
