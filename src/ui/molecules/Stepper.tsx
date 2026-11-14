@@ -1,3 +1,4 @@
+import type { Translator } from "../../types";
 import { Icon } from "../atoms/Icon";
 import { c } from "../styles/classes";
 
@@ -8,6 +9,7 @@ export interface StepperProps {
   step?: number;
   unit?: string;
   label?: string;
+  t?: Translator;
   onChange: (value: number) => void;
   formatValue?: (value: number) => string;
 }
@@ -34,6 +36,7 @@ export function Stepper({
   step = 1,
   unit,
   label,
+  t,
   onChange,
   formatValue,
 }: StepperProps) {
@@ -42,6 +45,12 @@ export function Stepper({
   const display = formatValue
     ? formatValue(value)
     : String(roundToStep(value, step));
+  const decreaseLabel = label
+    ? (t?.("stepper.decrease", { label }) ?? `Decrease ${label}`)
+    : "Decrease";
+  const increaseLabel = label
+    ? (t?.("stepper.increase", { label }) ?? `Increase ${label}`)
+    : "Increase";
 
   const move = (direction: -1 | 1) => {
     const next = roundToStep(
@@ -55,19 +64,19 @@ export function Stepper({
     <div className={c("stepper")}>
       <button
         type="button"
-        aria-label={label ? `Decrease ${label}` : "Decrease"}
+        aria-label={decreaseLabel}
         disabled={atMin}
         onClick={() => move(-1)}
       >
         <Icon name="minus" />
       </button>
-      <span className={c("val")}>
+      <span className={c("val")} aria-live="polite">
         {display}
         {unit ? <small>{unit}</small> : null}
       </span>
       <button
         type="button"
-        aria-label={label ? `Increase ${label}` : "Increase"}
+        aria-label={increaseLabel}
         disabled={atMax}
         onClick={() => move(1)}
       >

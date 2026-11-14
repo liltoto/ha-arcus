@@ -26,6 +26,7 @@ export function SheetTemplate({
       <div
         className={c("scrim", open && "open")}
         data-scrim
+        aria-hidden="true"
         onClick={(event) => {
           // Keep the click inside React; the card no longer delegates it.
           event.stopPropagation();
@@ -37,7 +38,9 @@ export function SheetTemplate({
         className={c("sheet", open && "open")}
         data-sheet
         role="dialog"
-        aria-modal="true"
+        aria-modal={open ? true : undefined}
+        aria-hidden={open ? undefined : true}
+        inert={!open}
         aria-label={label}
       >
         <SheetGrab />

@@ -198,6 +198,11 @@ describe("SheetFrame", () => {
     await waitFor(() =>
       expect(container.querySelector(".sheet")).not.toHaveClass("open"),
     );
+    expect(container.querySelector("[data-sheet]")).toHaveAttribute("inert");
+    expect(container.querySelector("[data-sheet]")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
     await waitFor(() => expect(document.activeElement).toBe(opener));
     opener.remove();
   });

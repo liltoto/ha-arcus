@@ -12,6 +12,7 @@ export {
   useActions,
   useArcusStore,
   useAtmo,
+  useAtmoMode,
   useBindings,
   useConfig,
   useDark,

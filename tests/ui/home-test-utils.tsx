@@ -77,6 +77,7 @@ export function makeArcusProps(options: ArcusRenderOptions = {}) {
     history: options.history ?? historyStub(),
     now,
     atmo: "night" as const,
+    atmoMode: "auto" as const,
     dark: true,
   };
 }

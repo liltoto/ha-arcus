@@ -120,6 +120,8 @@ export default defineConfig({
       boxSizing: "border-box",
     },
     ".app": {
+      colorScheme: "dark",
+      WebkitTapHighlightColor: "transparent",
       "--bg-0": "#080b0f",
       "--bg-1": "#0d1117",
       "--bg-2": "#121821",
@@ -166,6 +168,7 @@ export default defineConfig({
       "--arcus-sheet-pad": "20px",
     },
     ".app.light": {
+      colorScheme: "light",
       "--bg-0": "#efe8dc",
       "--bg-1": "#f7f2e9",
       "--bg-2": "#fbf7f0",
@@ -242,10 +245,11 @@ export default defineConfig({
       padding: "0",
       cursor: "pointer",
     },
-    "button:focus-visible, a:focus-visible, input:focus-visible": {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "3px",
-    },
+    "button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible, [tabindex]:focus-visible":
+      {
+        outline: "2px solid var(--accent)",
+        outlineOffset: "3px",
+      },
     "@media (prefers-reduced-motion: reduce)": {
       "*, *::before, *::after": {
         animationDuration: "0.001ms !important",

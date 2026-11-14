@@ -233,6 +233,13 @@ describe("ToggleRow", () => {
     expect(toggle).toHaveAttribute("data-entity", "input_boolean.window");
     expect(toggle).not.toHaveClass("on");
 
+    // One hit target: the switch is decorative and the whole row is the button.
+    expect(toggle.querySelector(".toggle")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+
     await user.click(toggle);
     expect(onChange).toHaveBeenCalledTimes(1);
 
@@ -387,11 +394,10 @@ describe("SegmentedTabs", () => {
 
     expect(container.querySelector(".sheet-tabs")).not.toBeNull();
     const overview = screen.getByRole("button", { name: "Overview" });
-    expect(overview).toHaveAttribute("aria-pressed", "true");
+    expect(overview).toHaveAttribute("aria-current", "page");
     expect(overview).toHaveAttribute("data-tab", "overview");
-    expect(screen.getByRole("button", { name: "Lights" })).toHaveAttribute(
-      "aria-pressed",
-      "false",
+    expect(screen.getByRole("button", { name: "Lights" })).not.toHaveAttribute(
+      "aria-current",
     );
 
     await user.click(screen.getByRole("button", { name: "Lights" }));

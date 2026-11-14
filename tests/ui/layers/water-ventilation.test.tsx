@@ -371,7 +371,7 @@ describe("VentilationBody", () => {
         `[data-act="temp-step"][data-entity="${climateId}"]`,
       ),
     ).not.toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Increase Setpunkt" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hæv Setpunkt" }));
     expect(props.actions.callService).toHaveBeenCalledWith(
       "climate",
       "set_temperature",

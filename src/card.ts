@@ -645,6 +645,7 @@ export class ArcusCard extends HTMLElement {
       history: this._history,
       now: this._nowFn,
       atmo: this._atmo(),
+      atmoMode: this._atmoMode,
       dark: this._themeDark(),
     };
   }

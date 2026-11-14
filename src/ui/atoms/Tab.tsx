@@ -20,7 +20,7 @@ export function Tab({
     <button
       type="button"
       className={c("tab", active && "active", className)}
-      aria-pressed={active}
+      aria-current={active ? "page" : undefined}
       data-tab={dataTab}
       onClick={onClick}
     >

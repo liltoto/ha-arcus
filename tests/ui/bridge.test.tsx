@@ -65,6 +65,7 @@ function bridgeProps() {
     history: historyStub(),
     now: () => FIXED_NOW,
     atmo: "night" as const,
+    atmoMode: "night" as const,
     dark: true,
   };
 }
@@ -95,12 +96,23 @@ describe("ArcusApp home shell", () => {
 
     expect(app?.querySelector("[data-scrim]")).not.toBeNull();
     expect(app?.querySelector("[data-toast]")).not.toBeNull();
+    expect(app?.querySelector("[data-toast]")).toHaveAttribute(
+      "role",
+      "status",
+    );
+    expect(app?.querySelector("[data-toast]")).toHaveAttribute(
+      "aria-live",
+      "polite",
+    );
     expect(app?.querySelector("[data-graph-tip]")).not.toBeNull();
     expect(app?.querySelector("[data-graph-cursor]")).not.toBeNull();
 
-    const sheet = screen.getByRole("dialog", { name: "Detaljer" });
+    const sheet = container.querySelector<HTMLElement>("[data-sheet]")!;
     expect(sheet).toHaveAttribute("data-sheet");
     expect(sheet).toHaveClass("sheet");
+    expect(sheet).toHaveAttribute("aria-hidden", "true");
+    expect(sheet).toHaveAttribute("inert");
+    expect(sheet).not.toHaveAttribute("aria-modal");
     expect(sheet.querySelector("[data-sheet-grab]")).not.toBeNull();
     expect(sheet.querySelector("arcus-sheets")).toBeNull();
 
@@ -123,6 +135,7 @@ describe("ArcusApp home shell", () => {
       route: { base: "energi", sub: null } as const,
       dark: false,
       atmo: "dusk" as const,
+      atmoMode: "day" as const,
       config: makeConfig({ density: "compact" }),
     };
     const { container } = render(<ArcusApp store={createArcusStore(state)} />);
@@ -132,6 +145,8 @@ describe("ArcusApp home shell", () => {
     expect(app).toHaveAttribute("data-atmo", "dusk");
     expect(app).toHaveAttribute("data-density", "compact");
     expect(screen.getByRole("dialog")).toHaveClass("open");
+    expect(screen.getByRole("dialog")).toHaveAttribute("aria-modal", "true");
+    expect(screen.getByRole("dialog")).not.toHaveAttribute("inert");
   });
 });
 

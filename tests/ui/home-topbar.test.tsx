@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { buildModel } from "../../src/model/build";
@@ -121,7 +121,7 @@ describe("TopBar", () => {
 
   it("cycles the atmosphere icon and reports each mode", async () => {
     const user = userEvent.setup();
-    const { props } = renderTopBar();
+    const { props, store } = renderTopBar();
     const button = screen.getByRole("button", { name: "Atmosfære" });
 
     expect(button).toHaveAttribute("data-act", "atmo");
@@ -130,14 +130,17 @@ describe("TopBar", () => {
 
     await user.click(button);
     expect(props.actions.setAtmo).toHaveBeenNthCalledWith(1, "night");
+    act(() => store.setState({ atmoMode: "night" }));
     expect(renderedIcon(button)).toBe(iconBody("moon"));
 
     await user.click(button);
     expect(props.actions.setAtmo).toHaveBeenNthCalledWith(2, "day");
+    act(() => store.setState({ atmoMode: "day" }));
     expect(renderedIcon(button)).toBe(iconBody("sun"));
 
     await user.click(button);
     expect(props.actions.setAtmo).toHaveBeenNthCalledWith(3, "auto");
+    act(() => store.setState({ atmoMode: "auto" }));
     expect(renderedIcon(button)).toBe(iconBody("spark"));
   });
 

@@ -54,6 +54,7 @@ export const sheetStyles: Record<string, string> = {
     background: "var(--line-strong)",
     margin: "9px auto 0",
     flex: "0 0 auto",
+    touchAction: "none",
     _sheetMobile: { display: "block" },
   }),
   "sheet-head": css({
@@ -81,6 +82,8 @@ export const sheetStyles: Record<string, string> = {
     fontWeight: 500,
     lineHeight: 0.95,
     letterSpacing: "-0.03em",
+    overflowWrap: "anywhere",
+    textWrap: "balance",
     _phone: { fontSize: "32px" },
   }),
   "sheet-sum": css({
@@ -110,9 +113,11 @@ export const sheetStyles: Record<string, string> = {
     flex: "1 1 auto",
     overflowY: "auto",
     overflowX: "hidden",
+    overscrollBehavior: "contain",
     scrollbarWidth: "thin",
     scrollbarColor: "var(--line-strong) transparent",
-    padding: "8px var(--arcus-sheet-pad) 48px",
+    padding:
+      "8px var(--arcus-sheet-pad) calc(48px + env(safe-area-inset-bottom, 0px))",
     "&::-webkit-scrollbar": { width: "5px" },
     "&::-webkit-scrollbar-thumb": {
       background: "var(--line-strong)",
@@ -167,7 +172,8 @@ export const sheetStyles: Record<string, string> = {
     textTransform: "uppercase",
     color: "var(--muted)",
     whiteSpace: "nowrap",
-    transition: "all 0.2s ease",
+    touchAction: "manipulation",
+    transition: "color 0.2s ease, background 0.2s ease, border-color 0.2s ease",
     "&.active": {
       color: "var(--bg-0)",
       background: "var(--text)",
@@ -399,6 +405,7 @@ export const sheetStyles: Record<string, string> = {
     minHeight: "48px",
     "& .row-main": { flex: 1, minWidth: 0 },
     "& .row-name": {
+      display: "block",
       fontSize: "12px",
       color: "var(--text)",
       lineHeight: 1.3,
@@ -407,6 +414,7 @@ export const sheetStyles: Record<string, string> = {
       textOverflow: "ellipsis",
     },
     "& .row-sub": {
+      display: "block",
       marginTop: "2px",
       fontSize: "10px",
       color: "var(--muted)",
@@ -426,5 +434,21 @@ export const sheetStyles: Record<string, string> = {
     },
     "& .ico": { color: "var(--muted)" },
     "&.on .ico": { color: "var(--accent)" },
+  }),
+  /**
+   * A `.row` that is itself a button. Buttons bring their own border,
+   * background and font, so reset those while keeping the row layout.
+   */
+  "row-button": css({
+    width: "100%",
+    border: "0",
+    borderBottom: "1px solid var(--line)",
+    background: "transparent",
+    font: "inherit",
+    color: "inherit",
+    textAlign: "left",
+    cursor: "pointer",
+    touchAction: "manipulation",
+    "&:disabled": { opacity: 0.45, cursor: "not-allowed" },
   }),
 };

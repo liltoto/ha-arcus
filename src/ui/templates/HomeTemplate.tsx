@@ -84,7 +84,7 @@ export function HomeTemplate({
         </main>
       </div>
       {sheet}
-      <div className={c("toast")} data-toast />
+      <div className={c("toast")} data-toast role="status" aria-live="polite" />
       <div className={c("graph-tip")} data-graph-tip aria-hidden="true" />
       <div className={c("graph-cursor")} data-graph-cursor aria-hidden="true" />
     </div>

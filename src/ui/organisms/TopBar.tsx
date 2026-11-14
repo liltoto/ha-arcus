@@ -1,8 +1,8 @@
-import { useState } from "react";
 import type { AtmosphereSetting } from "../../types";
 import { Icon } from "../atoms/Icon";
 import {
   useActions,
+  useAtmoMode,
   useBindings,
   useConfig,
   useHass,
@@ -39,7 +39,7 @@ export function TopBar({ className }: TopBarProps = {}) {
   const model = useModel();
   const actions = useActions();
   const hass = useHass();
-  const [atmo, setAtmo] = useState<AtmosphereSetting>("auto");
+  const atmo = useAtmoMode();
 
   const configuredPerson = config.person?.trim();
   const personHome = configuredPerson
@@ -52,7 +52,6 @@ export function TopBar({ className }: TopBarProps = {}) {
 
   const cycleAtmo = () => {
     const next = ATMO_ORDER[(ATMO_ORDER.indexOf(atmo) + 1) % ATMO_ORDER.length];
-    setAtmo(next);
     actions.setAtmo(next);
   };
 

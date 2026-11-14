@@ -3,10 +3,6 @@ import { Icon } from "../atoms/Icon";
 import { useActions, useConfig, useHass, useTranslator } from "../hooks";
 import { c } from "../styles/classes";
 
-const BEDTIME = "input_button.bedtime";
-const VACATION = "input_boolean.vacation_mode";
-const WINDOW_ALERT = "input_boolean.window_alert_notification";
-
 interface QuickButtonProps {
   icon: string;
   label: string;
@@ -64,11 +60,6 @@ export function QuickActions() {
   const actions = useActions();
 
   const configured = config.quick_actions.length > 0;
-  const hasBedtime = Boolean(hass.states?.[BEDTIME]);
-  const hasVacation = Boolean(hass.states?.[VACATION]);
-  const hasWindowAlert = Boolean(hass.states?.[WINDOW_ALERT]);
-
-  const isOn = (entity: string) => hass.states?.[entity]?.state === "on";
 
   const openMap = () => {
     try {
@@ -117,58 +108,6 @@ export function QuickActions() {
               );
             })
           : null}
-        {!configured && hasBedtime ? (
-          <QuickButton
-            icon="moon"
-            label={t("quick.bedtime")}
-            act="press"
-            entity={BEDTIME}
-            onClick={() =>
-              actions.callService(
-                "input_button",
-                "press",
-                {},
-                { entity_id: BEDTIME },
-              )
-            }
-          />
-        ) : null}
-        {!configured && hasVacation ? (
-          <QuickButton
-            icon="car"
-            label={t("quick.vacation")}
-            on={isOn(VACATION)}
-            act="toggle-bool"
-            entity={VACATION}
-            dataOn={VACATION}
-            onClick={() =>
-              actions.callService(
-                "input_boolean",
-                "toggle",
-                {},
-                { entity_id: VACATION },
-              )
-            }
-          />
-        ) : null}
-        {!configured && hasWindowAlert ? (
-          <QuickButton
-            icon="wind"
-            label={t("quick.windowAlert")}
-            on={isOn(WINDOW_ALERT)}
-            act="toggle-bool"
-            entity={WINDOW_ALERT}
-            dataOn={WINDOW_ALERT}
-            onClick={() =>
-              actions.callService(
-                "input_boolean",
-                "toggle",
-                {},
-                { entity_id: WINDOW_ALERT },
-              )
-            }
-          />
-        ) : null}
         {!configured ? (
           <QuickButton
             icon="light"

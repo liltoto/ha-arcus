@@ -10,6 +10,8 @@ export interface OpeningRowProps {
   icon?: string;
   onClick?: () => void;
   status?: string;
+  openLabel?: string;
+  closedLabel?: string;
 }
 
 /** A door/window/leak row with the open/closed status line. */
@@ -21,6 +23,8 @@ export function OpeningRow({
   icon,
   onClick,
   status,
+  openLabel = "Open",
+  closedLabel = "Closed",
 }: OpeningRowProps) {
   const interactive = Boolean(onClick);
   const sub = room ? `${kind} · ${room}` : kind;
@@ -42,7 +46,7 @@ export function OpeningRow({
       </div>
       <span className={c("status-line")}>
         <i className={c("dot", isOpen && "warn")} />
-        {status ?? (isOpen ? "Open" : "Closed")}
+        {status ?? (isOpen ? openLabel : closedLabel)}
       </span>
     </div>
   );

@@ -31,6 +31,7 @@ export function Hero() {
       <div className={c("hero-top")}>
         <div>
           <button
+            type="button"
             className={c("eyebrow")}
             data-nav={eyebrowRoute}
             aria-label={hasPrayers ? t("hero.seePrayers") : t("hero.seeLayers")}

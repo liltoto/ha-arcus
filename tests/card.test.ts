@@ -72,25 +72,18 @@ describe("ArcusCard", () => {
     ).not.toBeNull();
   });
 
-  test("delegates the default quick actions to hass.callService", async () => {
-    const hass = makeHass();
-    const callService = vi.spyOn(hass, "callService");
-    const card = await mount(makeConfig({ quick_actions: [] }), hass);
+  test("falls back to generic quick actions when none are configured", async () => {
+    const card = await mount(makeConfig({ quick_actions: [] }), makeHass());
+    const root = card.shadowRoot!;
 
-    const vacation = card.shadowRoot!.querySelector<HTMLElement>(
-      '[data-act="toggle-bool"][data-entity="input_boolean.vacation_mode"]',
-    );
-    expect(vacation).not.toBeNull();
-
-    vacation!.click();
-    await Promise.resolve();
-
-    expect(callService).toHaveBeenCalledWith(
-      "input_boolean",
-      "toggle",
-      {},
-      { entity_id: "input_boolean.vacation_mode" },
-    );
+    expect(
+      root.querySelector('[data-entity="input_boolean.vacation_mode"]'),
+    ).toBeNull();
+    expect(
+      root.querySelector('[data-entity="input_button.bedtime"]'),
+    ).toBeNull();
+    expect(root.querySelector('[data-nav="lys"]')).not.toBeNull();
+    expect(root.querySelector('[data-act="map"]')).not.toBeNull();
   });
 
   test("honours config.quick_actions and runs perform-action", async () => {

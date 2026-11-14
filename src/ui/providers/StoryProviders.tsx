@@ -55,6 +55,7 @@ const providerState: ArcusStoreState = {
   history,
   now,
   atmo: "night",
+  atmoMode: "night",
   dark: true,
 };
 
