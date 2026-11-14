@@ -1,0 +1,175 @@
+/* Arcus — alt er eget design, ingen HA-kort inde i oplevelsen */
+
+:host {
+  /* Audited spacing scale. Defaults reproduce the current design. */
+  --arcus-card-pad: 20px;
+  --arcus-grid-gap: 12px;
+  --arcus-section-gap: clamp(32px, 3vw, 40px);
+  --arcus-sheet-pad: 24px;
+  /* Height of the sparkline footer band in vitals and room cards. Text is
+     padded clear of it so charts never run behind labels. */
+  --arcus-spark-vital: 26px;
+  --arcus-spark-room: 46px;
+
+  display: block;
+  height: calc(100dvh - var(--header-height, 56px));
+  min-height: 560px;
+  background: #080b0f;
+  color: #f2ebe1;
+}
+
+:host([data-density="compact"]) {
+  --arcus-card-pad: 16px;
+  --arcus-grid-gap: 10px;
+  --arcus-section-gap: 32px;
+  --arcus-sheet-pad: 20px;
+}
+
+@media (max-width: 560px) {
+  :host {
+    --arcus-card-pad: 16px;
+    /* The prototype keeps its 12px grid gap on phones; 10px is compact-only. */
+    --arcus-sheet-pad: 16px;
+  }
+}
+
+/* The card sets density on .app; mirror the tokens there for nested content. */
+.app[data-density="compact"] {
+  --arcus-card-pad: 16px;
+  --arcus-grid-gap: 10px;
+  --arcus-section-gap: 32px;
+  --arcus-sheet-pad: 20px;
+}
+
+* { box-sizing: border-box; }
+
+.app {
+  --bg-0: #080b0f;
+  --bg-1: #0d1117;
+  --bg-2: #121821;
+  --bg-3: #1a2230;
+  --panel: rgba(255, 255, 255, 0.028);
+  --panel-2: rgba(255, 255, 255, 0.05);
+  --line: rgba(242, 235, 225, 0.09);
+  --line-strong: rgba(242, 235, 225, 0.18);
+  --text: #f2ebe1;
+  --text-2: #c9c2b8;
+  --muted: #8a929e;
+  --brass: #d8a657;
+  --amber: #e8b86d;
+  --sky: #7fafc4;
+  --sage: #8fb08b;
+  --coral: #e0785e;
+  --plum: #9a86c8;
+  --paper: #f4efe6;
+  --glow: rgba(154, 134, 200, 0.2);
+  --sky-a: #0a0e14;
+  --sky-b: #151b25;
+  --accent: #d8a657;
+  --serif: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: "Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", ui-monospace, monospace;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-0);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.app.light {
+  --bg-0: #efe8dc;
+  --bg-1: #f7f2e9;
+  --bg-2: #fbf7f0;
+  --bg-3: #e7dfd2;
+  --panel: rgba(29, 27, 24, 0.025);
+  --panel-2: rgba(29, 27, 24, 0.05);
+  --line: rgba(29, 27, 24, 0.1);
+  --line-strong: rgba(29, 27, 24, 0.2);
+  --text: #1d1b18;
+  --text-2: #4a463f;
+  --muted: #7a7368;
+  --brass: #a9772f;
+  --amber: #b97f2e;
+  --sky: #4f8499;
+  --sage: #597b57;
+  --coral: #c25c43;
+  --plum: #6f5aa3;
+  --glow: rgba(216, 166, 87, 0.22);
+  --sky-a: #f6efe2;
+  --sky-b: #efe2cd;
+}
+
+.app[data-atmo="night"] {
+  --glow: rgba(154, 134, 200, 0.2);
+  --sky-a: #080b10;
+  --sky-b: #141a24;
+  --accent: #9a86c8;
+}
+.app[data-atmo="dawn"] {
+  --glow: rgba(232, 168, 124, 0.28);
+  --sky-a: #0d0b10;
+  --sky-b: #35232c;
+  --accent: #e8a87c;
+}
+.app[data-atmo="day"] {
+  --glow: rgba(216, 166, 87, 0.26);
+  --sky-a: #0a1013;
+  --sky-b: #1a2626;
+  --accent: #d8a657;
+}
+.app[data-atmo="dusk"] {
+  --glow: rgba(224, 120, 94, 0.28);
+  --sky-a: #0d0a0d;
+  --sky-b: #351e26;
+  --accent: #e0785e;
+}
+
+.app.light[data-atmo="night"] {
+  --sky-a: #e9e2d8;
+  --sky-b: #d9d2cb;
+  --accent: #6f5aa3;
+}
+.app.light[data-atmo="dawn"] {
+  --sky-a: #f8ead9;
+  --sky-b: #f1d7c4;
+  --accent: #a9772f;
+}
+.app.light[data-atmo="day"] {
+  --sky-a: #f7f0e2;
+  --sky-b: #e8ddc8;
+  --accent: #a9772f;
+}
+.app.light[data-atmo="dusk"] {
+  --sky-a: #f4e2d9;
+  --sky-b: #e6c8c0;
+  --accent: #c25c43;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.ico {
+  width: 20px;
+  height: 20px;
+  display: block;
+  flex: 0 0 auto;
+}
+
