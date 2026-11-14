@@ -31,6 +31,7 @@ import type {
   Translator,
   WeatherForecastDay,
 } from "./types";
+import type { ArcusActions } from "./ui/types";
 import { ARCUS_VERSION } from "./version";
 import type { SheetApp } from "./views/layers/types";
 import { escapeHtml, renderChapterArt, renderHome } from "./views/home";
@@ -123,6 +124,36 @@ export class ArcusCard extends HTMLElement {
   _history: HistoryCache;
   _confirm: { text: string; act: string } | null = null;
   readonly updateComplete: Promise<void>;
+
+  /**
+   * Stable bridge for the React tree. Every method reads the current
+   * `_hass`/`_config` at call time, so a state push never leaves a stale
+   * object behind.
+   */
+  private readonly _actions: ArcusActions = {
+    callService: (domain, service, data, target) =>
+      this._call(domain, service, data, target),
+    navigate: (path) => this._navigate(path),
+    openSheet: (route) => this._navigate(route),
+    closeSheet: () => this._closeRoute(),
+    performAction: (action) => {
+      void performAction(this._hass!, action, this._config).catch(
+        (error: Error) => {
+          this._toast(
+            this._t("common.error", {
+              message: error?.message || action.action || "",
+            }),
+          );
+        },
+      );
+    },
+    confirm: (text, act) => {
+      this._confirm = { text, act };
+      this._refreshConfirm();
+    },
+    toast: (text) => this._toast(text),
+    setAtmo: (mode) => this._setAtmo(mode),
+  };
 
   private _resolveUpdate!: () => void;
   private _language: Language;
@@ -218,6 +249,11 @@ export class ArcusCard extends HTMLElement {
       if (registryChanged) this._build();
       else this._schedule();
     }
+  }
+
+  /** The imperative action bridge consumed by the React provider. */
+  get actions(): ArcusActions {
+    return this._actions;
   }
 
   connectedCallback(): void {
@@ -325,6 +361,16 @@ export class ArcusCard extends HTMLElement {
     this._atmoMode = order[(index + 1) % order.length];
     try {
       localStorage.setItem("arcus-atmo", this._atmoMode);
+    } catch {
+      /* ignore */
+    }
+    this._applyAtmo();
+  }
+
+  private _setAtmo(mode: AtmosphereSetting): void {
+    this._atmoMode = mode;
+    try {
+      localStorage.setItem("arcus-atmo", mode);
     } catch {
       /* ignore */
     }
