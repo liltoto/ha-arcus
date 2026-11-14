@@ -1357,7 +1357,7 @@ arcus-sheets {
   z-index: 3;
   display: flex;
   gap: 6px;
-  margin: 0 calc(-1 * var(--arcus-sheet-pad));
+  margin: 0;
   padding: 12px var(--arcus-sheet-pad) 12px;
   overflow-x: auto;
   background: var(--bg-1);
@@ -2214,7 +2214,7 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
   .sheet-head { padding: 18px 16px 14px; }
   .sheet-close { top: 16px; right: 16px; }
   .sheet-scroll { padding-left: 16px; padding-right: 16px; }
-  .sheet-tabs { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
+  .sheet-tabs { margin: 0; padding-left: 16px; padding-right: 16px; }
   .confirm { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
   .readings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2257,7 +2257,7 @@ input[type="range"].range::-moz-range-thumb { width: 14px; height: 14px; border:
 .app[data-density="compact"] .ch-art svg { height: 46px; }
 .app[data-density="compact"] .sheet-head { padding: 18px 20px 14px; }
 .app[data-density="compact"] .sheet-scroll { padding: 8px 20px 40px; }
-.app[data-density="compact"] .sheet-tabs { margin: 0 -20px; padding: 10px 20px; }
+.app[data-density="compact"] .sheet-tabs { margin: 0; padding: 10px 20px; }
 .app[data-density="compact"] .block { margin-top: 20px; }
 .app[data-density="compact"] .reading { padding: 11px 12px; }
 .app[data-density="compact"] .mini-stat { padding: 12px 14px; }
