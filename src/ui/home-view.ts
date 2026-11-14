@@ -1,4 +1,4 @@
-import { formatUnit } from "../format";
+import { formatUnit, numberFromState } from "../format";
 import type {
   HomeModel,
   RoomModel,
@@ -36,13 +36,6 @@ export interface SystemCardView {
   language: string;
 }
 
-function refNumber(value: unknown): number | null {
-  if (value === null || value === undefined || value === "") return null;
-  if (value === "unavailable" || value === "unknown") return null;
-  const number = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(number) ? number : null;
-}
-
 function roomLightIds(room: RoomModel): string[] {
   const out: string[] = [];
   const add = (id: string) => {
@@ -67,10 +60,10 @@ function statsFor(model: HomeModel, room: RoomModel): RoomStatsLike {
   const lightIds = roomLightIds(room);
   return {
     temp:
-      refNumber(room.temp?.state) ??
-      refNumber(room.tempFallback?.attributes?.current_temperature),
-    humidity: refNumber(room.humidity?.state),
-    co2: refNumber(room.co2?.state),
+      numberFromState(room.temp?.state) ??
+      numberFromState(room.tempFallback?.attributes?.current_temperature),
+    humidity: numberFromState(room.humidity?.state),
+    co2: numberFromState(room.co2?.state),
     lightsOn: 0,
     lightsTotal: lightIds.length,
     open: 0,
@@ -164,8 +157,8 @@ export function systemCardView(
   language: string,
   t: Translator,
 ): SystemCardView {
-  const humidity = refNumber(card.humidity?.state);
-  const step = refNumber(card.step?.state);
+  const humidity = numberFromState(card.humidity?.state);
+  const step = numberFromState(card.step?.state);
   const sub =
     card.id === "ventilation"
       ? `${t("ventilation.fanStep").toLocaleLowerCase()} ${
@@ -181,7 +174,7 @@ export function systemCardView(
     kind: card.id === "ventilation" ? "Nilan · luftskifte" : "Ude · klima",
     icon: card.icon,
     tint: card.tint,
-    temp: refNumber(card.temp?.state),
+    temp: numberFromState(card.temp?.state),
     tempEntity: card.temp?.entityId ?? "",
     sub,
     route: card.id === "ventilation" ? "ventilation" : "skur",

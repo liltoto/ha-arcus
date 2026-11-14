@@ -16,7 +16,7 @@ import type { ArcusConfig, ArcusConfigInput, ArcusHass } from "./types";
 export const ARCUS_STRATEGY_TAG = "ll-strategy-dashboard-arcus";
 
 /** The strategy name without the `custom:` prefix. */
-export const ARCUS_STRATEGY_TYPE = "arcus";
+const ARCUS_STRATEGY_TYPE = "arcus";
 
 /**
  * Strategy configuration stored in the dashboard's `strategy` block.

@@ -1,5 +1,5 @@
 import type { HistoryCache } from "../data/history";
-import { escapeHtml, formatNumber } from "../format";
+import { escapeHtml, formatNumber, numberFromState } from "../format";
 import type {
   ArcusConfig,
   ChapterKey,
@@ -119,7 +119,8 @@ export function renderChapterArt(
 
   if (key === "ventilation") {
     const system = model.systemCards.find((card) => card.id === "ventilation");
-    const step = model.ventilation?.step ?? refNumber(system?.step?.state) ?? 0;
+    const step =
+      model.ventilation?.step ?? numberFromState(system?.step?.state) ?? 0;
     return `<div class="${c("zone-strip")}">${[0, 1, 2, 3, 4]
       .map(
         (index) =>
@@ -191,8 +192,10 @@ export function renderChapterArt(
     const zones = [...model.heating, ...model.heatingReserve];
     return `<div class="${c("zone-strip")}">${zones
       .map((zone) => {
-        const current = refNumber(zone.entity.attributes?.current_temperature);
-        const target = refNumber(zone.entity.attributes?.temperature);
+        const current = numberFromState(
+          zone.entity.attributes?.current_temperature,
+        );
+        const target = numberFromState(zone.entity.attributes?.temperature);
         const height = clamp(40 + ((current ?? 21) - 19) * 14, 20, 96);
         const warn =
           current !== null && target !== null && current < target - 0.5;
@@ -211,13 +214,6 @@ export function renderChapterArt(
   }
 
   return "";
-}
-
-function refNumber(value: unknown): number | null {
-  if (value === null || value === undefined || value === "") return null;
-  if (value === "unavailable" || value === "unknown") return null;
-  const number = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(number) ? number : null;
 }
 
 function allLightIds(groups: LightGroupModel[]): string[] {

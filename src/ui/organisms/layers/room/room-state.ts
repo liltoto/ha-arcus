@@ -1,3 +1,4 @@
+import { numberFrom } from "../../../../format";
 import type {
   ArcusConfig,
   ArcusHass,
@@ -22,12 +23,6 @@ export interface RoomStat {
 }
 
 const ON_STATES = new Set(["on", "open", "home", "playing"]);
-
-export function numberFrom(value: unknown): number | null {
-  if (value === null || value === undefined || value === "") return null;
-  const number = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(number) ? number : null;
-}
 
 export function liveEntity(
   hass: ArcusHass,
@@ -57,7 +52,7 @@ export function entityName(
   );
 }
 
-export function isOnState(state: string | undefined): boolean {
+function isOnState(state: string | undefined): boolean {
   return typeof state === "string" && ON_STATES.has(state);
 }
 
@@ -81,7 +76,7 @@ export function numberOf(
   return live ?? numberFrom(ref.state);
 }
 
-export function lightIdsFor(room: RoomModel): string[] {
+function lightIdsFor(room: RoomModel): string[] {
   const ids = new Set<string>();
   for (const group of room.lights) {
     if (group.members.length) {

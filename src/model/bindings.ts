@@ -2,6 +2,7 @@ import {
   formatNumber,
   formatPrice,
   formatUnit,
+  numberFrom,
 } from "../format";
 import type {
   ArcusConfig,
@@ -62,12 +63,6 @@ function lower(value: string): string {
 function capitalizeFirst(value: string): string {
   if (!value) return value;
   return `${value[0].toLocaleUpperCase()}${value.slice(1)}`;
-}
-
-function numberFrom(value: unknown): number | null {
-  if (value === null || value === undefined || value === "") return null;
-  const number = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(number) ? number : null;
 }
 
 function refNumber(ref: EntityRef | null | undefined): number | null {

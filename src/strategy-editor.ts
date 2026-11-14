@@ -6,27 +6,10 @@
  * both entry points share exactly one implementation.
  */
 import { ArcusConfigEditor, EDITOR_STYLES } from "./editor";
+import { clone, isRecord } from "./editor-utils";
+import type { ConfigRecord } from "./editor-utils";
+import { escapeHtml } from "./format";
 import type { ArcusHass } from "./types";
-
-type ConfigRecord = Record<string, unknown>;
-
-function isRecord(value: unknown): value is ConfigRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function clone<T>(value: T): T {
-  if (value === undefined) return value;
-  return JSON.parse(JSON.stringify(value)) as T;
-}
-
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 /**
  * Editor for the strategy config:
@@ -179,10 +162,8 @@ export class ArcusStrategyEditor extends HTMLElement {
   }
 }
 
-export default ArcusStrategyEditor;
-
 /** The tag Home Assistant uses for the dashboard strategy editor. */
-export const ARCUS_STRATEGY_EDITOR_TAG = "arcus-strategy-editor";
+const ARCUS_STRATEGY_EDITOR_TAG = "arcus-strategy-editor";
 
 if (
   typeof customElements !== "undefined" &&

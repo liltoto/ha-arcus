@@ -13,10 +13,20 @@ function localeFor(language: Language | string | undefined): string {
     : LOCALES.en;
 }
 
-function toNumber(value: unknown): number | null {
+export function numberFrom(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
   const number = typeof value === "number" ? value : Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+/**
+ * Parse a Home Assistant state value. The recorder's `"unavailable"` and
+ * `"unknown"` strings count as missing values, like `numberFrom` does for
+ * empty and non-numeric input.
+ */
+export function numberFromState(value: unknown): number | null {
+  if (value === "unavailable" || value === "unknown") return null;
+  return numberFrom(value);
 }
 
 function toDate(value: Date | string | number | null | undefined): Date | null {
@@ -34,7 +44,7 @@ export function formatNumber(
   digits = 1,
   language: Language | string = "da",
 ): string {
-  const number = toNumber(value);
+  const number = numberFrom(value);
   if (number === null) return "–";
   const decimals =
     Number.isFinite(digits) && digits >= 0 ? Math.floor(digits) : 0;
@@ -145,7 +155,7 @@ export function formatUnit(
   language: Language | string = "da",
   digits = 0,
 ): string {
-  const number = toNumber(value);
+  const number = numberFrom(value);
   if (number === null) return "–";
   const formatted = formatNumber(number, digits, language);
   return unit ? `${formatted} ${unit}` : formatted;

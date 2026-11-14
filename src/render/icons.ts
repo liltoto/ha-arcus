@@ -7,7 +7,7 @@ const ICO_CLASS = c("ico");
 const I = (body: string, extra = "") =>
   `<svg class="${ICO_CLASS}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${body}</svg>`;
 
-export const ICONS = {
+const ICONS = {
   sun: I(
     `<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>`,
   ),
@@ -119,7 +119,7 @@ export const ICONS = {
   ),
 };
 
-export type IconName = keyof typeof ICONS;
+type IconName = keyof typeof ICONS;
 
 export function icon(name: string, cls = ""): string {
   const s = ICONS[name as IconName] || ICONS.info;

@@ -11,6 +11,7 @@ import {
   formatPrice,
   formatTime,
   greeting,
+  numberFromState,
 } from "./format";
 import { createTranslator, resolveLanguage } from "./localize";
 import { buildModel } from "./model/build";
@@ -83,13 +84,6 @@ function dayFraction(date: Date): number {
   return (
     (date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60) / 1440
   );
-}
-
-function refNumber(value: unknown): number | null {
-  if (value === null || value === undefined || value === "") return null;
-  if (value === "unavailable" || value === "unknown") return null;
-  const number = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(number) ? number : null;
 }
 
 /**
@@ -392,15 +386,6 @@ export class ArcusCard extends HTMLElement {
     return this._get(entityId)?.state;
   }
 
-  _attr(
-    entityId: string | undefined | null,
-    key: string,
-    fallback: unknown = null,
-  ): any {
-    const attributes = this._get(entityId)?.attributes;
-    return attributes && key in attributes ? attributes[key] : fallback;
-  }
-
   _n(
     entityId: string | undefined | null,
     fallback: number | null = null,
@@ -409,29 +394,9 @@ export class ArcusCard extends HTMLElement {
     return Number.isFinite(value) ? value : fallback;
   }
 
-  _on(entityId: string | undefined | null): boolean {
-    const state = this._state(entityId);
-    return (
-      state === "on" ||
-      state === "open" ||
-      state === "home" ||
-      state === "playing" ||
-      state === "heating" ||
-      state === "heat"
-    );
-  }
-
   _unavail(entityId: string | undefined | null): boolean {
     const state = this._state(entityId);
     return !state || state === "unavailable" || state === "unknown";
-  }
-
-  _onText(
-    entityId: string | undefined | null,
-    on = "Til",
-    off = "Fra",
-  ): string {
-    return this._on(entityId) ? on : off;
   }
 
   _tempFor(room: HomeModel["rooms"][number]): {
@@ -446,7 +411,7 @@ export class ArcusCard extends HTMLElement {
       }
     }
     if (room.tempFallback) {
-      const value = refNumber(
+      const value = numberFromState(
         room.tempFallback.attributes?.current_temperature,
       );
       if (value !== null) {
@@ -469,68 +434,6 @@ export class ArcusCard extends HTMLElement {
       return values.reduce((total, value) => total + value, 0) / values.length;
     }
     return this._model.ventilation?.temperature ?? null;
-  }
-
-  _lightStats(room: HomeModel["rooms"][number]): {
-    on: number;
-    total: number;
-  } | null {
-    if (!room.lights.length) return null;
-    const stored = (this._model.roomStats ?? {}) as Record<string, RoomStats>;
-    if (stored[room.id]) {
-      return {
-        on: stored[room.id].lightsOn,
-        total: stored[room.id].lightsTotal,
-      };
-    }
-    const ids = new Set<string>();
-    for (const group of room.lights) {
-      if (group.members.length) {
-        group.members.forEach((id) => ids.add(id));
-      } else {
-        ids.add(group.entityId);
-      }
-      group.extra.forEach((id) => ids.add(id));
-    }
-    const list = [...ids];
-    return { on: list.filter((id) => this._on(id)).length, total: list.length };
-  }
-
-  _openingStats(room: HomeModel["rooms"][number]): {
-    open: number;
-    total: number;
-    leak: boolean;
-  } | null {
-    if (!room.openings.length) return null;
-    return {
-      open: room.openings.filter((opening) => this._on(opening.id)).length,
-      total: room.openings.length,
-      leak: this._on(room.leak?.entityId),
-    };
-  }
-
-  _airFor(room: HomeModel["rooms"][number]): {
-    label: string;
-    value: string;
-    level: "ok" | "mid" | "warn" | "off";
-  } {
-    const co2 = room.co2 ? this._n(room.co2.entityId) : null;
-    if (co2 !== null) {
-      return {
-        label: this._t("room.air"),
-        value: `${Math.round(co2)} ppm`,
-        level: co2 > 1000 ? "warn" : co2 > 850 ? "mid" : "ok",
-      };
-    }
-    const humidity = room.humidity ? this._n(room.humidity.entityId) : null;
-    if (humidity !== null) {
-      return {
-        label: this._t("room.humidityShort"),
-        value: `${Math.round(humidity)} %`,
-        level: humidity > 65 ? "warn" : "ok",
-      };
-    }
-    return { label: this._t("room.air"), value: "–", level: "off" };
   }
 
   _priceToday(): PriceModel {

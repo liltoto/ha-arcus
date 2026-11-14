@@ -19,12 +19,19 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.0`.
 - If `styled-system/` is missing after a clean checkout, run
   `npx panda codegen`; `npm ci` normally does this via `prepare`.
 - `npm run size` — asserts `dist/arcus.js` is within the 400 KB gzip budget.
+- `npm run fallow:dead` — Fallow dead-code gate (unused files/exports/deps).
+- `npm run fallow:dupes` — Fallow copy-paste report; advisory, not a gate.
+- `npm run fallow` — full local Fallow report across every detector.
 - `npm run storybook` — Storybook on `:6006`.
 - `npm run build-storybook` — static Storybook build; CI runs this as a gate.
 - `npm run visual` — Playwright; starts `npm run dev` via `webServer`.
 - `npm run lint` is broken (no `eslint.config.*`); don't use it as a gate.
 - Verify before pushing:
-  `npm run typecheck && npm test && npm run build && npm run size && npm run build-storybook`.
+  `npm run typecheck && npm test && npm run fallow:dead && npm run build && npm run size && npm run build-storybook`.
+- Fallow config lives in `.fallowrc.jsonc`: `legacy/` is excluded, and
+  `getStubConfig`/`getConfig` are allowlisted because Home Assistant calls them
+  reflectively. Before deleting an export, confirm with
+  `npx fallow dead-code --trace <file>:<export>`.
 
 ## Architecture
 
@@ -123,8 +130,8 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.0`.
   push is not a release.
 - `main` is protected. This single-maintainer repo merges with
   `gh pr merge --squash --admin`.
-- CI: typecheck -> test -> build -> size -> HACS validation, plus a Storybook
-  build job. Visual is pinned to `ubuntu-26.04`.
+- CI: typecheck -> test -> fallow:dead -> build -> size -> HACS validation, plus
+  a Storybook build job. Visual is pinned to `ubuntu-26.04`.
 - The live HA dashboard `hjem-dognet` uses `custom:arcus` and the
   Marketplace-installed `/local/community/ha-arcus/arcus.js`; it does not load
   this repo's `dist/`. Changes need a release + Marketplace update. The old

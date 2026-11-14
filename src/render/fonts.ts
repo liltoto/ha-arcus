@@ -10,9 +10,6 @@ import frauncesUrl from "../../assets/fonts/fraunces-latin.woff2";
 // @ts-expect-error -- esbuild's dataurl loader resolves binary assets; TS has no declaration for .woff2.
 import interTightUrl from "../../assets/fonts/inter-tight-latin.woff2";
 
-/** Empty because the fonts are embedded in the bundle. */
-export const FONT_URL = "";
-
 export const FONT_FACE_CSS = `
 @font-face {
   font-family: "Fraunces";

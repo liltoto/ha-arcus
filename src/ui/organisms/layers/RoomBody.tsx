@@ -1,5 +1,5 @@
 import { Fragment, useEffect, type CSSProperties } from "react";
-import { formatNumber, formatUnit } from "../../../format";
+import { formatNumber, formatUnit, numberFrom } from "../../../format";
 import type {
   ArcusHass,
   EntityRef,
@@ -31,7 +31,6 @@ import {
   lightName,
   lightStateFor,
   liveEntity,
-  numberFrom,
   numberOf,
   openingIcon,
   refEntity,

@@ -1,4 +1,4 @@
-import { formatNumber } from "../../../format";
+import { formatNumber, numberFrom } from "../../../format";
 import type {
   ArcusHass,
   EntityRef,
@@ -38,12 +38,6 @@ function filterOk(filter: string | null | undefined): boolean {
 function filterLabel(t: Translator, filter: string | null | undefined): string {
   if (!filter) return "–";
   return filterOk(filter) ? t("ventilation.filterOk") : filter;
-}
-
-function numberFrom(value: unknown): number | null {
-  if (value === null || value === undefined || value === "") return null;
-  const number = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(number) ? number : null;
 }
 
 function countText(value: number | null | undefined, fallback = "–"): string {

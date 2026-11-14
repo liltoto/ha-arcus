@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { applyGraph } from "../../../../render/graph";
-import { formatNumber } from "../../../../format";
+import { escapeHtml, formatNumber } from "../../../../format";
 import type { Language } from "../../../../types";
-import { DAY_MS, escapeHtml, type DayBarDatum } from "./helpers";
+import { DAY_MS, type DayBarDatum } from "./helpers";
 import { c } from "../../../styles/classes";
 
 export interface DayBarsProps {

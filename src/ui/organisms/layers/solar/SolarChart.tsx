@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import { areaPath, sparkPath } from "../../../../render/charts";
+import { escapeHtml } from "../../../../format";
 import { applyGraph, type GraphInput } from "../../../../render/graph";
-import { DAY_MS, escapeHtml, isFiniteNumber } from "./helpers";
+import { DAY_MS, isFiniteNumber } from "./helpers";
 import { c } from "../../../styles/classes";
 
 export interface SolarSeries {

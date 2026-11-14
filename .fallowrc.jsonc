@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "ignorePatterns": [
+    // Pre-React reference copy, kept for history only; not built or imported.
+    "legacy/**",
+  ],
+  // Home Assistant calls these custom-element lifecycle methods reflectively.
+  "usedClassMembers": ["getStubConfig", "getConfig"],
+}
