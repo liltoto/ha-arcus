@@ -33,6 +33,7 @@ import {
   isEntityAvailable,
   resolveEntityRef,
 } from "./discover";
+import { lightIdsForGroups } from "./lights";
 
 const MAX_CHEAP_HOURS = 3;
 
@@ -142,21 +143,7 @@ function lightStats(
   hass: ArcusHass,
   groups: LightGroupModel[],
 ): { on: number; total: number } {
-  const ids: string[] = [];
-  const seen = new Set<string>();
-  const add = (id: string) => {
-    if (!id || seen.has(id)) return;
-    seen.add(id);
-    ids.push(id);
-  };
-  for (const group of groups) {
-    if (group.members.length) {
-      for (const member of group.members) add(member);
-    } else {
-      add(group.entityId);
-    }
-    for (const extra of group.extra) add(extra);
-  }
+  const ids = lightIdsForGroups(groups);
   return {
     on: ids.filter((id) => isOnState(hass.states?.[id]?.state)).length,
     total: ids.length,
@@ -459,33 +446,48 @@ function buildPrayers(
   };
 }
 
+function parseWattsArray(watts: unknown): SolarPoint[] {
+  const points: SolarPoint[] = [];
+  if (!Array.isArray(watts)) return points;
+
+  for (const item of watts) {
+    if (isRecord(item)) {
+      const rawTime = item.t ?? item.time ?? item.datetime;
+      const value = numberFrom(item.v ?? item.value ?? item.watts);
+      if (!rawTime || value === null) continue;
+      const time = new Date(rawTime);
+      if (Number.isNaN(time.getTime())) continue;
+      points.push({ t: time, v: value });
+    } else {
+      const value = numberFrom(item);
+      if (value === null) continue;
+    }
+  }
+
+  return points;
+}
+
+function parseWattsRecord(watts: Record<string, unknown>): SolarPoint[] {
+  const points: SolarPoint[] = [];
+
+  for (const [rawTime, rawValue] of Object.entries(watts)) {
+    const time = new Date(rawTime);
+    const value = numberFrom(rawValue);
+    if (Number.isNaN(time.getTime()) || value === null) continue;
+    points.push({ t: time, v: value });
+  }
+
+  return points;
+}
+
 function parseWatts(hass: ArcusHass, entityId: string | undefined): SolarPoint[] {
   if (!entityId) return [];
   const watts = attributesOf(hass, entityId).watts;
-  const points: SolarPoint[] = [];
-
-  if (Array.isArray(watts)) {
-    for (const item of watts) {
-      if (isRecord(item)) {
-        const rawTime = item.t ?? item.time ?? item.datetime;
-        const value = numberFrom(item.v ?? item.value ?? item.watts);
-        if (!rawTime || value === null) continue;
-        const time = new Date(rawTime);
-        if (Number.isNaN(time.getTime())) continue;
-        points.push({ t: time, v: value });
-      } else {
-        const value = numberFrom(item);
-        if (value === null) continue;
-      }
-    }
-  } else if (isRecord(watts)) {
-    for (const [rawTime, rawValue] of Object.entries(watts)) {
-      const time = new Date(rawTime);
-      const value = numberFrom(rawValue);
-      if (Number.isNaN(time.getTime()) || value === null) continue;
-      points.push({ t: time, v: value });
-    }
-  }
+  const points = Array.isArray(watts)
+    ? parseWattsArray(watts)
+    : isRecord(watts)
+      ? parseWattsRecord(watts)
+      : [];
 
   return points.sort((a, b) => a.t.getTime() - b.t.getTime());
 }
@@ -897,18 +899,11 @@ function buildSystemCards(
   ];
 }
 
-function buildAlerts(
-  hass: ArcusHass,
-  config: ArcusConfig,
+function pushRoomLeakAlerts(
+  alerts: AlertModel[],
   rooms: RoomModel[],
-  solar: SolarModel | undefined,
-  water: WaterModel | undefined,
-  security: SecurityModel | undefined,
-  tech: TechModel | undefined,
   t: ReturnType<typeof createTranslator>,
-): AlertModel[] {
-  const alerts: AlertModel[] = [];
-
+): void {
   for (const room of rooms) {
     if (!refStateIsOn(room.leak)) continue;
     const kitchen = room.id === "kokken";
@@ -928,7 +923,15 @@ function buildAlerts(
       route: `rum/${room.id}`,
     });
   }
+}
 
+function pushConfiguredLeakAlerts(
+  alerts: AlertModel[],
+  hass: ArcusHass,
+  config: ArcusConfig,
+  rooms: RoomModel[],
+  t: ReturnType<typeof createTranslator>,
+): void {
   // Configured leak sensors that are not part of a room still produce an alert.
   const roomLeakIds = new Set(
     rooms.map((room) => room.leak?.entityId).filter(Boolean),
@@ -944,7 +947,13 @@ function buildAlerts(
       route: "vand",
     });
   }
+}
 
+function pushOpeningAlert(
+  alerts: AlertModel[],
+  security: SecurityModel | undefined,
+  t: ReturnType<typeof createTranslator>,
+): void {
   const open = security?.open ?? 0;
   if (open > 0) {
     alerts.push({
@@ -958,7 +967,14 @@ function buildAlerts(
       route: "sikkerhed",
     });
   }
+}
 
+function pushFilterAlert(
+  alerts: AlertModel[],
+  hass: ArcusHass,
+  config: ArcusConfig,
+  t: ReturnType<typeof createTranslator>,
+): void {
   const filterState = stringState(hass, config.ventilation?.filter);
   const filterAlarm = isOnState(
     stringState(hass, config.ventilation?.filterAlarm),
@@ -980,7 +996,13 @@ function buildAlerts(
       route: "ventilation",
     });
   }
+}
 
+function pushWaterAlerts(
+  alerts: AlertModel[],
+  water: WaterModel | undefined,
+  t: ReturnType<typeof createTranslator>,
+): void {
   const bwtState = water?.state;
   if (bwtState && bwtState !== "OK") {
     alerts.push({
@@ -1001,7 +1023,13 @@ function buildAlerts(
       route: "vand",
     });
   }
+}
 
+function pushBatteryAlert(
+  alerts: AlertModel[],
+  solar: SolarModel | undefined,
+  t: ReturnType<typeof createTranslator>,
+): void {
   if (
     solar?.batterySoc !== null &&
     solar?.batterySoc !== undefined &&
@@ -1015,7 +1043,13 @@ function buildAlerts(
       route: "sol",
     });
   }
+}
 
+function pushRouterAlert(
+  alerts: AlertModel[],
+  tech: TechModel | undefined,
+  t: ReturnType<typeof createTranslator>,
+): void {
   if (tech?.routerOnline === false) {
     alerts.push({
       sev: 2,
@@ -1025,7 +1059,14 @@ function buildAlerts(
       route: "teknik",
     });
   }
+}
 
+function pushCloudflareAlert(
+  alerts: AlertModel[],
+  hass: ArcusHass,
+  config: ArcusConfig,
+  t: ReturnType<typeof createTranslator>,
+): void {
   const cloudflareId = config.network?.cloudflare;
   const cloudflareState = stringState(hass, cloudflareId);
   if (
@@ -1040,6 +1081,28 @@ function buildAlerts(
       route: "teknik",
     });
   }
+}
+
+function buildAlerts(
+  hass: ArcusHass,
+  config: ArcusConfig,
+  rooms: RoomModel[],
+  solar: SolarModel | undefined,
+  water: WaterModel | undefined,
+  security: SecurityModel | undefined,
+  tech: TechModel | undefined,
+  t: ReturnType<typeof createTranslator>,
+): AlertModel[] {
+  const alerts: AlertModel[] = [];
+
+  pushRoomLeakAlerts(alerts, rooms, t);
+  pushConfiguredLeakAlerts(alerts, hass, config, rooms, t);
+  pushOpeningAlert(alerts, security, t);
+  pushFilterAlert(alerts, hass, config, t);
+  pushWaterAlerts(alerts, water, t);
+  pushBatteryAlert(alerts, solar, t);
+  pushRouterAlert(alerts, tech, t);
+  pushCloudflareAlert(alerts, hass, config, t);
 
   return alerts.sort((a, b) => b.sev - a.sev);
 }

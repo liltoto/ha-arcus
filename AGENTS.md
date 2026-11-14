@@ -58,7 +58,10 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.0`.
 - `src/model/discover.ts` discovers rooms from HA's area/device/entity
   registries; `src/model/build.ts` builds `HomeModel`. `RoomModel` sensor fields
   are `EntityRef | null`, not raw IDs; `roomStats`/`lightStats` carry computed
-  counts because light/opening models have no live state.
+  counts because light/opening models have no live state. `src/model/lights.ts`
+  is the single light-ID flattener; don't re-add local group loops.
+- `src/ui/molecules/HistoryChart.tsx` is the shared economy/tech history chart.
+  Storybook sheet frames come from `src/ui/storybook/with-sheet.tsx`.
 - `src/strategy.ts` generates one panel view and declares
   `registryDependencies = ["areas", "devices", "entities", "floors"]`. Keep it,
   or the card receives empty registries.

@@ -259,6 +259,336 @@ function SystemRow({ icon, label, value }: SystemRowProps) {
   );
 }
 
+interface VentilationReadingsProps {
+  temperature: number | null | undefined;
+  humidity: number | null | undefined;
+  step: number | null | undefined;
+  efficiency: number | null | undefined;
+  language: SheetLanguage;
+  t: Translator;
+}
+
+/** The four live readings at the top of the sheet. */
+function VentilationReadings({
+  temperature,
+  humidity,
+  step,
+  efficiency,
+  language,
+  t,
+}: VentilationReadingsProps) {
+  return (
+    <div className={c("readings")}>
+      <Readout
+        label={t("ventilation.roomTemp")}
+        value={formatNumber(temperature, 1, language)}
+        unit="°C"
+      />
+      <Readout
+        label={t("ventilation.humidity")}
+        value={countText(humidity)}
+        unit="%"
+      />
+      <Readout
+        label={t("ventilation.fanStep")}
+        value={countText(step)}
+        unit="/ 4"
+      />
+      <Readout
+        label={t("ventilation.efficiency")}
+        value={countText(efficiency)}
+        unit="%"
+      />
+    </div>
+  );
+}
+
+interface ClimateControlsProps {
+  climateId: string;
+  mode: string | null;
+  modeLabel: string;
+  fan: string | number | null;
+  target: number | null;
+  minTemp: number;
+  maxTemp: number;
+  language: SheetLanguage;
+  onTemperature: (value: number) => void;
+  onMode: (value: string) => void;
+  onFan: (value: number) => void;
+  t: Translator;
+}
+
+/** The climate entity's setpoint, HVAC mode, and fan-step controls. */
+function ClimateControls({
+  climateId,
+  mode,
+  modeLabel,
+  fan,
+  target,
+  minTemp,
+  maxTemp,
+  language,
+  onTemperature,
+  onMode,
+  onFan,
+  t,
+}: ClimateControlsProps) {
+  return (
+    <div className={c("block")}>
+      <div className={c("block-head")}>
+        <div className={c("block-label")}>{t("ventilation.control")}</div>
+        <div className={c("block-label")}>
+          <b>{modeLabel}</b>
+        </div>
+      </div>
+      <div className={c("row")} data-act="temp-step" data-entity={climateId}>
+        <span className={c("row-main")}>
+          <div className={c("row-name")}>{t("ventilation.setpoint")}</div>
+          <div className={c("row-sub")}>{t("ventilation.autoSub")}</div>
+        </span>
+        <Stepper
+          value={target ?? 0}
+          min={minTemp}
+          max={maxTemp}
+          step={1}
+          label={t("ventilation.setpoint")}
+          formatValue={(value) =>
+            target === null ? "–" : temperatureText(value, language)
+          }
+          onChange={onTemperature}
+        />
+      </div>
+      <div className={c("row")}>
+        <span className={c("row-main")}>
+          <div className={c("row-name")}>{t("ventilation.mode")}</div>
+        </span>
+        <div className={c("seg")}>
+          {(
+            [
+              ["heat_cool", t("ventilation.auto")],
+              ["cool", t("ventilation.cool")],
+              ["heat", t("ventilation.heat")],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={c(mode === value && "active")}
+              data-act="hvac"
+              data-entity={climateId}
+              data-mode={value}
+              onClick={() => onMode(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className={c("row")}>
+        <span className={c("row-main")}>
+          <div className={c("row-name")}>{t("ventilation.fanStep")}</div>
+          <div className={c("row-sub")}>{t("ventilation.manualSpeed")}</div>
+        </span>
+        <div className={c("seg")}>
+          {[0, 1, 2, 3, 4].map((step) => (
+            <button
+              key={step}
+              type="button"
+              className={c(String(fan) === String(step) && "active")}
+              data-act="fan"
+              data-entity={climateId}
+              data-mode={step}
+              onClick={() => onFan(step)}
+            >
+              {step}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface FilterBlockProps {
+  status: string;
+  filterValue: string | null | undefined;
+  resetId: string | undefined;
+  daysSinceFilter: number | null | undefined;
+  daysToFilter: number | null | undefined;
+  inletFan: number | null | undefined;
+  exhaustFan: number | null | undefined;
+  onReset: () => void;
+  t: Translator;
+}
+
+/** Filter status, the filter counters, and the alarm reset control. */
+function FilterBlock({
+  status,
+  filterValue,
+  resetId,
+  daysSinceFilter,
+  daysToFilter,
+  inletFan,
+  exhaustFan,
+  onReset,
+  t,
+}: FilterBlockProps) {
+  return (
+    <div className={c("block")}>
+      <div className={c("block-head")}>
+        <div className={c("block-label")}>{t("ventilation.filter")}</div>
+        <div className={c("block-label")}>
+          <b>{status}</b>
+        </div>
+      </div>
+      <div className={c("readings")}>
+        <Readout
+          label={t("ventilation.daysSinceChange")}
+          value={countText(daysSinceFilter, "0")}
+        />
+        <Readout
+          label={t("ventilation.daysToNext")}
+          value={countText(daysToFilter, "0")}
+        />
+        <Readout
+          label={t("ventilation.inletSpeed")}
+          value={countText(inletFan, "0")}
+          unit="%"
+        />
+        <Readout
+          label={t("ventilation.exhaustSpeed")}
+          value={countText(exhaustFan, "0")}
+          unit="%"
+        />
+      </div>
+      <div className={c("btn-row")}>
+        {resetId ? (
+          <button
+            type="button"
+            className={c("btn small")}
+            data-act="press-button"
+            data-entity={resetId}
+            onClick={onReset}
+          >
+            {t("ventilation.resetAlarm")}
+          </button>
+        ) : null}
+        <span className={c("status-line")} style={{ marginLeft: "auto" }}>
+          <i className={c("dot", !filterOk(filterValue) && "warn")} />
+          {filterOk(filterValue) ? t("ventilation.filterOk") : status}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+interface UserChoiceBlockProps {
+  hass: ArcusHass;
+  userFunctionId: string | undefined;
+  userFunction2Id: string | undefined;
+  userFunction: string | null | undefined;
+  userFunction2: string | null | undefined;
+  userTime: number | null | undefined;
+  userSpeed: number | null | undefined;
+  onSelect: (entityId: string | undefined, option: string) => void;
+  t: Translator;
+}
+
+/** The user-function selects and their minute/speed readouts. */
+function UserChoiceBlock({
+  hass,
+  userFunctionId,
+  userFunction2Id,
+  userFunction,
+  userFunction2,
+  userTime,
+  userSpeed,
+  onSelect,
+  t,
+}: UserChoiceBlockProps) {
+  return (
+    <div className={c("block")}>
+      <div className={c("block-label")}>{t("ventilation.userChoice")}</div>
+      <div className={c("row")}>
+        <span className={c("row-main")}>
+          <div className={c("row-name")}>{t("ventilation.function1")}</div>
+        </span>
+        <UserSelect
+          hass={hass}
+          entityId={userFunctionId}
+          value={userFunction}
+          onSelect={(option) => onSelect(userFunctionId, option)}
+        />
+      </div>
+      <div className={c("row")}>
+        <span className={c("row-main")}>
+          <div className={c("row-name")}>{t("ventilation.time")}</div>
+        </span>
+        <span className={c("row-val")}>
+          {countText(userTime, "0")}
+          <small>{t("ventilation.min")}</small>
+        </span>
+      </div>
+      <div className={c("row")}>
+        <span className={c("row-main")}>
+          <div className={c("row-name")}>{t("ventilation.speed")}</div>
+        </span>
+        <span className={c("row-val")}>
+          {countText(userSpeed, "0")}
+          <small>/4</small>
+        </span>
+      </div>
+      <div className={c("row")}>
+        <span className={c("row-main")}>
+          <div className={c("row-name")}>{t("ventilation.function2")}</div>
+        </span>
+        <UserSelect
+          hass={hass}
+          entityId={userFunction2Id}
+          value={userFunction2}
+          onSelect={(option) => onSelect(userFunction2Id, option)}
+        />
+      </div>
+    </div>
+  );
+}
+
+interface SystemBlockProps {
+  aggregateType: string | null | undefined;
+  operationMode: string | null | undefined;
+  software: string | null | undefined;
+  t: Translator;
+}
+
+/** Static aggregate information: type, operation mode, and software. */
+function SystemBlock({
+  aggregateType,
+  operationMode,
+  software,
+  t,
+}: SystemBlockProps) {
+  return (
+    <div className={c("block")}>
+      <div className={c("block-label")}>{t("ventilation.system")}</div>
+      <SystemRow
+        icon="info"
+        label={t("ventilation.type")}
+        value={aggregateType}
+      />
+      <SystemRow
+        icon="fan"
+        label={t("ventilation.operation")}
+        value={operationMode}
+      />
+      <SystemRow
+        icon="info"
+        label={t("ventilation.software")}
+        value={software}
+      />
+    </div>
+  );
+}
+
 /** Nilan ventilation: readings, the five-node airflow, and the live controls. */
 export function VentilationBody(_props: LayerBodyProps) {
   const hass = useHass();
@@ -390,28 +720,14 @@ export function VentilationBody(_props: LayerBodyProps) {
         onClose={actions.closeSheet}
       />
       <div className={c("sheet-scroll")}>
-        <div className={c("readings")}>
-          <Readout
-            label={t("ventilation.roomTemp")}
-            value={formatNumber(temperatureValue, 1, language)}
-            unit="°C"
-          />
-          <Readout
-            label={t("ventilation.humidity")}
-            value={countText(humidityValue)}
-            unit="%"
-          />
-          <Readout
-            label={t("ventilation.fanStep")}
-            value={countText(stepValue)}
-            unit="/ 4"
-          />
-          <Readout
-            label={t("ventilation.efficiency")}
-            value={countText(ventilation.efficiency)}
-            unit="%"
-          />
-        </div>
+        <VentilationReadings
+          temperature={temperatureValue}
+          humidity={humidityValue}
+          step={stepValue}
+          efficiency={ventilation.efficiency}
+          language={language}
+          t={t}
+        />
 
         <Airflow
           ventilation={ventilation}
@@ -421,198 +737,52 @@ export function VentilationBody(_props: LayerBodyProps) {
         />
 
         {climateId ? (
-          <div className={c("block")}>
-            <div className={c("block-head")}>
-              <div className={c("block-label")}>{t("ventilation.control")}</div>
-              <div className={c("block-label")}>
-                <b>{modeLabel}</b>
-              </div>
-            </div>
-            <div
-              className={c("row")}
-              data-act="temp-step"
-              data-entity={climateId}
-            >
-              <span className={c("row-main")}>
-                <div className={c("row-name")}>{t("ventilation.setpoint")}</div>
-                <div className={c("row-sub")}>{t("ventilation.autoSub")}</div>
-              </span>
-              <Stepper
-                value={target ?? 0}
-                min={minTemp}
-                max={maxTemp}
-                step={1}
-                label={t("ventilation.setpoint")}
-                formatValue={(value) =>
-                  target === null ? "–" : temperatureText(value, language)
-                }
-                onChange={setTemperature}
-              />
-            </div>
-            <div className={c("row")}>
-              <span className={c("row-main")}>
-                <div className={c("row-name")}>{t("ventilation.mode")}</div>
-              </span>
-              <div className={c("seg")}>
-                {(
-                  [
-                    ["heat_cool", t("ventilation.auto")],
-                    ["cool", t("ventilation.cool")],
-                    ["heat", t("ventilation.heat")],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    className={c(mode === value && "active")}
-                    data-act="hvac"
-                    data-entity={climateId}
-                    data-mode={value}
-                    onClick={() => setMode(value)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className={c("row")}>
-              <span className={c("row-main")}>
-                <div className={c("row-name")}>{t("ventilation.fanStep")}</div>
-                <div className={c("row-sub")}>
-                  {t("ventilation.manualSpeed")}
-                </div>
-              </span>
-              <div className={c("seg")}>
-                {[0, 1, 2, 3, 4].map((step) => (
-                  <button
-                    key={step}
-                    type="button"
-                    className={c(String(fan) === String(step) && "active")}
-                    data-act="fan"
-                    data-entity={climateId}
-                    data-mode={step}
-                    onClick={() => setFan(step)}
-                  >
-                    {step}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          <ClimateControls
+            climateId={climateId}
+            mode={mode}
+            modeLabel={modeLabel}
+            fan={fan}
+            target={target}
+            minTemp={minTemp}
+            maxTemp={maxTemp}
+            language={language}
+            onTemperature={setTemperature}
+            onMode={setMode}
+            onFan={setFan}
+            t={t}
+          />
         ) : null}
 
-        <div className={c("block")}>
-          <div className={c("block-head")}>
-            <div className={c("block-label")}>{t("ventilation.filter")}</div>
-            <div className={c("block-label")}>
-              <b>{status}</b>
-            </div>
-          </div>
-          <div className={c("readings")}>
-            <Readout
-              label={t("ventilation.daysSinceChange")}
-              value={countText(ventilation.daysSinceFilter, "0")}
-            />
-            <Readout
-              label={t("ventilation.daysToNext")}
-              value={countText(ventilation.daysToFilter, "0")}
-            />
-            <Readout
-              label={t("ventilation.inletSpeed")}
-              value={countText(ventilation.inletFan, "0")}
-              unit="%"
-            />
-            <Readout
-              label={t("ventilation.exhaustSpeed")}
-              value={countText(ventilation.exhaustFan, "0")}
-              unit="%"
-            />
-          </div>
-          <div className={c("btn-row")}>
-            {resetId ? (
-              <button
-                type="button"
-                className={c("btn small")}
-                data-act="press-button"
-                data-entity={resetId}
-                onClick={pressReset}
-              >
-                {t("ventilation.resetAlarm")}
-              </button>
-            ) : null}
-            <span className={c("status-line")} style={{ marginLeft: "auto" }}>
-              <i className={c("dot", !filterOk(filterValue) && "warn")} />
-              {filterOk(filterValue) ? t("ventilation.filterOk") : status}
-            </span>
-          </div>
-        </div>
+        <FilterBlock
+          status={status}
+          filterValue={filterValue}
+          resetId={resetId}
+          daysSinceFilter={ventilation.daysSinceFilter}
+          daysToFilter={ventilation.daysToFilter}
+          inletFan={ventilation.inletFan}
+          exhaustFan={ventilation.exhaustFan}
+          onReset={pressReset}
+          t={t}
+        />
 
-        <div className={c("block")}>
-          <div className={c("block-label")}>{t("ventilation.userChoice")}</div>
-          <div className={c("row")}>
-            <span className={c("row-main")}>
-              <div className={c("row-name")}>{t("ventilation.function1")}</div>
-            </span>
-            <UserSelect
-              hass={hass}
-              entityId={config.ventilation?.userFunction}
-              value={ventilation.userFunction}
-              onSelect={(option) =>
-                selectOption(config.ventilation?.userFunction, option)
-              }
-            />
-          </div>
-          <div className={c("row")}>
-            <span className={c("row-main")}>
-              <div className={c("row-name")}>{t("ventilation.time")}</div>
-            </span>
-            <span className={c("row-val")}>
-              {countText(ventilation.userTime, "0")}
-              <small>{t("ventilation.min")}</small>
-            </span>
-          </div>
-          <div className={c("row")}>
-            <span className={c("row-main")}>
-              <div className={c("row-name")}>{t("ventilation.speed")}</div>
-            </span>
-            <span className={c("row-val")}>
-              {countText(ventilation.userSpeed, "0")}
-              <small>/4</small>
-            </span>
-          </div>
-          <div className={c("row")}>
-            <span className={c("row-main")}>
-              <div className={c("row-name")}>{t("ventilation.function2")}</div>
-            </span>
-            <UserSelect
-              hass={hass}
-              entityId={config.ventilation?.userFunction2}
-              value={ventilation.userFunction2}
-              onSelect={(option) =>
-                selectOption(config.ventilation?.userFunction2, option)
-              }
-            />
-          </div>
-        </div>
+        <UserChoiceBlock
+          hass={hass}
+          userFunctionId={config.ventilation?.userFunction}
+          userFunction2Id={config.ventilation?.userFunction2}
+          userFunction={ventilation.userFunction}
+          userFunction2={ventilation.userFunction2}
+          userTime={ventilation.userTime}
+          userSpeed={ventilation.userSpeed}
+          onSelect={selectOption}
+          t={t}
+        />
 
-        <div className={c("block")}>
-          <div className={c("block-label")}>{t("ventilation.system")}</div>
-          <SystemRow
-            icon="info"
-            label={t("ventilation.type")}
-            value={ventilation.aggregateType}
-          />
-          <SystemRow
-            icon="fan"
-            label={t("ventilation.operation")}
-            value={ventilation.operationMode}
-          />
-          <SystemRow
-            icon="info"
-            label={t("ventilation.software")}
-            value={ventilation.software}
-          />
-        </div>
+        <SystemBlock
+          aggregateType={ventilation.aggregateType}
+          operationMode={ventilation.operationMode}
+          software={ventilation.software}
+          t={t}
+        />
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
-import type { KeyboardEvent } from "react";
 import { Icon } from "../atoms/Icon";
 import { c } from "../styles/classes";
+import { rowActivation } from "./row-activation";
 
 export interface OpeningRowProps {
   name: string;
@@ -24,14 +24,7 @@ export function OpeningRow({
 }: OpeningRowProps) {
   const interactive = Boolean(onClick);
   const sub = room ? `${kind} · ${room}` : kind;
-
-  const activate = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!onClick) return;
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      onClick();
-    }
-  };
+  const activate = rowActivation(onClick);
 
   return (
     <div

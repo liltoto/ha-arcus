@@ -1,4 +1,5 @@
 import { formatUnit, numberFromState } from "../format";
+import { lightIdsForRoom } from "../model/lights";
 import type {
   HomeModel,
   RoomModel,
@@ -36,28 +37,12 @@ export interface SystemCardView {
   language: string;
 }
 
-function roomLightIds(room: RoomModel): string[] {
-  const out: string[] = [];
-  const add = (id: string) => {
-    if (id && !out.includes(id)) out.push(id);
-  };
-  for (const group of room.lights) {
-    if (group.members.length) {
-      for (const member of group.members) add(member);
-    } else {
-      add(group.entityId);
-    }
-    for (const extra of group.extra) add(extra);
-  }
-  return out;
-}
-
 function statsFor(model: HomeModel, room: RoomModel): RoomStatsLike {
   const all = (model.roomStats ?? {}) as Record<string, RoomStatsLike>;
   const stored = all[room.id];
   if (stored) return stored;
 
-  const lightIds = roomLightIds(room);
+  const lightIds = lightIdsForRoom(room);
   return {
     temp:
       numberFromState(room.temp?.state) ??

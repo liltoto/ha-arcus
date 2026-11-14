@@ -1,4 +1,5 @@
 import { numberFrom } from "../../../../format";
+import { lightIdsForRoom } from "../../../../model/lights";
 import type {
   ArcusConfig,
   ArcusHass,
@@ -76,26 +77,13 @@ export function numberOf(
   return live ?? numberFrom(ref.state);
 }
 
-function lightIdsFor(room: RoomModel): string[] {
-  const ids = new Set<string>();
-  for (const group of room.lights) {
-    if (group.members.length) {
-      group.members.forEach((id) => ids.add(id));
-    } else {
-      ids.add(group.entityId);
-    }
-    group.extra.forEach((id) => ids.add(id));
-  }
-  return [...ids];
-}
-
 export function roomStatFor(
   hass: ArcusHass,
   model: HomeModel,
   room: RoomModel,
 ): RoomStat {
   const stored = ((model.roomStats ?? {}) as Record<string, RoomStat>)[room.id];
-  const lightIds = lightIdsFor(room);
+  const lightIds = lightIdsForRoom(room);
   const fallbackTemp = room.tempFallback
     ? numberFrom(
         refEntity(hass, room.tempFallback)?.attributes?.current_temperature,
@@ -157,8 +145,12 @@ export function lightStateFor(hass: ArcusHass, entityId: string): LightState {
   return { isOn: on, pct };
 }
 
-export function lightName(hass: ArcusHass, entityId: string): string {
-  return entityName(liveEntity(hass, entityId), entityId);
+export function lightName(
+  hass: ArcusHass,
+  entityId: string,
+  fallback = entityId,
+): string {
+  return entityName(liveEntity(hass, entityId), fallback);
 }
 
 export function openingIcon(kind: string): string {

@@ -99,6 +99,72 @@ function Legend({ items }: { items: Array<{ color: string; label: string }> }) {
   );
 }
 
+interface SolarReading {
+  label: string;
+  value: ReactNode;
+  unit: string;
+}
+
+/** A four-cell `.readings` grid for the production totals. */
+function SolarTotals({ readings }: { readings: SolarReading[] }) {
+  return (
+    <div className={c("readings")}>
+      {readings.map((reading) => (
+        <Readout
+          key={reading.label}
+          label={reading.label}
+          value={reading.value}
+          unit={reading.unit}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** MPPT 3/4 power and voltage plus the current note, shared by two tabs. */
+function MpptReadings({
+  solar,
+  t,
+  language,
+}: {
+  solar: SolarModel;
+  t: Translator;
+  language: Language;
+}) {
+  return (
+    <>
+      <div className={c("readings")}>
+        <Readout
+          label={t("solar.mppt3")}
+          value={fmt(solar.pv3, 0, language)}
+          unit={t("energy.w")}
+        />
+        <Readout
+          label={t("solar.mppt4")}
+          value={fmt(solar.pv4, 0, language)}
+          unit={t("energy.w")}
+        />
+        <Readout
+          label={t("solar.voltage3")}
+          value={fmt(solar.pv3Voltage, 1, language)}
+          unit="V"
+        />
+        <Readout
+          label={t("solar.voltage4")}
+          value={fmt(solar.pv4Voltage, 1, language)}
+          unit="V"
+        />
+      </div>
+      <div className={c("block-note")}>
+        {t("solar.mpptNote", {
+          i3: fmt(solar.pv3Current, 1, language),
+          i4: fmt(solar.pv4Current, 1, language),
+        })}
+      </div>
+    </>
+  );
+}
+
 function entityBounds(
   hass: ArcusHass,
   entityId: string | undefined,
@@ -300,34 +366,7 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
       </div>
       <div className={c("block")}>
         <div className={c("block-label")}>{t("solar.mppt")}</div>
-        <div className={c("readings")}>
-          <Readout
-            label={t("solar.mppt3")}
-            value={fmt(solar.pv3, 0, language)}
-            unit={t("energy.w")}
-          />
-          <Readout
-            label={t("solar.mppt4")}
-            value={fmt(solar.pv4, 0, language)}
-            unit={t("energy.w")}
-          />
-          <Readout
-            label={t("solar.voltage3")}
-            value={fmt(solar.pv3Voltage, 1, language)}
-            unit="V"
-          />
-          <Readout
-            label={t("solar.voltage4")}
-            value={fmt(solar.pv4Voltage, 1, language)}
-            unit="V"
-          />
-        </div>
-        <div className={c("block-note")}>
-          {t("solar.mpptNote", {
-            i3: fmt(solar.pv3Current, 1, language),
-            i4: fmt(solar.pv4Current, 1, language),
-          })}
-        </div>
+        <MpptReadings solar={solar} t={t} language={language} />
       </div>
       <div className={c("btn-row")}>
         {heliosPath ? (
@@ -389,28 +428,30 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
 
   return (
     <>
-      <div className={c("readings")}>
-        <Readout
-          label={t("solar.forecastToday")}
-          value={fmt(solar.forecastToday, 1, language)}
-          unit={t("energy.kwh")}
-        />
-        <Readout
-          label={t("solar.actualToday")}
-          value={fmt(solar.today, 1, language)}
-          unit={t("energy.kwh")}
-        />
-        <Readout
-          label={t("solar.thisMonth")}
-          value={fmt(solar.month, 1, language)}
-          unit={t("energy.kwh")}
-        />
-        <Readout
-          label={t("solar.thisYear")}
-          value={fmt(solar.year, 1, language)}
-          unit={t("energy.kwh")}
-        />
-      </div>
+      <SolarTotals
+        readings={[
+          {
+            label: t("solar.forecastToday"),
+            value: fmt(solar.forecastToday, 1, language),
+            unit: t("energy.kwh"),
+          },
+          {
+            label: t("solar.actualToday"),
+            value: fmt(solar.today, 1, language),
+            unit: t("energy.kwh"),
+          },
+          {
+            label: t("solar.thisMonth"),
+            value: fmt(solar.month, 1, language),
+            unit: t("energy.kwh"),
+          },
+          {
+            label: t("solar.thisYear"),
+            value: fmt(solar.year, 1, language),
+            unit: t("energy.kwh"),
+          },
+        ]}
+      />
       <div className={c("block")}>
         <div className={c("block-head")}>
           <div className={c("block-label")}>
@@ -449,34 +490,7 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
       </div>
       <div className={c("block")}>
         <div className={c("block-label")}>{t("solar.strings")}</div>
-        <div className={c("readings")}>
-          <Readout
-            label={t("solar.mppt3")}
-            value={fmt(solar.pv3, 0, language)}
-            unit={t("energy.w")}
-          />
-          <Readout
-            label={t("solar.mppt4")}
-            value={fmt(solar.pv4, 0, language)}
-            unit={t("energy.w")}
-          />
-          <Readout
-            label={t("solar.voltage3")}
-            value={fmt(solar.pv3Voltage, 1, language)}
-            unit="V"
-          />
-          <Readout
-            label={t("solar.voltage4")}
-            value={fmt(solar.pv4Voltage, 1, language)}
-            unit="V"
-          />
-        </div>
-        <div className={c("block-note")}>
-          {t("solar.mpptNote", {
-            i3: fmt(solar.pv3Current, 1, language),
-            i4: fmt(solar.pv4Current, 1, language),
-          })}
-        </div>
+        <MpptReadings solar={solar} t={t} language={language} />
       </div>
       <div className={c("block")}>
         <div className={c("block-label")}>{t("solar.strings24")}</div>
@@ -510,28 +524,30 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
       </div>
       <div className={c("block")}>
         <div className={c("block-label")}>{t("solar.total")}</div>
-        <div className={c("readings")}>
-          <Readout
-            label={t("solar.totalProduced")}
-            value={fmt(solar.totalProduction, 0, language)}
-            unit={t("energy.kwh")}
-          />
-          <Readout
-            label={t("solar.thisMonth")}
-            value={fmt(solar.month, 1, language)}
-            unit={t("energy.kwh")}
-          />
-          <Readout
-            label={t("solar.thisYear")}
-            value={fmt(solar.year, 1, language)}
-            unit={t("energy.kwh")}
-          />
-          <Readout
-            label={t("solar.actualToday")}
-            value={fmt(solar.today, 1, language)}
-            unit={t("energy.kwh")}
-          />
-        </div>
+        <SolarTotals
+          readings={[
+            {
+              label: t("solar.totalProduced"),
+              value: fmt(solar.totalProduction, 0, language),
+              unit: t("energy.kwh"),
+            },
+            {
+              label: t("solar.thisMonth"),
+              value: fmt(solar.month, 1, language),
+              unit: t("energy.kwh"),
+            },
+            {
+              label: t("solar.thisYear"),
+              value: fmt(solar.year, 1, language),
+              unit: t("energy.kwh"),
+            },
+            {
+              label: t("solar.actualToday"),
+              value: fmt(solar.today, 1, language),
+              unit: t("energy.kwh"),
+            },
+          ]}
+        />
       </div>
       <div className={c("block")}>
         <div className={c("block-label")}>{t("solar.dailyEnergy7")}</div>

@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import type { ChartValues } from "../../render/charts";
 import type { GraphInput } from "../../render/graph";
 import { Sparkline } from "../atoms/Sparkline";
+import { VitalText } from "../atoms/VitalText";
 import { c } from "../styles/classes";
 
 export interface VitalStatProps {
@@ -35,12 +36,7 @@ export function VitalStat({
 }: VitalStatProps) {
   const body = (
     <>
-      <div className={c("vital-label")}>{label}</div>
-      <div className={c("vital-value")}>
-        <span>{value}</span>
-        {unit ? <small>{unit}</small> : null}
-      </div>
-      {sub ? <div className={c("vital-sub")}>{sub}</div> : null}
+      <VitalText label={label} value={value} unit={unit} sub={sub} />
       {spark ? (
         <Sparkline
           className={c("vital-spark")}
