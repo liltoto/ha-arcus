@@ -297,7 +297,7 @@ describe("SheetFrame", () => {
 });
 
 describe("ArcusCard sheet routing", () => {
-  test("renders lights in react and keeps other sheets on arcus-sheets", async () => {
+  test("renders lights and rooms in react", async () => {
     window.history.replaceState(null, "", "/#/lys");
     const initial = makeHass();
     const card = new ArcusCard();
@@ -340,8 +340,9 @@ describe("ArcusCard sheet routing", () => {
     });
 
     expect(shadow.querySelector(".sheet.open")).not.toBeNull();
-    expect(shadow.querySelector("arcus-sheets")).not.toBeNull();
-    expect(shadow.querySelector("arcus-sheets .sheet-scroll")).not.toBeNull();
+    expect(shadow.querySelector("arcus-sheets")).toBeNull();
+    expect(shadow.querySelector(".sheet-title")).toHaveTextContent("Stue");
+    expect(shadow.querySelector(".sheet-scroll .readings")).not.toBeNull();
 
     await act(async () => {
       card._closeRoute();
@@ -349,7 +350,7 @@ describe("ArcusCard sheet routing", () => {
     });
     expect(shadow.querySelector(".sheet")).not.toHaveClass("open");
     // The body stays mounted briefly so the CSS slide-out can finish.
-    expect(shadow.querySelector("arcus-sheets")).not.toBeNull();
+    expect(shadow.querySelector(".sheet-scroll")).not.toBeNull();
 
     card.remove();
   });
