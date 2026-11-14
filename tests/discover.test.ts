@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { normalizeConfig } from "../src/config";
 import { buildModel } from "../src/model/build";
 import { discoverRooms, entitiesForArea } from "../src/model/discover";
+import type { ArcusConfig, AreaRegistryEntry, RoomModel } from "../src/types";
 import { HOME_AREA_IDS, makeConfig, makeHass } from "./fixtures/home";
 
 // The mock home is in Europe/Copenhagen. Pin the process zone so the price
@@ -10,6 +11,27 @@ import { HOME_AREA_IDS, makeConfig, makeHass } from "./fixtures/home";
   "Europe/Copenhagen";
 
 const NOW = new Date("2026-11-13T21:00:00+01:00");
+
+/**
+ * Discover synthetic areas in registry order. Each spec is
+ * `[area_id, icon, name]`; the name defaults to the area ID. All areas are
+ * included, so specs and expectations line up index by index.
+ */
+function discoverAreaSpecs(
+  specs: Array<[string, string | null | undefined, string?]>,
+  rooms?: ArcusConfig["rooms"],
+): RoomModel[] {
+  const areas: Record<string, AreaRegistryEntry> = {};
+  for (const [areaId, icon, name] of specs) {
+    areas[areaId] = { area_id: areaId, name: name ?? areaId, icon };
+  }
+  const ids = Object.keys(areas);
+  const config = makeConfig({
+    areas: { include: ids, order: ids },
+    ...(rooms ? { rooms } : {}),
+  });
+  return discoverRooms({ ...makeHass(), areas }, config);
+}
 
 describe("discoverRooms", () => {
   test("selects included areas in configured order and appends the rest", () => {
@@ -300,6 +322,147 @@ describe("discoverRooms", () => {
       "door",
       "stairs",
     ]);
+  });
+
+  test("maps the exact area icon keys", () => {
+    const rooms = discoverAreaSpecs([
+      ["sofa", "mdi:sofa"],
+      ["bed", "mdi:bed"],
+      ["desk", "mdi:desk"],
+      ["washer", "mdi:washing-machine"],
+      ["door", "mdi:door"],
+      ["stairs", "mdi:stairs"],
+      ["garage", "mdi:garage"],
+      ["shed", "mdi:shed"],
+      ["counter", "mdi:counter"],
+      ["home", "mdi:home"],
+    ]);
+
+    expect(rooms.map((room) => room.icon)).toEqual([
+      "sofa",
+      "bed",
+      "desk",
+      "washer",
+      "door",
+      "stairs",
+      "shed",
+      "shed",
+      "counter",
+      "home",
+    ]);
+  });
+
+  test("maps derived MDI icon names onto the same keys", () => {
+    const rooms = discoverAreaSpecs([
+      ["couch", "mdi:couch"],
+      ["couch_outline", "mdi:couch-outline"],
+      ["bed_double", "mdi:bed-double"],
+      ["bed_queen", "mdi:bed-queen"],
+      ["office_monitor", "mdi:office-monitor"],
+      ["tumble_dryer", "mdi:tumble-dryer"],
+      ["washer_alert", "mdi:washing-machine-alert"],
+      ["door_open", "mdi:door-open"],
+      ["door_sliding", "mdi:door-sliding"],
+      ["stairs_up", "mdi:stairs-up"],
+      ["staircase", "mdi:staircase"],
+      ["garage_variant", "mdi:garage-variant"],
+      ["garage_outline", "mdi:garage-variant-outline"],
+      ["fridge", "mdi:fridge"],
+      ["stove_burner", "mdi:stove-burner"],
+      ["uppercase", "MDI:SOFA"],
+    ]);
+
+    expect(rooms.map((room) => room.icon)).toEqual([
+      "sofa", // exact: couch
+      "sofa", // regex: couch
+      "bed", // exact: bed-double
+      "bed", // regex: bed
+      "desk", // regex: office
+      "washer", // exact: tumble-dryer
+      "washer", // regex: washing
+      "door", // exact: door-open
+      "door", // regex: door
+      "stairs", // exact: stairs-up
+      "stairs", // regex: stair
+      "shed", // exact: garage-variant
+      "shed", // regex: garage
+      "counter", // exact: fridge
+      "counter", // regex: stove
+      "sofa", // MDI: prefix is case-insensitive
+    ]);
+  });
+
+  test("falls back to home for unknown and missing icons", () => {
+    const rooms = discoverAreaSpecs([
+      ["rocket", "mdi:rocket", "Rum"],
+      ["plain_rocket", "rocket", "Rum"],
+      ["no_icon", null, "Rum"],
+    ]);
+
+    expect(rooms.map((room) => room.icon)).toEqual(["home", "home", "home"]);
+  });
+
+  test("falls back to the area name for icon-less areas", () => {
+    const rooms = discoverAreaSpecs([
+      ["kitchen_da", null, "Køkken"],
+      ["kitchen_en", null, "Kitchen"],
+      ["living_da", null, "Stue"],
+      ["living_en", null, "Living Room"],
+      ["bed_da", null, "Soveværelse"],
+      ["bed_en", null, "Bedroom"],
+      ["office_da", null, "Kontor"],
+      ["office_en", null, "Office"],
+      ["laundry_da", null, "Bryggers"],
+      ["laundry_en", null, "Laundry"],
+      ["hall_da", null, "Entre"],
+      // "hall" is matched before "hallway", so the English name reads as a
+      // door rather than a staircase.
+      ["hall_en", null, "Hallway"],
+      ["stairs", null, "Gang"],
+      ["shed_da", null, "Skur"],
+      ["shed_en", null, "Shed"],
+      ["garage", null, "Garage"],
+      ["outdoor", null, "Outdoor"],
+      ["bathroom", null, "Badeværelse"],
+      ["unknown", null, "Rocket Room"],
+    ]);
+
+    expect(rooms.map((room) => room.icon)).toEqual([
+      "counter",
+      "counter",
+      "sofa",
+      "sofa",
+      "bed",
+      "bed",
+      "desk",
+      "desk",
+      "washer",
+      "washer",
+      "door",
+      "door",
+      "stairs",
+      "shed",
+      "shed",
+      "shed",
+      "shed",
+      "home",
+      "home",
+    ]);
+  });
+
+  test("a room icon override wins over the area icon", () => {
+    const rooms = discoverAreaSpecs(
+      [
+        ["stue", "mdi:sofa", "Stue"],
+        ["kontor", null, "Kontor"],
+      ],
+      {
+        stue: { icon: "mdi:bed" },
+        kontor: { icon: "mdi:washing-machine" },
+      },
+    );
+
+    expect(rooms.map((room) => room.icon)).toEqual(["bed", "washer"]);
   });
 
   test("an empty home has no rooms", () => {
