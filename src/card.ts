@@ -1,3 +1,7 @@
+import { createElement } from "react";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
+import type { Root } from "react-dom/client";
 import { performAction } from "./actions";
 import { configSignature, normalizeConfig } from "./config";
 import { HistoryCache } from "./data/history";
@@ -31,10 +35,11 @@ import type {
   Translator,
   WeatherForecastDay,
 } from "./types";
+import { ArcusApp } from "./ui/ArcusApp";
 import type { ArcusActions } from "./ui/types";
 import { ARCUS_VERSION } from "./version";
 import type { SheetApp } from "./views/layers/types";
-import { escapeHtml, renderChapterArt, renderHome } from "./views/home";
+import { escapeHtml, renderChapterArt } from "./views/home";
 
 declare global {
   interface Window {
@@ -161,7 +166,6 @@ export class ArcusCard extends HTMLElement {
   private _route: Route = { base: "hjem", sub: null };
   private _scrub: number | null = null;
   private _scrubTimer: ReturnType<typeof setTimeout> | null = null;
-  private _refreshTimer: ReturnType<typeof setTimeout> | null = null;
   private _clockTimer: ReturnType<typeof setInterval> | null = null;
   private _toastTimer: ReturnType<typeof setTimeout> | null = null;
   private _lastFocus: HTMLElement | null = null;
@@ -174,6 +178,9 @@ export class ArcusCard extends HTMLElement {
   private _weather: WeatherForecastDay[] | null = null;
   private _drag: { y: number; sheet: HTMLElement; dy?: number } | null = null;
   private _configSignature: string;
+  private _reactRoot: Root | null = null;
+  private _reactContainer: HTMLElement | null = null;
+  private _renderFrame: number | null = null;
 
   constructor() {
     super();
@@ -259,7 +266,7 @@ export class ArcusCard extends HTMLElement {
   connectedCallback(): void {
     this._reduced =
       window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches || false;
-    if (this._hass && !this._built) this._build();
+    if (this._hass && (!this._built || !this._reactRoot)) this._build();
     this._addListeners();
     if (this._built) this._startClock();
   }
@@ -267,9 +274,9 @@ export class ArcusCard extends HTMLElement {
   disconnectedCallback(): void {
     this._removeListeners();
     if (this._clockTimer) clearInterval(this._clockTimer);
-    if (this._refreshTimer) clearTimeout(this._refreshTimer);
     if (this._scrubTimer) clearTimeout(this._scrubTimer);
     if (this._toastTimer) clearTimeout(this._toastTimer);
+    this._unmountReact();
   }
 
   getCardSize(): number {
@@ -788,14 +795,17 @@ export class ArcusCard extends HTMLElement {
 
   _build(): void {
     if (!this._hass) return;
+    this._unmountReact();
     this._built = true;
     this._sheetEl = null;
-    this._root.innerHTML = `<style>${STYLES}</style>${renderHome(
-      this._model,
-      this._config,
-      this._t,
-      this._hass,
-    )}`;
+    this._root.innerHTML = `<style>${STYLES}</style><div class="arcus-react"></div>`;
+
+    const container = this._root.querySelector<HTMLElement>(".arcus-react");
+    if (!container) return;
+    container.style.display = "contents";
+    this._reactContainer = container;
+    this._reactRoot = createRoot(container);
+    flushSync(() => this._renderIntoReact());
 
     this._applyAtmo();
     this._applyRoute(true);
@@ -803,6 +813,40 @@ export class ArcusCard extends HTMLElement {
     this._refresh();
     void this._loadInitial();
     this._markReady();
+  }
+
+  /** Render the current card state into the mounted React root. */
+  private _renderIntoReact(): void {
+    if (!this._reactRoot || !this._hass) return;
+    this._reactRoot.render(
+      createElement(ArcusApp, {
+        hass: this._hass,
+        model: this._model,
+        config: this._config,
+        t: this._t,
+        bindings: this._binds(),
+        route: this._route as SheetRoute,
+        actions: this.actions,
+        history: this._history,
+        now: () => this._now(),
+        app: this as unknown as SheetApp,
+        atmo: this._atmo(),
+        dark: this._themeDark(),
+        sheetOpen: this._route.base !== "hjem",
+      }),
+    );
+  }
+
+  /** Unmount the React root and cancel any pending batched render. */
+  private _unmountReact(): void {
+    if (this._renderFrame !== null) {
+      cancelAnimationFrame(this._renderFrame);
+      this._renderFrame = null;
+    }
+    const root = this._reactRoot;
+    this._reactRoot = null;
+    this._reactContainer = null;
+    if (root) root.unmount();
   }
 
   private _applyBindings(bindings: Record<string, string>): void {
@@ -1458,11 +1502,18 @@ export class ArcusCard extends HTMLElement {
   }
 
   private _schedule(): void {
-    if (this._refreshTimer) return;
-    this._refreshTimer = setTimeout(() => {
-      this._refreshTimer = null;
+    if (this._renderFrame !== null || !this._built || !this._hass) return;
+    const commit = () => {
+      this._renderFrame = null;
+      if (!this._built || !this._hass) return;
+      flushSync(() => this._renderIntoReact());
+      // The legacy sheet is still populated imperatively by the card.
       this._refresh();
-    }, 240);
+    };
+    this._renderFrame =
+      typeof requestAnimationFrame === "function"
+        ? requestAnimationFrame(commit)
+        : (setTimeout(commit, 0) as unknown as number);
   }
 
   private _parseHash(): Route {
