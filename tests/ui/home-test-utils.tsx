@@ -27,7 +27,7 @@ export interface ArcusRenderOptions {
   now?: () => Date;
   /**
    * Card-level bindings that are not part of `buildBindings` (the hero copy,
-   * for example). They are merged over the generated map.
+   * date, person, clock, and version). They are merged over the generated map.
    */
   bindings?: Record<string, string>;
 }

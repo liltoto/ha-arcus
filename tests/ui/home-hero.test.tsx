@@ -61,9 +61,7 @@ describe("Hero", () => {
     expect(container.querySelector(".weather-sub")).toHaveTextContent(
       "delvist skyet",
     );
-    expect(
-      container.querySelector('[data-placeholder="day-arc"]'),
-    ).not.toBeNull();
+    expect(container.querySelector(".arc-wrap[data-arc]")).not.toBeNull();
   });
 
   it("opens the prayer sheet from the eyebrow", async () => {
