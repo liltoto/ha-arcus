@@ -2,6 +2,14 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.2 - 2026-11-14
+
+### Fixed
+
+- Restored the legacy sparkline rendering: `non-scaling-stroke`, 1/1.1 px strokes, and round caps/joins, so stretched card sparklines stay crisp instead of looking thick or jagged.
+- History requests are batched in groups of four entities. A home-sized dashboard asks for dozens of entities, and a single request can exceed the recorder/WebSocket budget when busy sensors return thousands of rows; a failed request left charts on forecast/model fallbacks.
+- Added opt-in history diagnostics. Set `localStorage.setItem("arcus-debug", "1")` and reload to log each history batch, duration, and failure in the browser console.
+
 ## 0.2.1 - 2026-11-14
 
 ### Fixed

@@ -40,6 +40,25 @@ interface CacheEntry {
 }
 
 const CACHE_MS = 5 * 60 * 1000;
+
+/**
+ * Keep each WebSocket/REST history request small. A home-sized dashboard asks
+ * for dozens of entities, and a single request can exceed HA recorder
+ * guardrails or the WebSocket response budget when busy sensors (load, grid)
+ * return thousands of rows each.
+ */
+const FETCH_BATCH = 4;
+
+/** Opt-in console diagnostics: set `localStorage.arcus-debug = "1"`. */
+function debugHistory(message: string, details: unknown): void {
+  try {
+    if (globalThis.localStorage?.getItem("arcus-debug") === "1") {
+      console.debug(`[arcus history] ${message}`, details);
+    }
+  } catch {
+    /* localStorage can be unavailable in embedded browsers. */
+  }
+}
 const MAX_POINTS = 90;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -196,6 +215,18 @@ export class HistoryCache {
   }
 
   private async fetch(entityIds: string[], hours: number): Promise<void> {
+    for (let index = 0; index < entityIds.length; index += FETCH_BATCH) {
+      await this.fetchBatch(
+        entityIds.slice(index, index + FETCH_BATCH),
+        hours,
+      );
+    }
+  }
+
+  private async fetchBatch(
+    entityIds: string[],
+    hours: number,
+  ): Promise<void> {
     const end = this.now();
     const start = new Date(end.getTime() - hours * 60 * 60 * 1000);
     const message: HistoryWsRequest = {
@@ -208,11 +239,22 @@ export class HistoryCache {
       significant_changes_only: false,
     };
 
+    const started = Date.now();
     try {
       const response = await this.hass.callWS(message);
       this.ingest(response, entityIds, hours);
+      debugHistory("ws batch", {
+        entities: entityIds.length,
+        hours,
+        ms: Date.now() - started,
+      });
       return;
-    } catch {
+    } catch (error) {
+      debugHistory("ws batch failed", {
+        entities: entityIds.length,
+        hours,
+        error: error instanceof Error ? error.message : String(error),
+      });
       /* WebSocket unavailable: fall through to the REST endpoint. */
     }
 
@@ -222,7 +264,17 @@ export class HistoryCache {
         `?filter_entity_id=${entityIds.join(",")}&minimal_response&no_attributes`;
       const response = await this.hass.callApi("GET", path);
       this.ingest(response, entityIds, hours);
-    } catch {
+      debugHistory("rest batch", {
+        entities: entityIds.length,
+        hours,
+        ms: Date.now() - started,
+      });
+    } catch (error) {
+      debugHistory("rest batch failed", {
+        entities: entityIds.length,
+        hours,
+        error: error instanceof Error ? error.message : String(error),
+      });
       /* Both transports failed: keep previously cached data. */
     }
   }

@@ -1,3 +1,4 @@
+import { waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { ArcusCard } from "../src/card";
 import { HOME_AREA_IDS, makeConfig, makeHass } from "./fixtures/home";
@@ -12,10 +13,6 @@ async function mount(
   document.body.appendChild(card);
   await card.updateComplete;
   return card;
-}
-
-function tick(milliseconds = 150): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 beforeEach(() => {
@@ -61,10 +58,11 @@ describe("ArcusCard", () => {
     expect(room).not.toBeNull();
 
     room!.click();
-    await tick(120);
+    await waitFor(() =>
+      expect(card.shadowRoot!.querySelector(".sheet.open")).not.toBeNull(),
+    );
 
     expect(location.hash).toBe("#/rum/stue");
-    expect(card.shadowRoot!.querySelector(".sheet.open")).not.toBeNull();
     expect(card.shadowRoot!.querySelector("arcus-sheets")).toBeNull();
     expect(card.shadowRoot!.querySelector(".sheet-title")).toHaveTextContent(
       "Stue",
@@ -134,16 +132,17 @@ describe("ArcusCard", () => {
   test("closes the sheet from the close button and returns home", async () => {
     const card = await mount();
     card.shadowRoot!.querySelector<HTMLElement>('[data-room="stue"]')!.click();
-    await tick();
-    expect(card.shadowRoot!.querySelector(".sheet.open")).not.toBeNull();
+    await waitFor(() =>
+      expect(card.shadowRoot!.querySelector(".sheet.open")).not.toBeNull(),
+    );
 
     card
       .shadowRoot!.querySelector<HTMLElement>(".sheet-close[data-act='close']")!
       .click();
-    await tick();
-
-    expect(location.hash).toBe("#/");
-    expect(card.shadowRoot!.querySelector(".sheet.open")).toBeNull();
+    await waitFor(() => {
+      expect(location.hash).toBe("#/");
+      expect(card.shadowRoot!.querySelector(".sheet.open")).toBeNull();
+    });
   });
 
   test("hides a chapter disabled in config", async () => {
@@ -167,8 +166,7 @@ describe("ArcusCard", () => {
     const room =
       card.shadowRoot!.querySelector<HTMLElement>('[data-room="stue"]');
     room!.click();
-    await tick();
-    expect(location.hash).toBe("#/rum/stue");
+    await waitFor(() => expect(location.hash).toBe("#/rum/stue"));
 
     const next = makeHass();
     next.areas = {
@@ -209,13 +207,14 @@ describe("ArcusCard", () => {
     };
 
     card.hass = next;
-    await tick();
 
-    expect(
-      card.shadowRoot!.querySelector('[data-room="garage"]'),
-    ).not.toBeNull();
-    expect(location.hash).toBe("#/rum/stue");
-    expect(card.shadowRoot!.querySelector(".sheet.open")).not.toBeNull();
+    await waitFor(() => {
+      expect(
+        card.shadowRoot!.querySelector('[data-room="garage"]'),
+      ).not.toBeNull();
+      expect(location.hash).toBe("#/rum/stue");
+      expect(card.shadowRoot!.querySelector(".sheet.open")).not.toBeNull();
+    });
   });
 
   test("renders the sheet header/tabs and exposes the stub config", async () => {
