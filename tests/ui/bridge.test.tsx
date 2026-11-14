@@ -104,7 +104,6 @@ describe("ArcusApp home shell", () => {
       "vitals",
       "room-grid",
       "chapter-grid",
-      "quick-actions",
       "footer",
     ]) {
       expect(
@@ -112,6 +111,9 @@ describe("ArcusApp home shell", () => {
         name,
       ).not.toBeNull();
     }
+
+    expect(app?.querySelector(".quick-row")).not.toBeNull();
+    expect(app?.querySelectorAll(".quick-row .quick")).toHaveLength(5);
   });
 
   test("honours the light theme and an open sheet", () => {
