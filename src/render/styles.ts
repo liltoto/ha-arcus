@@ -1356,6 +1356,7 @@ arcus-sheets {
   top: 0;
   z-index: 3;
   display: flex;
+  flex: 0 0 auto;
   gap: 6px;
   margin: 0;
   padding: 12px var(--arcus-sheet-pad) 12px;

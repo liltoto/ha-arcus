@@ -115,6 +115,33 @@ test("the first tab shows the right-edge fade on a phone", async ({ page }) => {
   expect(state?.canRight).toBe(true);
 });
 
+test("the tab strip cannot scroll vertically on a phone", async ({ page }) => {
+  await openSolarSheet(page, { hash: "#/sol", width: 390, height: 844 });
+
+  const metrics = await page.evaluate(() => {
+    const card = document.querySelector("arcus-card") as
+      | (HTMLElement & { shadowRoot: ShadowRoot | null })
+      | null;
+    const strip = card?.shadowRoot?.querySelector<HTMLElement>(".sheet-tabs");
+    if (!strip) return null;
+    const before = strip.scrollTop;
+    strip.scrollTop = 40;
+    const after = strip.scrollTop;
+    strip.scrollTop = before;
+    return {
+      clientHeight: strip.clientHeight,
+      scrollHeight: strip.scrollHeight,
+      after,
+    };
+  });
+
+  expect(metrics).not.toBeNull();
+  expect(metrics?.scrollHeight).toBeLessThanOrEqual(
+    (metrics?.clientHeight ?? 0) + 1,
+  );
+  expect(metrics?.after).toBe(0);
+});
+
 test("switching tabs keeps the active tab visible on a phone", async ({
   page,
 }) => {
