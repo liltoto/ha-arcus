@@ -14,7 +14,7 @@ async function mount(
   return card;
 }
 
-function tick(milliseconds = 30): Promise<void> {
+function tick(milliseconds = 150): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
