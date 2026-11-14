@@ -176,8 +176,6 @@ function baseConfig(): ArcusConfig {
       investmentBattery: "input_number.investering_batteri",
       installedAt: "input_datetime.anlaeg_installeret",
       paybackPercent: "sensor.tilbagebetalt_total",
-
-      heliosPath: "/nyt-overblik/solceller-helios",
     },
 
     prayers: {

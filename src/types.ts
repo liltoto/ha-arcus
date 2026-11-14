@@ -296,9 +296,6 @@ export interface SolarConfig {
   investmentBattery?: string;
   installedAt?: string;
   paybackPercent?: string;
-
-  /** Optional path to an external Helios 3D dashboard. */
-  heliosPath?: string;
 }
 
 export interface PrayersConfig {

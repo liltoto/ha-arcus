@@ -151,7 +151,6 @@ const SOLAR_KEYS = [
   "investmentBattery",
   "installedAt",
   "paybackPercent",
-  "heliosPath",
 ] as const;
 
 const PRAYERS_KEYS = [

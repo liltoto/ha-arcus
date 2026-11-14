@@ -68,11 +68,13 @@ describe("SolarBody", () => {
     await user.click(screen.getByRole("button", { name: "Luk" }));
     expect(props.actions.closeSheet).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getByRole("button", { name: /Åbn Helios 3D/ }));
-    expect(props.actions.performAction).toHaveBeenCalledWith({
-      action: "navigate",
-      navigation_path: "/nyt-overblik/solceller-helios",
-    });
+    // The old external Helios 3D shortcut is gone; the overview only exposes
+    // the in-dashboard solar tabs.
+    expect(container.querySelector('[data-act="helios"]')).toBeNull();
+    await user.click(
+      container.querySelector<HTMLElement>('[data-nav="sol/produktion"]')!,
+    );
+    expect(props.actions.navigate).toHaveBeenCalledWith("sol/produktion");
   });
 
   it("navigates to each tab route from the segmented strip", async () => {
