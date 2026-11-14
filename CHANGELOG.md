@@ -2,6 +2,33 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.4 - 2026-11-14
+
+Maintenance release: the Fallow-driven cleanup, new regression tests, and four user-visible fixes.
+
+### Added
+
+- Regression coverage for action dispatch, graph tooltips, sheet drag, solar watts parsing, and area icon inference. Tests grew from 366 to 444.
+- Shared `useHistoryFrame` / `useLightActions` hooks, `RoomStats` / `LightStats` types, `ChartScaffold`, and heating/room view helpers.
+
+### Changed
+
+- Split `RoomBody`, `SecurityBody`, `HeatingBody`, `EnergyBody`, `WaterBody`, `TechBody`, and `discoverRooms` into section components and pure view modules. The rendered dashboard is unchanged.
+- Duplication dropped from 1.5% to 0.5%; high-complexity functions from 38 to 19.
+- Bundle is 393.0 KB gzip.
+
+### Fixed
+
+- A cancelled sheet drag (`pointercancel`) no longer dismisses the sheet.
+- Multi-series bar tooltips use the cursor bucket, so values, cursor, and timestamp agree.
+- `toggle` actions support area/device-only targets through `homeassistant.toggle`.
+- Service names with whitespace around the dot are trimmed.
+- `Hallway` maps to the stairs area icon; bare `Hall` remains a door.
+
+### Verified
+
+- 444 tests, typecheck, lint, Fallow audit, build, size budget, Storybook, and the visual suite.
+
 ## 0.4.3 - 2026-11-14
 
 Removed the external Helios 3D shortcut from the solar sheet.

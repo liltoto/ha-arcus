@@ -1,1 +1,1 @@
-export const ARCUS_VERSION = "0.4.3";
+export const ARCUS_VERSION = "0.4.4";
