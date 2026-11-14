@@ -1,12 +1,14 @@
 # Arcus React + Storybook Migration Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Replace Arcus's string-template presentation layer with a React component library organized by atomic design, developed and documented in Storybook, without changing the HA card/strategy contract or the visual design.
 
 **Architecture:** `<arcus-card>` remains the Home Assistant custom element and the only owner of `hass`, config, model building, routing, history, and theme. It mounts one React root inside its shadow DOM. A thin `ArcusProvider` exposes stable contexts (`hass`, `model`, `config`, `t`, `bindings`, `route`, `actions`, `history`, `now`); pure components take props and pages wire context. No second WebSocket and no module-level global store.
 
 **Tech Stack:** React 19.3, ReactDOM 19.3, TypeScript 7, Storybook 10.6, Vite 8.3, esbuild 0.28, Vitest 5, Playwright 1.65, happy-dom 21, `@testing-library/react` 16.
+
+**Status:** complete and shipped in `v0.2.0`.
 
 **Spec:** this conversation (2026-11-14 architecture discussion). No standalone spec file; the Goal, Global Constraints, and Review Focus below are the contract.
 
@@ -245,10 +247,10 @@ export function useNow(): () => Date;
 - Modify: `src/ui/organisms/layers/RoomBody.tsx`
 - Create: `tests/ui/room-sheet.test.tsx`
 
-- [ ] Write failing room-sheet tests: thermostat stepper, light group toggle, opening row, battery, media.
-- [ ] Port the room layer (774 lines) to `RoomBody` using the molecules and provider.
-- [ ] Run the tests and the visual suite.
-- [ ] Commit: `feat: port the room sheet to react`.
+- [x] Write failing room-sheet tests: thermostat stepper, light group toggle, opening row, battery, media.
+- [x] Port the room layer (774 lines) to `RoomBody` using the molecules and provider.
+- [x] Run the tests and the visual suite.
+- [x] Commit: `feat: port the room sheet to react`.
 
 ## Task 9: Energy and Solar
 
@@ -256,10 +258,10 @@ export function useNow(): () => Date;
 - Modify: `src/ui/organisms/layers/EnergyBody.tsx`, `src/ui/organisms/layers/SolarBody.tsx`
 - Create: `src/ui/hooks/useGraphTips.ts`, `src/ui/molecules/SolarArc.tsx`, `src/ui/molecules/BatteryRing.tsx`, `tests/ui/energy-solar.test.tsx`
 
-- [ ] Write failing tests: price bars, history windows, solar readouts, battery ring, graph tip mount/unmount.
-- [ ] Port Energy and Solar; reuse `priceBars`, `sparkPath`, `arcPoint`, `downsample`.
-- [ ] Run the tests and the visual suite.
-- [ ] Commit: `feat: port energy and solar sheets to react`.
+- [x] Write failing tests: price bars, history windows, solar readouts, battery ring, graph tip mount/unmount.
+- [x] Port Energy and Solar; reuse `priceBars`, `sparkPath`, `arcPoint`, `downsample`.
+- [x] Run the tests and the visual suite.
+- [x] Commit: `feat: port energy and solar sheets to react`.
 
 ## Task 10: Water, Security, Ventilation
 
@@ -267,10 +269,10 @@ export function useNow(): () => Date;
 - Modify: `src/ui/organisms/layers/WaterBody.tsx`, `SecurityBody.tsx`, `VentilationBody.tsx`
 - Create: `tests/ui/layers.test.tsx`
 
-- [ ] Write failing tests: water leak/consumption, open doors/windows, fan modes and airflow.
-- [ ] Port all three layers using shared `ZoneStrip`/`OpeningRow`.
-- [ ] Run the tests and the visual suite.
-- [ ] Commit: `feat: port water security and ventilation sheets`.
+- [x] Write failing tests: water leak/consumption, open doors/windows, fan modes and airflow.
+- [x] Port all three layers using shared `ZoneStrip`/`OpeningRow`.
+- [x] Run the tests and the visual suite.
+- [x] Commit: `feat: port water security and ventilation sheets`.
 
 ## Task 11: Tech, Economy, Prayers, Alerts, All
 
@@ -278,10 +280,10 @@ export function useNow(): () => Date;
 - Modify: `src/ui/organisms/layers/TechBody.tsx`, `EconomyBody.tsx`, `PrayersBody.tsx`, `AlertsBody.tsx`, `AllBody.tsx`
 - Create/Modify: `tests/ui/layers.test.tsx`
 
-- [ ] Write failing tests: tech/economy chart paths, next prayer highlight, severity order, all-room links.
-- [ ] Port all five layers using shared `Readout`/`ListRow`/`EmptyState`.
-- [ ] Run the tests and the visual suite.
-- [ ] Commit: `feat: port remaining sheets to react`.
+- [x] Write failing tests: tech/economy chart paths, next prayer highlight, severity order, all-room links.
+- [x] Port all five layers using shared `Readout`/`ListRow`/`EmptyState`.
+- [x] Run the tests and the visual suite.
+- [x] Commit: `feat: port remaining sheets to react`.
 
 ## Task 12: Cleanup, size gate, release
 
@@ -290,13 +292,13 @@ export function useNow(): () => Date;
 - Modify: `src/main.ts`, `src/card.ts`, `tests/card.test.ts`, `tests/smoke.test.ts`, `tests/sheets.test.ts`, `tests/remaining-sheets.test.ts`, `AGENTS.md`, `README.md`, `CHANGELOG.md`, `package.json`, `src/version.ts`
 - Create: `scripts/check-size.mjs`
 
-- [ ] Remove `arcus-sheets`, the `LegacySheet` bridge, event delegation, and dead tests.
-- [ ] Remove the `STYLES` compatibility re-export and update imports.
-- [ ] Add `npm run size` with a 400 KB gzip cap and run it after build in CI/release.
-- [ ] Update AGENTS/README/CHANGELOG; bump `0.2.0` in `package.json` and `src/version.ts`.
-- [ ] Refresh visual baselines through the `Visual` workflow only if the final DOM intentionally changed.
-- [ ] Run `npm run typecheck && npm test && npm run build && npm run build-storybook && npm run size`.
-- [ ] Commit: `chore: finish react migration and release 0.2.0`.
+- [x] Remove `arcus-sheets`, the `LegacySheet` bridge, event delegation, and dead tests.
+- [x] Remove the `STYLES` compatibility re-export and update imports.
+- [x] Add `npm run size` with a 400 KB gzip cap and run it after build in CI/release.
+- [x] Update AGENTS/README/CHANGELOG; bump `0.2.0` in `package.json` and `src/version.ts`.
+- [x] Refresh visual baselines through the `Visual` workflow only if the final DOM intentionally changed.
+- [x] Run `npm run typecheck && npm test && npm run build && npm run build-storybook && npm run size`.
+- [x] Commit: `chore: finish react migration and release 0.2.0`.
 
 ---
 
