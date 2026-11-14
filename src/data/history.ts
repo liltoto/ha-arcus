@@ -24,6 +24,15 @@ export interface HistoryWsRequest {
  * `minimal_response` (`s`/`lu`/`lc`) or by the REST API in full form
  * (`state`/`last_updated`/`last_changed`).
  */
+export interface SeriesOptions {
+  /** Number of time buckets across the window. */
+  buckets?: number;
+  /** Explicit window in hours; defaults to the cached fetch window. */
+  hours?: number;
+  /** Value for empty time buckets. Null keeps a visible gap. */
+  fill?: number | null;
+}
+
 export interface HistoryRow {
   s?: string | number | null;
   lu?: string | number | null;
@@ -59,7 +68,6 @@ function debugHistory(message: string, details: unknown): void {
     /* localStorage can be unavailable in embedded browsers. */
   }
 }
-const MAX_POINTS = 90;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Numeric epoch seconds or an ISO/numeric date string -> milliseconds. */
@@ -85,35 +93,6 @@ function rowValue(row: HistoryRow): number | null {
     return Number.isFinite(number) ? number : null;
   }
   return null;
-}
-
-/**
- * Average buckets to at most `target` points. `null` entries are skipped
- * inside a bucket but survive when a bucket contains no numeric value, so
- * gaps in the series stay visible.
- */
-function downsample(
-  values: Array<number | null>,
-  target = MAX_POINTS,
-): Array<number | null> {
-  if (values.length <= target) return values;
-  const out: Array<number | null> = [];
-  const step = values.length / target;
-  for (let i = 0; i < target; i++) {
-    const from = Math.floor(i * step);
-    const to = Math.max(from + 1, Math.floor((i + 1) * step));
-    let sum = 0;
-    let count = 0;
-    for (let j = from; j < to && j < values.length; j++) {
-      const value = values[j];
-      if (value !== null) {
-        sum += value;
-        count++;
-      }
-    }
-    out.push(count ? sum / count : null);
-  }
-  return out;
 }
 
 /**
@@ -186,20 +165,86 @@ export class HistoryCache {
     }
   }
 
-  /** Full cached series, downsampled to at most 90 points. */
-  series(entityId: string): Array<number | null> {
+  /**
+   * Cached series mapped into equal time buckets, not equal row counts.
+   *
+   * The recorder stores only state changes. A solar sensor may report 0 at
+   * sunset and then nothing until sunrise; index-based downsampling would put
+   * those two rows next to each other and draw a ramp across the night. Time
+   * bucketing keeps the night in place, so `fill: 0` produces a flat zero line
+   * and `fill: null` keeps an honest gap.
+   */
+  series(
+    entityId: string,
+    options: SeriesOptions = {},
+  ): Array<number | null> {
     const entry = this.cache.get(entityId);
     if (!entry) return [];
-    return downsample(entry.rows.map(rowValue));
+    return this.bucket(
+      entry.rows,
+      this.now().getTime() - (options.hours ?? entry.hours) * 60 * 60 * 1000,
+      this.now().getTime(),
+      options.buckets ?? 90,
+      options.fill ?? null,
+    );
   }
 
-  /** Cached series filtered to the last `days` days, downsampled to at most 90 points. */
-  window(entityId: string, days: number): Array<number | null> {
+  /** Cached series for the last `days`, mapped into time buckets. */
+  window(
+    entityId: string,
+    days: number,
+    options: SeriesOptions = {},
+  ): Array<number | null> {
     const entry = this.cache.get(entityId);
     if (!entry) return [];
-    const cutoff = this.now().getTime() - days * DAY_MS;
-    const rows = entry.rows.filter((row) => rowTimestamp(row) >= cutoff);
-    return downsample(rows.map(rowValue));
+    const end = this.now().getTime();
+    return this.bucket(
+      entry.rows,
+      end - days * DAY_MS,
+      end,
+      options.buckets ?? 90,
+      options.fill ?? null,
+    );
+  }
+
+  private bucket(
+    rows: HistoryRow[],
+    start: number,
+    end: number,
+    buckets: number,
+    fill: number | null,
+  ): Array<number | null> {
+    const count = Math.max(1, Math.round(buckets));
+    const width = (end - start) / count;
+    const sums = new Array<number>(count).fill(0);
+    const counts = new Array<number>(count).fill(0);
+    const nulls = new Array<boolean>(count).fill(false);
+    let hasValue = false;
+
+    for (const row of rows) {
+      const timestamp = rowTimestamp(row);
+      if (!timestamp || timestamp < start || timestamp > end) continue;
+      const index = Math.min(
+        count - 1,
+        Math.max(0, Math.floor((timestamp - start) / width)),
+      );
+      const value = rowValue(row);
+      if (value === null) {
+        nulls[index] = true;
+        continue;
+      }
+      sums[index] += value;
+      counts[index] += 1;
+      hasValue = true;
+    }
+
+    // Do not fabricate a full flat series for an entity with no history at all.
+    if (!hasValue) return [];
+
+    return counts.map((bucketCount, index) => {
+      if (bucketCount) return sums[index] / bucketCount;
+      return nulls[index] ? null : fill;
+    });
   }
 
   /** Raw cached rows for an entity. */

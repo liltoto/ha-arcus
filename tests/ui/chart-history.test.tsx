@@ -38,6 +38,7 @@ class MutableHistory {
 describe("history-driven charts", () => {
   it("updates a vital sparkline when the history cache ingests a series", () => {
     const history = new MutableHistory();
+    const series = vi.spyOn(history, "series");
     const props = makeArcusProps();
     const entityId = props.config.ventilation?.temperature ?? "";
     expect(entityId).not.toBe("");
@@ -66,5 +67,9 @@ describe("history-driven charts", () => {
         .closest(".vital")
         ?.querySelector(".vital-spark"),
     ).toHaveAttribute("data-graph", "line");
+    expect(series).toHaveBeenCalledWith(props.config.solar?.power, {
+      buckets: 96,
+      fill: 0,
+    });
   });
 });

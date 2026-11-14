@@ -82,6 +82,7 @@ export function RoomCard({
         className="room-spark"
         values={spark ?? room.spark}
         height={40}
+        pad={1}
         graph={sparkGraph}
         style={{ color: room.tint }}
       />

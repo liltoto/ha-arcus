@@ -8,6 +8,10 @@ import {
 
 const FIXED = new Date("2026-11-13T10:00:00+01:00");
 
+function nonNull(values: Array<number | null>): number[] {
+  return values.filter((value): value is number => value !== null);
+}
+
 function makeHass(
   callWS: HistoryHass["callWS"],
   callApi: HistoryHass["callApi"] = async () => [],
@@ -25,8 +29,8 @@ test("reads object responses with numeric timestamps", async () => {
     calls.push(message);
     return {
       "sensor.a": [
-        { s: "1", lu: 1763000000 },
-        { s: "unavailable", lu: 1763003600 },
+        { s: "1", lu: Math.floor(FIXED.getTime() / 1000) - 7200 },
+        { s: "unavailable", lu: Math.floor(FIXED.getTime() / 1000) - 3600 },
       ],
     };
   });
@@ -34,7 +38,8 @@ test("reads object responses with numeric timestamps", async () => {
 
   await cache.ensure(["sensor.a"], 24);
 
-  expect(cache.series("sensor.a")).toEqual([1, null]);
+  expect(nonNull(cache.series("sensor.a"))).toEqual([1]);
+  expect(cache.series("sensor.a")).toHaveLength(90);
   expect(cache.raw("sensor.a")).toHaveLength(2);
   expect(calls).toHaveLength(1);
   expect(calls[0]).toMatchObject({
@@ -60,7 +65,7 @@ test("reads array-of-arrays responses with ISO timestamps", async () => {
 
   await cache.ensure(["sensor.b"], 12);
 
-  expect(cache.series("sensor.b")).toEqual([2.5, null, 3]);
+  expect(nonNull(cache.series("sensor.b"))).toEqual([2.5, 3]);
   expect(cache.raw("sensor.b")[0]).toMatchObject({
     state: "2.5",
     last_updated: "2026-11-13T08:00:00+01:00",
@@ -85,12 +90,14 @@ test("falls back to REST when the WebSocket request rejects", async () => {
   expect(api.mock.calls[0][1]).toBe(
     `history/period/${encodeURIComponent(start)}?filter_entity_id=sensor.c&minimal_response&no_attributes`,
   );
-  expect(cache.series("sensor.c")).toEqual([4]);
+  expect(nonNull(cache.series("sensor.c"))).toEqual([4]);
 });
 
 test("reuses cached history for repeated ensure calls", async () => {
   const ws = vi.fn(async (_message: HistoryWsRequest) => ({
-    "sensor.a": [{ s: "1", lu: 1763000000 }],
+    "sensor.a": [
+      { s: "1", lu: Math.floor(FIXED.getTime() / 1000) - 3600 },
+    ],
   }));
   const cache = new HistoryCache(makeHass(ws), () => FIXED);
 
@@ -98,7 +105,7 @@ test("reuses cached history for repeated ensure calls", async () => {
   await cache.ensure(["sensor.a"], 24);
 
   expect(ws).toHaveBeenCalledTimes(1);
-  expect(cache.series("sensor.a")).toEqual([1]);
+  expect(nonNull(cache.series("sensor.a"))).toEqual([1]);
 });
 
 test("shares one in-flight request between concurrent ensure calls", async () => {
@@ -113,11 +120,15 @@ test("shares one in-flight request between concurrent ensure calls", async () =>
 
   const first = cache.ensure(["sensor.a"], 24);
   const second = cache.ensure(["sensor.a"], 24);
-  resolve({ "sensor.a": [{ s: "7", lu: 1763000000 }] });
+  resolve({
+    "sensor.a": [
+      { s: "7", lu: Math.floor(FIXED.getTime() / 1000) - 3600 },
+    ],
+  });
   await Promise.all([first, second]);
 
   expect(ws).toHaveBeenCalledTimes(1);
-  expect(cache.series("sensor.a")).toEqual([7]);
+  expect(nonNull(cache.series("sensor.a"))).toEqual([7]);
 });
 
 test("window filters cached rows by timestamp", async () => {
@@ -137,8 +148,8 @@ test("window filters cached rows by timestamp", async () => {
 
   await cache.ensure(["sensor.d"], 24 * 365);
 
-  expect(cache.window("sensor.d", 30)).toEqual([20, 10, 2, 1]);
-  expect(cache.window("sensor.d", 1)).toEqual([1]);
+  expect(nonNull(cache.window("sensor.d", 30))).toEqual([20, 10, 2, 1]);
+  expect(nonNull(cache.window("sensor.d", 1))).toEqual([1]);
 });
 
 test("keeps a longer cached range when a shorter one is fetched later", async () => {
@@ -148,11 +159,15 @@ test("keeps a longer cached range when a shorter one is fetched later", async ()
     .fn()
     .mockResolvedValueOnce({
       "sensor.a": [
-        { s: "1", lu: 1763000000 },
-        { s: "2", lu: 1763003600 },
+        { s: "1", lu: Math.floor(FIXED.getTime() / 1000) - 7200 },
+        { s: "2", lu: Math.floor(FIXED.getTime() / 1000) - 3600 },
       ],
     })
-    .mockResolvedValueOnce({ "sensor.a": [{ s: "9", lu: 1763007200 }] });
+    .mockResolvedValueOnce({
+      "sensor.a": [
+        { s: "9", lu: Math.floor(FIXED.getTime() / 1000) - 1800 },
+      ],
+    });
   const cache = new HistoryCache(makeHass(ws));
 
   await cache.ensure(["sensor.a"], 48);
@@ -160,14 +175,14 @@ test("keeps a longer cached range when a shorter one is fetched later", async ()
   await cache.ensure(["sensor.a"], 12);
 
   expect(ws).toHaveBeenCalledTimes(2);
-  expect(cache.series("sensor.a")).toEqual([1, 2]);
+  expect(nonNull(cache.series("sensor.a"))).toEqual([1, 2]);
 });
 
-test("downsamples long series to at most 90 points", async () => {
-  const base = Math.floor(FIXED.getTime() / 1000);
-  const rows: HistoryRow[] = Array.from({ length: 200 }, (_, index) => ({
+test("maps long series into 90 equal time buckets", async () => {
+  const base = FIXED.getTime();
+  const rows: HistoryRow[] = Array.from({ length: 240 }, (_, index) => ({
     s: String(index),
-    lu: base - 200 + index,
+    lu: (base - (240 - index) * 6 * 60 * 1000) / 1000,
   }));
   const cache = new HistoryCache(
     makeHass(async () => ({ "sensor.long": rows })),
@@ -178,13 +193,34 @@ test("downsamples long series to at most 90 points", async () => {
 
   const series = cache.series("sensor.long");
   expect(series).toHaveLength(90);
-  expect(series.every((value) => value !== null)).toBe(true);
+  expect(nonNull(series).length).toBeGreaterThan(0);
   expect(cache.window("sensor.long", 1)).toHaveLength(90);
+});
+
+test("fills a sparse solar night with zero instead of a diagonal ramp", async () => {
+  const now = new Date("2026-11-14T14:00:00+01:00");
+  const rows: HistoryRow[] = [
+    { s: "0", lu: new Date("2026-11-13T16:52:00+01:00").getTime() / 1000 },
+    { s: "18.8", lu: new Date("2026-11-14T07:05:00+01:00").getTime() / 1000 },
+  ];
+  const cache = new HistoryCache(
+    makeHass(async () => ({ "sensor.solar": rows })),
+    () => now,
+  );
+
+  await cache.ensure(["sensor.solar"], 24);
+
+  const series = cache.series("sensor.solar", { fill: 0, buckets: 96 });
+  expect(series).toHaveLength(96);
+  expect(series.filter((value) => value === 0).length).toBeGreaterThan(24);
+  expect(series.some((value) => value !== null && value > 10)).toBe(true);
 });
 
 test("notifies subscribers when new rows are cached", async () => {
   const hass = makeHass(async () => ({
-    "sensor.d": [{ s: "5", lu: 1763000000 }],
+    "sensor.d": [
+      { s: "5", lu: Math.floor(FIXED.getTime() / 1000) - 3600 },
+    ],
   }));
   const cache = new HistoryCache(hass, () => FIXED);
   const listener = vi.fn();
@@ -195,7 +231,7 @@ test("notifies subscribers when new rows are cached", async () => {
 
   expect(listener).toHaveBeenCalledTimes(1);
   expect(cache.getVersion()).toBe(before + 1);
-  expect(cache.series("sensor.d")).toEqual([5]);
+  expect(nonNull(cache.series("sensor.d"))).toEqual([5]);
 
   unsubscribe();
   await cache.ensure(["sensor.d"], 48);
@@ -209,7 +245,7 @@ test("batches large history requests instead of sending one giant payload", asyn
     return Object.fromEntries(
       (message.entity_ids ?? []).map((id) => [
         id,
-        [{ s: "7", lu: 1763000000 }],
+        [{ s: "7", lu: Math.floor(FIXED.getTime() / 1000) - 3600 }],
       ]),
     );
   });
@@ -222,7 +258,7 @@ test("batches large history requests instead of sending one giant payload", asyn
   expect(calls.map((call) => call.entity_ids.length)).toEqual([
     4, 4, 4, 4, 1,
   ]);
-  expect(cache.series("sensor.batch_0")).toEqual([7]);
-  expect(cache.series("sensor.batch_8")).toEqual([7]);
-  expect(cache.series("sensor.batch_16")).toEqual([7]);
+  expect(nonNull(cache.series("sensor.batch_0"))).toEqual([7]);
+  expect(nonNull(cache.series("sensor.batch_8"))).toEqual([7]);
+  expect(nonNull(cache.series("sensor.batch_16"))).toEqual([7]);
 });

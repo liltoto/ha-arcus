@@ -417,7 +417,7 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
             },
             {
               key: windowKey(config.solar?.power),
-              values: historySeries(history, config.solar?.power, 1),
+              values: historySeries(history, config.solar?.power, 1, 0),
               color: "var(--text)",
               label: t("solar.actual"),
             },

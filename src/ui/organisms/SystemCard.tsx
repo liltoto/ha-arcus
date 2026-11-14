@@ -56,6 +56,7 @@ export function SystemCard({ card, onOpen, spark, sparkGraph = null }: SystemCar
         className="room-spark"
         values={spark ?? []}
         height={40}
+        pad={1}
         graph={sparkGraph}
         style={{ color: card.tint }}
       />

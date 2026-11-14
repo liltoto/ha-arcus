@@ -150,10 +150,11 @@ export function historySeries(
   history: HistoryCache,
   id: string | undefined,
   days: number,
+  fill: number | null = null,
 ): Array<number | null> {
   if (!id) return [];
   try {
-    return history.window(id, days) ?? [];
+    return history.window(id, days, { buckets: 96, fill }) ?? [];
   } catch {
     return [];
   }
