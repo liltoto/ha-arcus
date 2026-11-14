@@ -862,7 +862,11 @@ export interface HomeModel {
 /* ------------------------------------------------------------------ */
 
 export type SolarTab =
-  "overblik" | "produktion" | "batteri" | "prognose" | "afkast";
+  | "overblik"
+  | "produktion"
+  | "batteri"
+  | "prognose"
+  | "afkast";
 
 export type Translator = (
   key: string,

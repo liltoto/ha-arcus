@@ -48,6 +48,7 @@ function ShadowHost({ theme, density, children }: ShadowHostProps) {
 
   return createElement(
     "arc-story-host",
+    // oxlint-disable-next-line react/refs -- ref callbacks run after commit, not during render.
     {
       ref: (node: HTMLElement | null) => {
         hostRef.current = node as ArcStoryHost | null;

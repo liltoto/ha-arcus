@@ -21,7 +21,6 @@ import {
   useTranslator,
 } from "../../hooks";
 import { EmptyState } from "../../atoms/EmptyState";
-import { Icon } from "../../atoms/Icon";
 import { Readout } from "../../molecules/Readout";
 import { SegmentedTabs } from "../../molecules/SegmentedTabs";
 import { SheetHeader } from "../../molecules/SheetHeader";
@@ -1261,13 +1260,7 @@ export function SolarBody({ route }: LayerBodyProps) {
 
   const pv = activePv(config, solar);
   const hasBattery = hasSolarBattery(config, solar);
-  const summary = solarHeaderSummary(
-    solar,
-    hasData,
-    hasBattery,
-    language,
-    t,
-  );
+  const summary = solarHeaderSummary(solar, hasData, hasBattery, language, t);
 
   const tabs = [
     { key: "overblik", label: t("sheet.tabOverview") },

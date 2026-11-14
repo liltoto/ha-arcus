@@ -137,18 +137,24 @@ function baseConfig(): ArcusConfig {
       month: "sensor.sol_denne_maned",
       year: "sensor.sol_i_ar",
 
-      batteryTemperature: "sensor.sunmate_io_pulse_ee40a0_pulse_battery_temperature",
+      batteryTemperature:
+        "sensor.sunmate_io_pulse_ee40a0_pulse_battery_temperature",
       batteryVoltage: "sensor.sunmate_io_pulse_ee40a0_pulse_battery_voltage",
       batteryCurrent: "sensor.sunmate_io_pulse_ee40a0_pulse_battery_output_a",
-      batteryCharge: "sensor.sunmate_io_pulse_ee40a0_pulse_daily_battery_charge",
-      batteryDischarge: "sensor.sunmate_io_pulse_ee40a0_pulse_daily_battery_discharge",
+      batteryCharge:
+        "sensor.sunmate_io_pulse_ee40a0_pulse_daily_battery_charge",
+      batteryDischarge:
+        "sensor.sunmate_io_pulse_ee40a0_pulse_daily_battery_discharge",
       batteryMinSoc: "number.sunmate_io_pulse_ee40a0_pulse_battery_min_soc",
       batteryMaxSoc: "number.sunmate_io_pulse_ee40a0_pulse_battery_max_soc",
 
-      inverterTemperature: "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_temperature",
-      inverterFrequency: "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_frequency",
+      inverterTemperature:
+        "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_temperature",
+      inverterFrequency:
+        "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_frequency",
       inverterModel: "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_model_fw",
-      dataloggerVersion: "sensor.sunmate_io_pulse_ee40a0_pulse_datalogger_version",
+      dataloggerVersion:
+        "sensor.sunmate_io_pulse_ee40a0_pulse_datalogger_version",
       wifiSignal: "sensor.sunmate_io_pulse_ee40a0_pulse_wifi_signal",
       uptime: "sensor.sunmate_io_pulse_ee40a0_pulse_uptime",
 
@@ -214,7 +220,8 @@ function baseConfig(): ArcusConfig {
       temperature: "sensor.sunmate_io_pulse_ee40a0_pulse_temperature",
       frequency: "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_frequency",
       inverterModel: "sensor.sunmate_io_pulse_ee40a0_pulse_inverter_model_fw",
-      dataloggerVersion: "sensor.sunmate_io_pulse_ee40a0_pulse_datalogger_version",
+      dataloggerVersion:
+        "sensor.sunmate_io_pulse_ee40a0_pulse_datalogger_version",
     },
 
     economy: {

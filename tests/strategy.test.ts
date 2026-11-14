@@ -95,9 +95,9 @@ describe("ArcusDashboardStrategy", () => {
   });
 
   test("getConfigElement returns the strategy editor element", () => {
-    expect(ArcusDashboardStrategy.getConfigElement().tagName.toLowerCase()).toBe(
-      "arcus-strategy-editor",
-    );
+    expect(
+      ArcusDashboardStrategy.getConfigElement().tagName.toLowerCase(),
+    ).toBe("arcus-strategy-editor");
   });
 
   test("registers the custom element and the custom strategy", () => {
@@ -107,9 +107,7 @@ describe("ArcusDashboardStrategy", () => {
       "entities",
       "floors",
     ]);
-    expect(customElements.get(ARCUS_STRATEGY_TAG)).toBe(
-      ArcusDashboardStrategy,
-    );
+    expect(customElements.get(ARCUS_STRATEGY_TAG)).toBe(ArcusDashboardStrategy);
     expect(new ArcusDashboardStrategy()).toBeInstanceOf(HTMLElement);
     expect(window.customStrategies).toContainEqual(ARCUS_CUSTOM_STRATEGY);
   });

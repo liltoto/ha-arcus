@@ -1,12 +1,7 @@
 import { formatTime } from "../../format";
 import { resolveLanguage } from "../../localize";
 import { arcPoint, priceColor } from "../../render/charts";
-import type {
-  ArcusConfig,
-  HomeModel,
-  Language,
-  Translator,
-} from "../../types";
+import type { ArcusConfig, HomeModel, Language, Translator } from "../../types";
 import type { HistoryCache } from "../../data/history";
 import {
   useConfig,
@@ -154,7 +149,9 @@ function buildLabels(
   const labels: ArcLabel[] = [];
 
   if (sunrise) {
-    labels.push(sunLabel("sunrise", t("prayers.sunrise"), sunrise, 5, language));
+    labels.push(
+      sunLabel("sunrise", t("prayers.sunrise"), sunrise, 5, language),
+    );
   }
 
   prayerTimes.forEach((prayer, index) => {
@@ -173,10 +170,14 @@ function buildLabels(
     const rising = model.sun?.nextRising;
     const setting = model.sun?.nextSetting;
     if (rising && !sunrise) {
-      labels.push(sunLabel("sunrise", t("prayers.sunrise"), rising, 5, language));
+      labels.push(
+        sunLabel("sunrise", t("prayers.sunrise"), rising, 5, language),
+      );
     }
     if (setting) {
-      labels.push(sunLabel("sunset", t("prayers.sunset"), setting, 9, language));
+      labels.push(
+        sunLabel("sunset", t("prayers.sunset"), setting, 9, language),
+      );
     }
   }
 

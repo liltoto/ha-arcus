@@ -84,10 +84,7 @@ function effectiveTemp(room: RoomModel): number | null {
   return numberFrom(room.tempFallback?.attributes?.current_temperature);
 }
 
-function roomStats(
-  model: HomeModel,
-  room: RoomModel,
-): RoomStatBinding {
+function roomStats(model: HomeModel, room: RoomModel): RoomStatBinding {
   const stats = (model.roomStats ?? {}) as Record<string, RoomStatBinding>;
   const stored = stats[room.id];
   if (stored) return stored;
@@ -165,9 +162,7 @@ function allStats(model: HomeModel): RoomStatBinding[] {
   return model.rooms.map((room) => roomStats(model, room));
 }
 
-function lightsSummary(
-  model: HomeModel,
-): { on: number; total: number } {
+function lightsSummary(model: HomeModel): { on: number; total: number } {
   const stored = model.lightStats as
     | { on?: number; total?: number }
     | undefined;
@@ -187,7 +182,8 @@ function lightsSummary(
 
 function average(values: Array<number | null>): number | null {
   const numbers = values.filter(
-    (value): value is number => typeof value === "number" && Number.isFinite(value),
+    (value): value is number =>
+      typeof value === "number" && Number.isFinite(value),
   );
   if (!numbers.length) return null;
   return numbers.reduce((total, value) => total + value, 0) / numbers.length;
@@ -305,9 +301,7 @@ function ventilationSummary(
   )}°</b> · ${lower(t("ventilation.fanStep"))} ${
     model.ventilation?.step ?? "–"
   } · ${
-    filterOk
-      ? t("ventilation.filterOk")
-      : escapeHtml(filter.toLowerCase())
+    filterOk ? t("ventilation.filterOk") : escapeHtml(filter.toLowerCase())
   }`;
 }
 
@@ -378,11 +372,7 @@ function heatingSummary(
     .filter((value): value is number => value !== null);
   const currentAverage = average(currentTemps);
   const targetAverage = average(targetTemps);
-  return `<b>${formatNumber(
-    currentAverage,
-    1,
-    language,
-  )}°</b> · ${formatNumber(
+  return `<b>${formatNumber(currentAverage, 1, language)}°</b> · ${formatNumber(
     targetAverage,
     1,
     language,
@@ -453,8 +443,7 @@ export function buildBindings(
   const stats = allStats(model);
   const lights = lightsSummary(model);
   const open =
-    model.security?.open ??
-    stats.reduce((total, stat) => total + stat.open, 0);
+    model.security?.open ?? stats.reduce((total, stat) => total + stat.open, 0);
   const indoor =
     average(stats.map((stat) => stat.temp)) ??
     (typeof model.ventilation?.temperature === "number"

@@ -458,12 +458,7 @@ export function EnergyBody(_props: LayerBodyProps) {
           </div>
           <div className={c("block")} style={{ marginTop: 18 }}>
             <div className={c("block-label")}>{t("energy.dayPrices")}</div>
-            <PriceBars
-              price={price}
-              now={nowDate}
-              t={t}
-              currency={currency}
-            />
+            <PriceBars price={price} now={nowDate} t={t} currency={currency} />
           </div>
           <div className={c("mini-grid")} style={{ marginTop: 12 }}>
             <div className={c("mini-stat")}>
@@ -500,8 +495,16 @@ export function EnergyBody(_props: LayerBodyProps) {
           <div className={c("block-label")}>{t("energy.pricesNow")}</div>
           <div className={c("readings")}>
             <Readout label={t("energy.buy")} value={buyText} unit={currency} />
-            <Readout label={t("energy.sell")} value={sellText} unit={currency} />
-            <Readout label={t("energy.spot")} value={spotText} unit={currency} />
+            <Readout
+              label={t("energy.sell")}
+              value={sellText}
+              unit={currency}
+            />
+            <Readout
+              label={t("energy.spot")}
+              value={spotText}
+              unit={currency}
+            />
             <Readout
               label={t("energy.nextHour")}
               value={formatPrice(next, language)}

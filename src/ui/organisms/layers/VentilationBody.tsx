@@ -1,7 +1,6 @@
-import { formatNumber, numberFrom, resolveTempUnit } from "../../../format";
+import { formatNumber } from "../../../format";
 import type {
   ArcusHass,
-  EntityRef,
   TemperatureUnit,
   Translator,
   VentilationModel,
@@ -637,7 +636,6 @@ export function VentilationBody(_props: LayerBodyProps) {
     filterValue,
     status,
     climateId,
-    climate,
     mode,
     fan,
     target,

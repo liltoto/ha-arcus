@@ -422,11 +422,11 @@ export function WaterBody(_props: LayerBodyProps) {
   const softenerTitle = customSoftenerName || t("water.bwt");
   const hasSoftener = Boolean(
     water.state ||
-      salt !== null ||
-      saltDays !== null ||
-      capacity !== null ||
-      holidayId ||
-      customSoftenerName,
+    salt !== null ||
+    saltDays !== null ||
+    capacity !== null ||
+    holidayId ||
+    customSoftenerName,
   );
   const holidayOn = holidayId
     ? isOn(hass, holidayId, Boolean(water.holiday))
@@ -510,7 +510,11 @@ export function WaterBody(_props: LayerBodyProps) {
             value={fmt(total === null ? null : total / 1000, 1)}
             unit="m³"
           />
-          <Readout label={t("water.cost")} value={fmt(cost, 0)} unit={currency} />
+          <Readout
+            label={t("water.cost")}
+            value={fmt(cost, 0)}
+            unit={currency}
+          />
           <Readout
             label={t("water.flowNow")}
             value={fmt(flow, 2)}

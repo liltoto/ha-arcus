@@ -1,10 +1,7 @@
 import type { ComponentType } from "react";
 import type { LayerBodyProps } from "../../src/ui/pages/layerRegistry";
 import type { ArcusRoute } from "../../src/ui/types";
-import {
-  renderWithArcus,
-  type ArcusRenderOptions,
-} from "./home-test-utils";
+import { renderWithArcus, type ArcusRenderOptions } from "./home-test-utils";
 
 /**
  * Render one layer body with the fixture provider and the route the body

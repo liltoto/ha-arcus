@@ -49,7 +49,8 @@ describe("history-driven charts", () => {
       </ArcusProvider>,
     );
 
-    const spark = screen.getByText(props.bindings.indoor)
+    const spark = screen
+      .getByText(props.bindings.indoor)
       .closest(".vital")
       ?.querySelector(".vital-spark path");
     expect(spark?.getAttribute("d")).toBe("");

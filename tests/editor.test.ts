@@ -190,10 +190,7 @@ describe("ArcusConfigEditor", () => {
     document.body.appendChild(editor);
 
     const changes = trackConfigChanges(editor);
-    const toggle = field<HTMLInputElement>(
-      editor.shadowRoot!,
-      "auto_discover",
-    );
+    const toggle = field<HTMLInputElement>(editor.shadowRoot!, "auto_discover");
     expect(toggle.checked).toBe(true);
 
     toggle.checked = false;
@@ -308,10 +305,7 @@ describe("ArcusConfigEditor", () => {
     editor.hass = hass;
     document.body.appendChild(editor);
 
-    const weatherInput = field<HTMLInputElement>(
-      editor.shadowRoot!,
-      "weather",
-    );
+    const weatherInput = field<HTMLInputElement>(editor.shadowRoot!, "weather");
     const weatherListId = weatherInput.getAttribute("list")!;
     expect(weatherListId).toBe("arcus-entities-weather");
     const weatherOptions = Array.from(
@@ -463,23 +457,18 @@ describe("editor focus and key handling", () => {
     editor.hass = makeHass();
     document.body.appendChild(editor);
 
-    const advanced = editor.shadowRoot!.querySelector<HTMLDetailsElement>(
-      "details.advanced",
-    )!;
+    const advanced =
+      editor.shadowRoot!.querySelector<HTMLDetailsElement>("details.advanced")!;
     advanced.open = true;
     const input = field<HTMLInputElement>(editor.shadowRoot!, "title");
     input.focus();
     input.value = "Mit hjem";
-    input.dispatchEvent(
-      new Event("input", { bubbles: true, composed: true }),
-    );
+    input.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
 
     // Home Assistant echoes the emitted config back into setConfig.
     editor.setConfig(editor.getConfig());
 
-    expect(editor.shadowRoot!.querySelector("details.advanced")).toBe(
-      advanced,
-    );
+    expect(editor.shadowRoot!.querySelector("details.advanced")).toBe(advanced);
     expect(advanced.open).toBe(true);
     expect(field(editor.shadowRoot!, "title")).toBe(input);
   });
@@ -490,9 +479,8 @@ describe("editor focus and key handling", () => {
     editor.hass = makeHass();
     document.body.appendChild(editor);
 
-    const advanced = editor.shadowRoot!.querySelector<HTMLDetailsElement>(
-      "details.advanced",
-    )!;
+    const advanced =
+      editor.shadowRoot!.querySelector<HTMLDetailsElement>("details.advanced")!;
     advanced.open = true;
     const input = field<HTMLInputElement>(editor.shadowRoot!, "title");
     input.focus();
@@ -504,9 +492,8 @@ describe("editor focus and key handling", () => {
       subtitle: "Neu",
     });
 
-    const nextAdvanced = editor.shadowRoot!.querySelector<HTMLDetailsElement>(
-      "details.advanced",
-    )!;
+    const nextAdvanced =
+      editor.shadowRoot!.querySelector<HTMLDetailsElement>("details.advanced")!;
     expect(nextAdvanced.open).toBe(true);
     const nextInput = field<HTMLInputElement>(editor.shadowRoot!, "title");
     expect(nextInput.value).toBe("Mit hjem");
@@ -584,26 +571,22 @@ describe("editor focus and key handling", () => {
     });
     document.body.appendChild(editor);
 
-    const cardEditor = editor.shadowRoot!.querySelector(
-      "arcus-config-editor",
-    );
+    const cardEditor = editor.shadowRoot!.querySelector("arcus-config-editor");
     const title = field<HTMLInputElement>(
       editor.shadowRoot!,
       "dashboard_title",
     );
     title.focus();
     title.value = "Hjemme";
-    title.dispatchEvent(
-      new Event("input", { bubbles: true, composed: true }),
-    );
+    title.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
 
     editor.setConfig(editor.getConfig());
 
-    expect(
-      editor.shadowRoot!.querySelector("arcus-config-editor"),
-    ).toBe(cardEditor);
-    expect(
-      field<HTMLInputElement>(editor.shadowRoot!, "dashboard_title"),
-    ).toBe(title);
+    expect(editor.shadowRoot!.querySelector("arcus-config-editor")).toBe(
+      cardEditor,
+    );
+    expect(field<HTMLInputElement>(editor.shadowRoot!, "dashboard_title")).toBe(
+      title,
+    );
   });
 });

@@ -4,19 +4,30 @@ export type ChartPoint = { x: number; y: number };
 export type ChartRange = { min: number; max: number };
 export type ChartValues = ReadonlyArray<number | null | undefined>;
 
-const clamp = (v: number, a: number, b: number): number => Math.max(a, Math.min(b, v));
+const clamp = (v: number, a: number, b: number): number =>
+  Math.max(a, Math.min(b, v));
 
 /**
  * A symmetric 1000×300 parabola. The defaults put the endpoints at
  * (40, 210) and (960, 210), with the apex at (500, 60).
  */
-export function arcPoint(t: number, w = 920, x0 = 40, base = 210, rise = 150): ChartPoint {
+export function arcPoint(
+  t: number,
+  w = 920,
+  x0 = 40,
+  base = 210,
+  rise = 150,
+): ChartPoint {
   const x = x0 + w * clamp(t, 0, 1);
   const y = base - rise * 4 * clamp(t, 0, 1) * (1 - clamp(t, 0, 1));
   return { x, y };
 }
 
-export function priceColor(price: number | null | undefined, min: number, max: number): string {
+export function priceColor(
+  price: number | null | undefined,
+  min: number,
+  max: number,
+): string {
   if (price === null || price === undefined) return "#6b7280";
   const r = max > min ? (price - min) / (max - min) : 0;
   if (r < 0.34) return "#8FB08B";
@@ -24,7 +35,13 @@ export function priceColor(price: number | null | undefined, min: number, max: n
   return "#E0785E";
 }
 
-export function sparkPath(values: ChartValues, w = 100, h = 28, pad = 2, range: ChartRange | null = null): string {
+export function sparkPath(
+  values: ChartValues,
+  w = 100,
+  h = 28,
+  pad = 2,
+  range: ChartRange | null = null,
+): string {
   const nums = (values || []).map((v) =>
     v === null || v === undefined || Number.isNaN(Number(v)) ? null : Number(v),
   );
@@ -53,7 +70,13 @@ export function sparkPath(values: ChartValues, w = 100, h = 28, pad = 2, range: 
   return d;
 }
 
-export function areaPath(values: ChartValues, w = 100, h = 28, pad = 2, range: ChartRange | null = null): string {
+export function areaPath(
+  values: ChartValues,
+  w = 100,
+  h = 28,
+  pad = 2,
+  range: ChartRange | null = null,
+): string {
   const line = sparkPath(values, w, h, pad, range);
   if (!line) return "";
   return `${line}L${w - pad},${h - pad}L${pad},${h - pad}Z`;
@@ -63,11 +86,16 @@ export function areaPath(values: ChartValues, w = 100, h = 28, pad = 2, range: C
  * Average the series into `target` buckets, preserving gaps as nulls.
  * A series already short enough is returned unchanged.
  */
-export function downsample(values: ChartValues, target = 48): Array<number | null> {
+export function downsample(
+  values: ChartValues,
+  target = 48,
+): Array<number | null> {
   if (!values || !values.length) return [];
   if (values.length <= target) {
     return values.map((v) =>
-      v === null || v === undefined || Number.isNaN(Number(v)) ? null : Number(v),
+      v === null || v === undefined || Number.isNaN(Number(v))
+        ? null
+        : Number(v),
     );
   }
   const out: Array<number | null> = [];

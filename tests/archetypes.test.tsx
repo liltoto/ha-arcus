@@ -65,9 +65,7 @@ describe("urban apartment archetype", () => {
     wet.states["binary_sensor.kitchen_water_leak"].state = "on";
     const wetModel = buildModel(wet, config, NOW);
     expect(wetModel.security?.leak).toBe(true);
-    expect(wetModel.alerts.map((alert) => alert.key)).toContain(
-      "leak_kitchen",
-    );
+    expect(wetModel.alerts.map((alert) => alert.key)).toContain("leak_kitchen");
   });
 });
 
@@ -77,10 +75,10 @@ describe("suburban multi-floor home archetype", () => {
   const model = buildModel(hass, config, NOW);
 
   test("discovers two floors plus the outdoor garage", () => {
-    const byId = Object.fromEntries(
-      model.rooms.map((room) => [room.id, room]),
+    const byId = Object.fromEntries(model.rooms.map((room) => [room.id, room]));
+    expect(Object.keys(byId)).toEqual(
+      expect.arrayContaining([...SUBURBAN_ROOMS]),
     );
-    expect(Object.keys(byId)).toEqual(expect.arrayContaining([...SUBURBAN_ROOMS]));
     expect(byId.living_room.floorName).toBe("Ground floor");
     expect(byId.office.floorName).toBe("First floor");
     expect(byId.office.floorLevel).toBe(1);

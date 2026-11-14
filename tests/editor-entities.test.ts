@@ -92,10 +92,7 @@ describe("suggestEntities", () => {
       deviceClasses: ["power"],
     };
     const result = suggestEntities(HOME, spec);
-    expect(result).toEqual([
-      "sensor.solar_power",
-      "sensor.offline_power",
-    ]);
+    expect(result).toEqual(["sensor.solar_power", "sensor.offline_power"]);
   });
 
   test("requires a non-empty forecast attribute", () => {
@@ -103,9 +100,7 @@ describe("suggestEntities", () => {
       domains: ["sensor"],
       requireAttributes: ["raw_today", "prices"],
     };
-    expect(suggestEntities(HOME, spec)).toEqual([
-      "sensor.energi_data_service",
-    ]);
+    expect(suggestEntities(HOME, spec)).toEqual(["sensor.energi_data_service"]);
   });
 
   test("matches the friendly name", () => {
@@ -156,7 +151,11 @@ describe("suggestEntities", () => {
     for (let index = 0; index < 120; index += 1) {
       states[`sensor.item_${index}`] = state(String(index));
     }
-    const result = suggestEntities(hassWith(states), { domains: ["sensor"] }, 25);
+    const result = suggestEntities(
+      hassWith(states),
+      { domains: ["sensor"] },
+      25,
+    );
     expect(result).toHaveLength(25);
   });
 

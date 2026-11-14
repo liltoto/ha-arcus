@@ -20,9 +20,7 @@ describe("buildBindings", () => {
   test("binds the vitals, room rows, system card, and chapter summaries", () => {
     const b = homeBindings();
 
-    expect(b.roomsMeta).toBe(
-      "<b>7 rum</b> · 0 åbne · <b>0</b> lys tændt",
-    );
+    expect(b.roomsMeta).toBe("<b>7 rum</b> · 0 åbne · <b>0</b> lys tændt");
     expect(b.indoor).toBe("22,5");
     expect(b.indoorSub).toBe("gennemsnit · inde");
     expect(b.price).toBe("1,75");
@@ -52,28 +50,18 @@ describe("buildBindings", () => {
   test("renders every chapter summary as legacy-style HTML", () => {
     const b = homeBindings();
 
-    expect(b.ch_energi_sum).toBe(
-      "<b>1,75 kr/kWh</b> · huset bruger 665 W",
-    );
+    expect(b.ch_energi_sum).toBe("<b>1,75 kr/kWh</b> · huset bruger 665 W");
     expect(b.ch_sol_sum).toBe("<b>27 % batteri</b> · 15,3 kWh i dag");
-    expect(b.ch_vand_sum).toBe(
-      "<b>12,2 L i dag</b> · BWT OK · salt 41 %",
-    );
-    expect(b.ch_sikkerhed_sum).toBe(
-      "<b>Alt lukket</b> · ingen lækage",
-    );
+    expect(b.ch_vand_sum).toBe("<b>12,2 L i dag</b> · BWT OK · salt 41 %");
+    expect(b.ch_sikkerhed_sum).toBe("<b>Alt lukket</b> · ingen lækage");
     expect(b.ch_ventilation_sum).toBe(
       "<b>23,2°</b> · blæsertrin 2 · skift filter",
     );
-    expect(b.ch_teknik_sum).toBe(
-      "<b>0,3 ms</b> router · 8,1 ms google",
-    );
+    expect(b.ch_teknik_sum).toBe("<b>0,3 ms</b> router · 8,1 ms google");
     expect(b.ch_oekonomi_sum).toBe("<b>97,15</b> · +0,22 i dag");
     expect(b.ch_lys_sum).toBe("<b>0 af 15</b> lys tændt");
     expect(b.ch_varme_sum).toBe("<b>23,2°</b> · 22,5° setpunkt");
-    expect(b.ch_alarmer_sum).toBe(
-      "<b>2 ting</b> · Nilan vil have nyt filter",
-    );
+    expect(b.ch_alarmer_sum).toBe("<b>2 ting</b> · Nilan vil have nyt filter");
     expect(b.ch_alarmer_num).toBe("2");
   });
 

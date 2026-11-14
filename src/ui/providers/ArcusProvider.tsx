@@ -6,11 +6,7 @@ import type {
   HomeModel,
   Translator,
 } from "../../types";
-import type {
-  ArcusActions,
-  ArcusProviderProps,
-  ArcusRoute,
-} from "../types";
+import type { ArcusActions, ArcusProviderProps, ArcusRoute } from "../types";
 
 export type { ArcusActions, ArcusProviderProps } from "../types";
 

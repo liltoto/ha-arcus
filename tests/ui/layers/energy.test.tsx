@@ -103,9 +103,9 @@ describe("EnergyBody", () => {
     const big = container.querySelector(".big-read");
     expect(big).toHaveTextContent("1,75");
     expect(big?.querySelector("small")).toHaveTextContent("EUR/kWh");
-    expect(container.querySelector(".big-read + .block-note")).toHaveTextContent(
-      "salgspris 1,10 EUR",
-    );
+    expect(
+      container.querySelector(".big-read + .block-note"),
+    ).toHaveTextContent("salgspris 1,10 EUR");
 
     const readings = container.querySelectorAll(".readings .reading");
     expect(readings[0]).toHaveTextContent("EUR");
@@ -127,11 +127,14 @@ describe("EnergyBody", () => {
     expect(container.querySelector(".big-read small")).toHaveTextContent(
       "$/kWh",
     );
-    expect(container.querySelector(".bar-chart")).toHaveAttribute("data-gu", "$");
+    expect(container.querySelector(".bar-chart")).toHaveAttribute(
+      "data-gu",
+      "$",
+    );
   });
 
   test("renders the optional EV and appliance blocks", () => {
-    const { container } = renderLayer(EnergyBody, {
+    renderLayer(EnergyBody, {
       config: makeConfig({
         energy: {
           ev: {

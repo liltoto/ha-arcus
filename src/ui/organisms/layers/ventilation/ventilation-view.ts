@@ -25,10 +25,7 @@ export function filterOk(filter: string | null | undefined): boolean {
   return !filter || FILTER_OK.has(filter.toLowerCase());
 }
 
-function filterLabel(
-  t: Translator,
-  filter: string | null | undefined,
-): string {
+function filterLabel(t: Translator, filter: string | null | undefined): string {
   if (!filter) return "–";
   return filterOk(filter) ? t("ventilation.filterOk") : filter;
 }
@@ -49,10 +46,7 @@ function modeLabel(mode: string | null, t: Translator): string {
   return t("ventilation.autoLower");
 }
 
-function hasDucts(
-  ventilation: VentilationModel,
-  config: ArcusConfig,
-): boolean {
+function hasDucts(ventilation: VentilationModel, config: ArcusConfig): boolean {
   if (
     ventilation.outdoor != null ||
     ventilation.inlet != null ||
@@ -63,9 +57,9 @@ function hasDucts(
   }
   return Boolean(
     config.ventilation?.outdoor ||
-      config.ventilation?.inlet ||
-      config.ventilation?.exhaust ||
-      config.ventilation?.outlet,
+    config.ventilation?.inlet ||
+    config.ventilation?.exhaust ||
+    config.ventilation?.outlet,
   );
 }
 
@@ -92,8 +86,7 @@ function climateState(
     climate,
     mode: ventilation.climateMode ?? climate?.state ?? null,
     fan: ventilation.fanMode ?? climate?.attributes?.fan_mode ?? null,
-    target:
-      ventilation.target ?? numberFrom(climate?.attributes?.temperature),
+    target: ventilation.target ?? numberFrom(climate?.attributes?.temperature),
     minTemp: numberFrom(climate?.attributes?.min_temp) ?? 5,
     maxTemp: numberFrom(climate?.attributes?.max_temp) ?? 35,
   };
