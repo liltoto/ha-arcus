@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import {
   areaPath,
   sparkPath,
@@ -13,6 +14,7 @@ export interface SparklineProps {
   range?: ChartRange | null;
   area?: boolean;
   className?: string;
+  style?: CSSProperties;
 }
 
 export function Sparkline({
@@ -23,6 +25,7 @@ export function Sparkline({
   range = null,
   area = false,
   className,
+  style,
 }: SparklineProps) {
   const d = area
     ? areaPath(values, width, height, pad, range)
@@ -34,6 +37,7 @@ export function Sparkline({
       preserveAspectRatio="none"
       aria-hidden="true"
       className={className}
+      style={style}
     >
       <path
         d={d}

@@ -5,9 +5,16 @@ export interface TabProps {
   children: ReactNode;
   onClick: () => void;
   className?: string;
+  dataTab?: string;
 }
 
-export function Tab({ active, children, onClick, className }: TabProps) {
+export function Tab({
+  active,
+  children,
+  onClick,
+  className,
+  dataTab,
+}: TabProps) {
   const classes = ["tab", active ? "active" : "", className ?? ""]
     .filter(Boolean)
     .join(" ");
@@ -17,6 +24,7 @@ export function Tab({ active, children, onClick, className }: TabProps) {
       type="button"
       className={classes}
       aria-pressed={active}
+      data-tab={dataTab}
       onClick={onClick}
     >
       {children}
