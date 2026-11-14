@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 80,
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "coverage/**",
+    "dev/fixture.js",
+    "dist/**",
+    "examples/hjem.yaml",
+    "playwright-report/**",
+    "storybook-static/**",
+    "styled-system/**",
+    "test-results/**"
+  ]
+}

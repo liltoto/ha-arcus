@@ -113,24 +113,23 @@ vitals: [indoor, outdoor, price, battery]
 chapter_order: [lys, varme, sikkerhed]
 ```
 
-| Option                  | Default       | Description                                                                                                        |
-| ----------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `title`                 | `HJEM`        | The wordmark in the top bar.                                                                                       |
-| `subtitle`              | `ARCUS`       | The small line under the wordmark.                                                                                 |
-| `language`              | `auto`        | `auto` follows the Home Assistant profile language. Danish and English ship; other languages fall back to English. |
-| `appearance`            | `auto`        | `auto` follows the active Home Assistant theme. `dark` and `light` pin the palette.                                |
-| `atmosphere`            | `auto`        | `auto` follows the time of day: night, dawn, day, or dusk.                                                         |
-| `density`               | `comfortable` | `comfortable` is the designed layout; `compact` tightens card padding, grid gaps, and sheet padding.               |
-| `show_weather_forecast` | `true`        | Show the short forecast strip under the vitals.                                                                    |
-| `auto_discover`         | `true`        | Fill unconfigured sections (weather, price, solar, water, ventilation, prayers, security) from the HA registries.  |
-| `group_by_floor`        | `false`       | Group the room grid by Home Assistant floor.                                                                        |
-| `person`                | –             | Pin the presence pill to one `person.*` entity instead of "anyone home".                                           |
-| `units`                 | HA defaults   | Override `currency`, `price_unit`, `temperature` (`°C`/`°F`), and `water` labels.                                  |
+| Option                  | Default       | Description                                                                                                                                                                                          |
+| ----------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`                 | `HJEM`        | The wordmark in the top bar.                                                                                                                                                                         |
+| `subtitle`              | `ARCUS`       | The small line under the wordmark.                                                                                                                                                                   |
+| `language`              | `auto`        | `auto` follows the Home Assistant profile language. Danish and English ship; other languages fall back to English.                                                                                   |
+| `appearance`            | `auto`        | `auto` follows the active Home Assistant theme. `dark` and `light` pin the palette.                                                                                                                  |
+| `atmosphere`            | `auto`        | `auto` follows the time of day: night, dawn, day, or dusk.                                                                                                                                           |
+| `density`               | `comfortable` | `comfortable` is the designed layout; `compact` tightens card padding, grid gaps, and sheet padding.                                                                                                 |
+| `show_weather_forecast` | `true`        | Show the short forecast strip under the vitals.                                                                                                                                                      |
+| `auto_discover`         | `true`        | Fill unconfigured sections (weather, price, solar, water, ventilation, prayers, security) from the HA registries.                                                                                    |
+| `group_by_floor`        | `false`       | Group the room grid by Home Assistant floor.                                                                                                                                                         |
+| `person`                | –             | Pin the presence pill to one `person.*` entity instead of "anyone home".                                                                                                                             |
+| `units`                 | HA defaults   | Override `currency`, `price_unit`, `temperature` (`°C`/`°F`), and `water` labels.                                                                                                                    |
 | `vitals`                | auto          | Replace the hero vitals with presets (`indoor`, `outdoor`, `price`, `battery`, `solar`, `power`, `humidity`, `co2`, `water`, `security`, `lights`) or custom `{ label, entity, unit, route }` tiles. |
-| `chapter_order`         | legacy order  | Reorder the chapter grid; disabled chapters stay hidden.                                                           |
+| `chapter_order`         | legacy order  | Reorder the chapter grid; disabled chapters stay hidden.                                                                                                                                             |
 
 Arcus reads `hass.config.currency` and `hass.config.unit_system` when `units` is not set, so a Home Assistant configured in USD/°F does not need any Arcus-specific units.
-
 
 ### Areas
 
@@ -339,7 +338,6 @@ chapter_order: [energi, sol, lys, varme]
 
 The keys are `energi`, `sol`, `vand`, `sikkerhed`, `ventilation`, `teknik`, `oekonomi`, `lys`, `varme`, and `alarmer`.
 
-
 ### Quick actions
 
 Without configuration, Arcus shows the default actions whose entities exist: bedtime, vacation mode, the window alert switch, lights, and the map. `quick_actions` replaces that list.
@@ -391,15 +389,19 @@ The card editor exposes the title, subtitle, language, appearance, atmosphere, d
 
 ## Development
 
+Requires Node 22.12+ and pnpm 12; the pnpm version is pinned in `package.json`.
+
 ```bash
-npm install
-npm run dev        # development harness at http://localhost:5173/dev/index.html
-npm run test       # Vitest
-npm run typecheck  # tsc --noEmit
-npm run build      # one self-contained dist/arcus.js
-npm run visual     # Playwright visual checks (install browsers: npx playwright install chromium)
-npm run build-storybook  # static component docs (npm run storybook for the dev server)
-npm run size       # 400 KB gzip budget for dist/arcus.js
+pnpm install
+pnpm run dev        # development harness at http://localhost:5173/dev/index.html
+pnpm test           # Vitest
+pnpm run typecheck  # tsc --noEmit
+pnpm run lint       # Oxlint
+pnpm run format:check  # Oxfmt
+pnpm run build      # one self-contained dist/arcus.js
+pnpm run visual     # Playwright visual checks (install browsers: pnpm exec playwright install chromium)
+pnpm run build-storybook  # static component docs (pnpm run storybook for the dev server)
+pnpm run size       # 400 KB gzip budget for dist/arcus.js
 ```
 
 The dashboard UI is a React tree mounted inside the card's shadow DOM, organized

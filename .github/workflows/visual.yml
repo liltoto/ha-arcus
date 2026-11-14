@@ -19,15 +19,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       # Manual runs with `update_snapshots` rewrite every committed baseline and
       # upload them for a human to review and commit. `=all` is deliberate:
@@ -36,7 +38,7 @@ jobs:
       # so they stay the source of truth for visual diffs.
       - name: Update baselines
         if: ${{ inputs.update_snapshots }}
-        run: npx playwright test --update-snapshots=all
+        run: pnpm exec playwright test --update-snapshots=all
 
       - name: Upload updated baselines
         if: ${{ inputs.update_snapshots }}
@@ -48,7 +50,7 @@ jobs:
 
       - name: Run visual tests
         if: ${{ !inputs.update_snapshots }}
-        run: npx playwright test
+        run: pnpm exec playwright test
 
       - name: Upload visual diffs
         if: failure()

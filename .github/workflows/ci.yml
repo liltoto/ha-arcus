@@ -12,21 +12,24 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run test:coverage
-      - run: npm run fallow:dead
-      - run: npm run fallow:arch
-      - run: npm run fallow:dupes
-      - run: npm run fallow:health
-      - run: npm run fallow:audit
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run format:check
+      - run: pnpm run lint
+      - run: pnpm run typecheck
+      - run: pnpm run test:coverage
+      - run: pnpm run fallow:dead
+      - run: pnpm run fallow:arch
+      - run: pnpm run fallow:dupes
+      - run: pnpm run fallow:health
+      - run: pnpm run fallow:audit
         if: github.event_name == 'pull_request'
-      - run: npm run build
-      - run: npm run size
+      - run: pnpm run build
+      - run: pnpm run size
       - name: HACS validation
         uses: hacs/action@main
         with:
@@ -36,12 +39,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run build-storybook
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build-storybook
       - name: Upload Storybook
         uses: actions/upload-artifact@v4
         with:
