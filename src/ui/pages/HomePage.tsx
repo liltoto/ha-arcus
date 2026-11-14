@@ -1,19 +1,15 @@
-import type { AtmosphereSetting } from "../../types";
-import { useConfig } from "../hooks";
+import { useAtmo, useConfig, useDark } from "../hooks";
 import { HomeTemplate } from "../templates/HomeTemplate";
 import { SheetFrame } from "./SheetFrame";
 
-export interface HomePageProps {
-  atmo: AtmosphereSetting;
-  dark: boolean;
-}
-
 /**
- * Context-aware home page. It resolves the values that come from the provider
+ * Context-aware home page. It resolves the values that come from the store
  * and hands the pure shell to `HomeTemplate`.
  */
-export function HomePage({ atmo, dark }: HomePageProps) {
+export function HomePage() {
   const config = useConfig();
+  const atmo = useAtmo();
+  const dark = useDark();
 
   return (
     <HomeTemplate

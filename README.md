@@ -405,7 +405,8 @@ pnpm run size       # 400 KB gzip budget for dist/arcus.js
 ```
 
 The dashboard UI is a React tree mounted inside the card's shadow DOM, organized
-by atomic design under `src/ui/`. Storybook is the component workshop; the
+by atomic design under `src/ui/`. One Zustand store per card holds the Home
+Assistant snapshot, and components subscribe to the slices they read. Storybook is the component workshop; the
 Playwright suite remains the visual source of truth. The build bundles every
 dependency and embeds the Fraunces and Inter Tight fonts as data URLs. The release asset is `dist/arcus.js`; it has no runtime CDN or Google Fonts requests. The 1440 px and 390 px screenshots in `docs/screenshots/` are captured from the development harness. Releases are built and published by [`.github/workflows/release.yml`](.github/workflows/release.yml).
 

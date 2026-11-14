@@ -7,6 +7,7 @@ import { buildBindings } from "../../src/model/bindings";
 import { buildModel } from "../../src/model/build";
 import type { ArcusActions } from "../../src/ui/types";
 import { ArcusApp } from "../../src/ui/ArcusApp";
+import { createArcusStore } from "../../src/ui/providers/store";
 import { makeConfig, makeHass } from "../fixtures/home";
 
 const FIXED_NOW = new Date("2026-11-13T01:19:00+01:00");
@@ -75,7 +76,9 @@ afterEach(() => {
 
 describe("ArcusApp home shell", () => {
   test("renders the card shell and the real home organisms", () => {
-    const { container } = render(<ArcusApp {...bridgeProps()} />);
+    const { container } = render(
+      <ArcusApp store={createArcusStore(bridgeProps())} />,
+    );
 
     const app = container.querySelector<HTMLElement>(".app");
     expect(app).not.toBeNull();
@@ -115,15 +118,14 @@ describe("ArcusApp home shell", () => {
   });
 
   test("honours the light theme and an open sheet", () => {
-    const { container } = render(
-      <ArcusApp
-        {...bridgeProps()}
-        route={{ base: "energi", sub: null }}
-        dark={false}
-        atmo="dusk"
-        config={makeConfig({ density: "compact" })}
-      />,
-    );
+    const state = {
+      ...bridgeProps(),
+      route: { base: "energi", sub: null } as const,
+      dark: false,
+      atmo: "dusk" as const,
+      config: makeConfig({ density: "compact" }),
+    };
+    const { container } = render(<ArcusApp store={createArcusStore(state)} />);
 
     const app = container.querySelector<HTMLElement>(".app");
     expect(app).toHaveClass("light");

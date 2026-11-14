@@ -227,6 +227,19 @@ describe("ArcusCard", () => {
     );
   });
 
+  test("cycles the atmosphere through the card store", async () => {
+    const card = await mount();
+    const app = card.shadowRoot!.querySelector<HTMLElement>(".app")!;
+    const atmoButton = () =>
+      card.shadowRoot!.querySelector<HTMLElement>('[data-act="atmo"]')!;
+
+    atmoButton().click();
+    await waitFor(() => expect(app).toHaveAttribute("data-atmo", "night"));
+
+    atmoButton().click();
+    await waitFor(() => expect(app).toHaveAttribute("data-atmo", "day"));
+  });
+
   test("scrubs the day arc readout on pointer move", async () => {
     const card = await mount();
     const arc = card.shadowRoot!.querySelector<HTMLElement>("[data-arc]")!;

@@ -1,21 +1,19 @@
-import type { AtmosphereSetting } from "../types";
 import { HomePage } from "./pages/HomePage";
 import { ArcusProvider } from "./providers/ArcusProvider";
-import type { ArcusProviderProps } from "./types";
+import type { ArcusStore } from "./types";
 
-export interface ArcusAppProps extends Omit<ArcusProviderProps, "children"> {
-  atmo: AtmosphereSetting;
-  dark: boolean;
+export interface ArcusAppProps {
+  store: ArcusStore;
 }
 
 /**
- * The single React root rendered inside `<arcus-card>`. It forwards the
- * card's state to the provider and mounts the current page.
+ * The single React root rendered inside `<arcus-card>`. The card owns the
+ * store and publishes snapshots; this shell only injects it.
  */
-export function ArcusApp({ atmo, dark, ...provider }: ArcusAppProps) {
+export function ArcusApp({ store }: ArcusAppProps) {
   return (
-    <ArcusProvider {...provider}>
-      <HomePage atmo={atmo} dark={dark} />
+    <ArcusProvider store={store}>
+      <HomePage />
     </ArcusProvider>
   );
 }

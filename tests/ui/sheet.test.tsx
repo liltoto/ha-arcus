@@ -5,13 +5,15 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { ArcusCard } from "../../src/card";
 import { buildModel } from "../../src/model/build";
 import type { ArcusHass } from "../../src/types";
 import type { ArcusActions, ArcusRoute } from "../../src/ui/types";
 import { ArcusProvider } from "../../src/ui/providers/ArcusProvider";
+import { createArcusStore } from "../../src/ui/providers/store";
+import type { ArcusStore } from "../../src/ui/types";
 import { SheetFrame } from "../../src/ui/pages/SheetFrame";
 import { makeConfig, makeHass } from "../fixtures/home";
 import {
@@ -67,14 +69,22 @@ function SheetHarness({
   controls.changeRoute = setRoute;
   controls.bumpHass = () => setHass(makeHass());
 
+  const [store] = useState<ArcusStore>(() =>
+    createArcusStore({
+      ...base,
+      hass,
+      model,
+      route,
+      actions: wiredActions,
+    }),
+  );
+
+  useLayoutEffect(() => {
+    store.setState({ hass, model, route, actions: wiredActions });
+  }, [store, hass, model, route, wiredActions]);
+
   return (
-    <ArcusProvider
-      {...base}
-      hass={hass}
-      model={model}
-      route={route}
-      actions={wiredActions}
-    >
+    <ArcusProvider store={store}>
       <SheetFrame />
     </ArcusProvider>
   );

@@ -8,6 +8,7 @@ import { EconomyBody } from "../../../src/ui/organisms/layers/EconomyBody";
 import { TechBody } from "../../../src/ui/organisms/layers/TechBody";
 import type { LayerBodyProps } from "../../../src/ui/pages/layerRegistry";
 import { ArcusProvider } from "../../../src/ui/providers/ArcusProvider";
+import { createArcusStore } from "../../../src/ui/providers/store";
 import type { ArcusRoute } from "../../../src/ui/types";
 import { makeArcusProps } from "../home-test-utils";
 import { renderLayer } from "../layer-test-utils";
@@ -27,7 +28,7 @@ function renderWithHistory(
 ) {
   const props = makeArcusProps({ route });
   const result = render(
-    <ArcusProvider {...props} history={history}>
+    <ArcusProvider store={createArcusStore({ ...props, history })}>
       <Body route={route} />
     </ArcusProvider>,
   );

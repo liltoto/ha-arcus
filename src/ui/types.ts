@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { StoreApi } from "zustand/vanilla";
 import type { HistoryCache } from "../data/history";
 import type {
   ActionConfig,
@@ -31,10 +32,6 @@ export interface ArcusActions {
 }
 
 /**
- * Everything a page needs for one render. The card passes these values
- * straight through; the provider never copies or memoizes them.
- */
-/**
  * The card's route. It includes the home route (`hjem`); sheet pages receive
  * the same shape and read `base`/`sub`.
  */
@@ -43,7 +40,12 @@ export interface ArcusRoute {
   sub: string | null;
 }
 
-export interface ArcusProviderProps {
+/**
+ * Everything the React tree can read. The card owns one store per instance
+ * and replaces the snapshot when Home Assistant pushes state; components
+ * subscribe to individual slices through `src/ui/hooks.ts`.
+ */
+export interface ArcusStoreState {
   hass: ArcusHass;
   model: HomeModel;
   config: ArcusConfig;
@@ -53,5 +55,13 @@ export interface ArcusProviderProps {
   actions: ArcusActions;
   history: HistoryCache;
   now: () => Date;
+  atmo: AtmosphereSetting;
+  dark: boolean;
+}
+
+export type ArcusStore = StoreApi<ArcusStoreState>;
+
+export interface ArcusProviderProps {
+  store: ArcusStore;
   children: ReactNode;
 }

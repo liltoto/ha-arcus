@@ -10,8 +10,11 @@ import { useHistory } from "./providers/ArcusProvider";
 
 export {
   useActions,
+  useArcusStore,
+  useAtmo,
   useBindings,
   useConfig,
+  useDark,
   useHass,
   useHistory,
   useModel,

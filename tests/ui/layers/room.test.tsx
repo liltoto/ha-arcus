@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import type { HistoryCache } from "../../../src/data/history";
 import { RoomBody } from "../../../src/ui/organisms/layers/RoomBody";
 import { ArcusProvider } from "../../../src/ui/providers/ArcusProvider";
+import { createArcusStore } from "../../../src/ui/providers/store";
 import { makeArcusProps } from "../home-test-utils";
 import { renderLayer } from "../layer-test-utils";
 
@@ -233,7 +234,7 @@ describe("RoomBody", () => {
     } as unknown as HistoryCache;
 
     const { container } = render(
-      <ArcusProvider {...props} history={history}>
+      <ArcusProvider store={createArcusStore({ ...props, history })}>
         <RoomBody route={{ base: "rum", sub: "stue" }} />
       </ArcusProvider>,
     );
