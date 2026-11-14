@@ -18,6 +18,7 @@ interface LimitRowProps {
   hass: ArcusHass;
   language: Language;
   unit: TemperatureUnit;
+  t: Translator;
   onChange: (entityId: string, value: number) => void;
 }
 
@@ -29,6 +30,7 @@ function LimitRow({
   hass,
   language,
   unit,
+  t,
   onChange,
 }: LimitRowProps) {
   const attributes = liveAttributes(hass, entity);
@@ -50,6 +52,7 @@ function LimitRow({
         label={label}
         language={language}
         unit={unit}
+        t={t}
         dataAct="input-step"
         onChange={(next) => onChange(entity.entityId, next)}
       />
@@ -89,6 +92,7 @@ export function HeatingLimits({
             hass={hass}
             language={language}
             unit={unit}
+            t={t}
             onChange={onChange}
           />
         ) : null}
@@ -100,6 +104,7 @@ export function HeatingLimits({
             hass={hass}
             language={language}
             unit={unit}
+            t={t}
             onChange={onChange}
           />
         ) : null}

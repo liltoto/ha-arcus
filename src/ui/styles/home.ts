@@ -201,6 +201,7 @@ export const homeStyles: Record<string, string> = {
     lineHeight: 0.95,
     letterSpacing: "-0.025em",
     margin: 0,
+    textWrap: "balance",
     _phone: { fontSize: "clamp(32px, 9.5vw, 44px)" },
     "& em": {
       fontStyle: "italic",
@@ -631,6 +632,7 @@ export const homeStyles: Record<string, string> = {
       fontWeight: 500,
       letterSpacing: "-0.02em",
       lineHeight: 1,
+      textWrap: "balance",
       _phone: { fontSize: "25px" },
     },
     "& .meta": {
@@ -713,6 +715,7 @@ export const homeStyles: Record<string, string> = {
     fontWeight: 500,
     letterSpacing: "-0.01em",
     lineHeight: 1.05,
+    overflowWrap: "anywhere",
     _phone: { fontSize: "17px" },
   }),
   "room-kind": css({
@@ -866,6 +869,7 @@ export const homeStyles: Record<string, string> = {
       fontWeight: 500,
       letterSpacing: "-0.01em",
       lineHeight: 1,
+      textWrap: "balance",
     },
     "&.large h3": { fontSize: "29px" },
     "& .sum": {
@@ -1022,7 +1026,8 @@ export const homeStyles: Record<string, string> = {
     fontSize: "10px",
     letterSpacing: "0.08em",
     textTransform: "uppercase",
-    transition: "all 0.2s ease",
+    touchAction: "manipulation",
+    transition: "color 0.2s ease, background 0.2s ease, border-color 0.2s ease",
     "& .ico": { width: "16px", height: "16px", color: "var(--muted)" },
     "&:hover": {
       color: "var(--text)",

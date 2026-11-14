@@ -71,6 +71,7 @@ function providerState(
     history: historyStub(),
     now: () => new Date("2026-11-13T01:19:00+01:00"),
     atmo: "night",
+    atmoMode: "night",
     dark: true,
     ...overrides,
   };

@@ -51,10 +51,17 @@ interface UserSelectProps {
   hass: ArcusHass;
   entityId: string | undefined;
   value: string | null | undefined;
+  label: string;
   onSelect: (option: string) => void;
 }
 
-function UserSelect({ hass, entityId, value, onSelect }: UserSelectProps) {
+function UserSelect({
+  hass,
+  entityId,
+  value,
+  label,
+  onSelect,
+}: UserSelectProps) {
   if (!entityId) return <span className={c("row-val")}>{value || "–"}</span>;
   const options = optionsFor(hass, entityId);
   const selected = value ?? hass.states[entityId]?.state ?? "";
@@ -66,6 +73,7 @@ function UserSelect({ hass, entityId, value, onSelect }: UserSelectProps) {
     <select
       className={c("select")}
       data-select-entity={entityId}
+      aria-label={label}
       value={selected || options[0]}
       onChange={(event) => onSelect(event.currentTarget.value)}
     >
@@ -351,6 +359,7 @@ function ClimateControls({
           max={maxTemp}
           step={1}
           label={t("ventilation.setpoint")}
+          t={t}
           formatValue={(value) =>
             target === null ? "–" : temperatureText(value, language, unit)
           }
@@ -376,6 +385,7 @@ function ClimateControls({
               data-act="hvac"
               data-entity={climateId}
               data-mode={value}
+              aria-pressed={mode === value}
               onClick={() => onMode(value)}
             >
               {label}
@@ -397,6 +407,7 @@ function ClimateControls({
               data-act="fan"
               data-entity={climateId}
               data-mode={step}
+              aria-pressed={String(fan) === String(step)}
               onClick={() => onFan(step)}
             >
               {step}
@@ -516,6 +527,7 @@ function UserChoiceBlock({
           hass={hass}
           entityId={userFunctionId}
           value={userFunction}
+          label={t("ventilation.function1")}
           onSelect={(option) => onSelect(userFunctionId, option)}
         />
       </div>
@@ -545,6 +557,7 @@ function UserChoiceBlock({
           hass={hass}
           entityId={userFunction2Id}
           value={userFunction2}
+          label={t("ventilation.function2")}
           onSelect={(option) => onSelect(userFunction2Id, option)}
         />
       </div>

@@ -7,6 +7,7 @@ export interface SegmentedTabsProps {
   tabs: TabItem[];
   active: string;
   onChange: (key: string) => void;
+  label?: string;
 }
 
 /**
@@ -17,7 +18,12 @@ export interface SegmentedTabsProps {
  * are recomputed after mount, on scroll, on resize, and whenever the active
  * route changes.
  */
-export function SegmentedTabs({ tabs, active, onChange }: SegmentedTabsProps) {
+export function SegmentedTabs({
+  tabs,
+  active,
+  onChange,
+  label,
+}: SegmentedTabsProps) {
   const stripRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -68,7 +74,12 @@ export function SegmentedTabs({ tabs, active, onChange }: SegmentedTabsProps) {
   }, [active, tabs]);
 
   return (
-    <div className={c("sheet-tabs")} ref={stripRef} role="tablist">
+    <div
+      className={c("sheet-tabs")}
+      ref={stripRef}
+      role={label ? "group" : undefined}
+      aria-label={label}
+    >
       {tabs.map((tab) => (
         <Tab
           key={tab.key}

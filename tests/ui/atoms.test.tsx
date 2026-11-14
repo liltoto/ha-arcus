@@ -212,7 +212,7 @@ describe("Tab", () => {
     );
 
     const tab = screen.getByRole("button", { name: "Lights" });
-    expect(tab.getAttribute("aria-pressed")).toBe("false");
+    expect(tab).not.toHaveAttribute("aria-current");
     expect(tab).toHaveClass("tab");
 
     await user.click(tab);
@@ -225,7 +225,7 @@ describe("Tab", () => {
     );
 
     const activeTab = screen.getByRole("button", { name: "Lights" });
-    expect(activeTab.getAttribute("aria-pressed")).toBe("true");
+    expect(activeTab).toHaveAttribute("aria-current", "page");
     expect(activeTab).toHaveClass("tab", "active");
   });
 });

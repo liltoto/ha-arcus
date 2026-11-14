@@ -40,6 +40,8 @@ export function SecurityOpenings({
                 isOpen={row.isOpen}
                 icon={row.icon}
                 status={row.status}
+                openLabel={t("opening.open")}
+                closedLabel={t("opening.closed")}
                 onClick={() => onNavigate(row.nav)}
               />
             </div>

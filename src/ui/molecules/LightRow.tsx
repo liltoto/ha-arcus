@@ -11,6 +11,8 @@ export interface LightRowProps {
   onBrightness: (percent: number) => void;
   icon?: string;
   entity?: string;
+  toggleLabel?: string;
+  brightnessLabel?: string;
 }
 
 /**
@@ -26,6 +28,8 @@ export function LightRow({
   onBrightness,
   icon,
   entity,
+  toggleLabel = `Toggle ${name}`,
+  brightnessLabel = `Brightness ${name}`,
 }: LightRowProps) {
   const pct = clampPercent(brightness);
   const sub = isOn ? `On · ${pct} %` : "Off";
@@ -38,7 +42,7 @@ export function LightRow({
           type="button"
           className={c("toggle", isOn && "on")}
           aria-pressed={isOn}
-          aria-label={`Toggle ${name}`}
+          aria-label={toggleLabel}
           data-act="toggle-light"
           data-entity={entity}
           onClick={onToggle}
@@ -61,7 +65,7 @@ export function LightRow({
             step="1"
             value={pct}
             style={sliderStyle}
-            aria-label={`Brightness ${name}`}
+            aria-label={brightnessLabel}
             onChange={(event) =>
               onBrightness(Number(event.currentTarget.value))
             }

@@ -56,6 +56,8 @@ export interface ArcusStoreState {
   history: HistoryCache;
   now: () => Date;
   atmo: AtmosphereSetting;
+  /** The atmosphere mode the user picked (`auto` is not resolved). */
+  atmoMode: AtmosphereSetting;
   dark: boolean;
 }
 

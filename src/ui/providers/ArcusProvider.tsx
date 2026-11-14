@@ -90,6 +90,11 @@ export function useAtmo(): AtmosphereSetting {
   return useStore(store, (state) => state.atmo);
 }
 
+export function useAtmoMode(): AtmosphereSetting {
+  const store = useRequiredStore("useAtmoMode");
+  return useStore(store, (state) => state.atmoMode);
+}
+
 export function useDark(): boolean {
   const store = useRequiredStore("useDark");
   return useStore(store, (state) => state.dark);

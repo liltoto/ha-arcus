@@ -224,7 +224,7 @@ describe("SolarBody", () => {
     const user = userEvent.setup();
     const { props } = renderSolar("batteri");
 
-    await user.click(screen.getByRole("button", { name: "Increase Min. SoC" }));
+    await user.click(screen.getByRole("button", { name: "Hæv Min. SoC" }));
 
     expect(props.actions.callService).toHaveBeenCalledWith(
       "number",

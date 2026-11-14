@@ -19,9 +19,9 @@ import { RoomCard } from "../molecules/RoomCard";
 import { SystemCard } from "./SystemCard";
 import { c } from "../styles/classes";
 
-/** `skur` predates room kinds; both markers mean "outside". */
+/** Outdoor rooms come from the room kind discovered for the area. */
 function isOutdoorRoom(room: RoomModel): boolean {
-  return room.id === "skur" || room.kind === "outdoor";
+  return room.kind === "outdoor";
 }
 
 interface FloorGroup {

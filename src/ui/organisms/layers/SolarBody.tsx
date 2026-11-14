@@ -289,6 +289,7 @@ interface ControlRowProps {
   max: number;
   digits: number;
   language: Language;
+  t: Translator;
   onChange: (value: number) => void;
 }
 
@@ -301,6 +302,7 @@ function ControlRow({
   max,
   digits,
   language,
+  t,
   onChange,
 }: ControlRowProps) {
   if (!entityId || value === null) {
@@ -325,6 +327,7 @@ function ControlRow({
         max={max}
         step={step}
         label={label}
+        t={t}
         formatValue={(next) => fmt(next, digits, language)}
         onChange={onChange}
       />
@@ -828,6 +831,7 @@ function SolarBattery({ ctx }: { ctx: SolarContext }) {
           max={minBounds.max}
           digits={0}
           language={language}
+          t={t}
           onChange={(value) => setNumber(minEntity, value)}
         />
         <ControlRow
@@ -839,6 +843,7 @@ function SolarBattery({ ctx }: { ctx: SolarContext }) {
           max={maxBounds.max}
           digits={0}
           language={language}
+          t={t}
           onChange={(value) => setNumber(maxEntity, value)}
         />
       </div>
@@ -1133,6 +1138,7 @@ function SolarPayback({ ctx }: { ctx: SolarContext }) {
           max={solarBounds.max}
           digits={0}
           language={language}
+          t={t}
           onChange={(value) => setInvestment(solarEntity, value)}
         />
         <ControlRow
@@ -1144,6 +1150,7 @@ function SolarPayback({ ctx }: { ctx: SolarContext }) {
           max={batteryBounds.max}
           digits={0}
           language={language}
+          t={t}
           onChange={(value) => setInvestment(batteryEntity, value)}
         />
         <div className={c("row")}>
@@ -1284,7 +1291,12 @@ export function SolarBody({ route }: LayerBodyProps) {
         onClose={actions.closeSheet}
       />
       {hasData ? (
-        <SegmentedTabs tabs={tabs} active={active} onChange={changeTab} />
+        <SegmentedTabs
+          tabs={tabs}
+          active={active}
+          onChange={changeTab}
+          label={t("sheet.tabs")}
+        />
       ) : null}
       <div className={c("sheet-scroll")}>
         {hasData && solar ? (

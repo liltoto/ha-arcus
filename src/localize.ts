@@ -29,6 +29,12 @@ const da: Record<string, string> = {
   "common.error": "Kunne ikke: {message}",
   "common.toggle": "Skift",
   "common.perKwh": "kr/kWh",
+  "row.toggle": "Skift {name}",
+  "row.brightness": "Lysstyrke {name}",
+  "stepper.decrease": "Sænk {label}",
+  "stepper.increase": "Hæv {label}",
+  "opening.open": "Åben",
+  "opening.closed": "Lukket",
 
   /* Brand and top bar */
   "brand.homeAria": "Gå til hjem",
@@ -194,6 +200,7 @@ const da: Record<string, string> = {
   "sheet.allSummary": "Hele hjemmet samlet ét sted. Tryk dig ind.",
   "sheet.homeSummary": "Døgnet, rummene og husets kapitler.",
   "sheet.close": "Luk",
+  "sheet.tabs": "Faner",
   "sheet.tabOverview": "Overblik",
   "sheet.tabProduction": "Produktion",
   "sheet.tabBattery": "Batteri",
@@ -650,6 +657,12 @@ const en: Record<string, string> = {
   "common.error": "Could not: {message}",
   "common.toggle": "Toggle",
   "common.perKwh": "DKK/kWh",
+  "row.toggle": "Toggle {name}",
+  "row.brightness": "Brightness {name}",
+  "stepper.decrease": "Decrease {label}",
+  "stepper.increase": "Increase {label}",
+  "opening.open": "Open",
+  "opening.closed": "Closed",
 
   /* Brand and top bar */
   "brand.homeAria": "Go to home",
@@ -815,6 +828,7 @@ const en: Record<string, string> = {
   "sheet.allSummary": "The whole home in one place. Tap to explore.",
   "sheet.homeSummary": "The day, the rooms, and the chapters of the house.",
   "sheet.close": "Close",
+  "sheet.tabs": "Tabs",
   "sheet.tabOverview": "Overview",
   "sheet.tabProduction": "Production",
   "sheet.tabBattery": "Battery",

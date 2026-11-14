@@ -311,9 +311,7 @@ describe("heating sheet", () => {
     const zoneRow = screen
       .getByText("Stue", { selector: ".list .row-name" })
       .closest(".row") as HTMLElement;
-    await user.click(
-      within(zoneRow).getByRole("button", { name: "Increase Stue" }),
-    );
+    await user.click(within(zoneRow).getByRole("button", { name: "Hæv Stue" }));
     expect(props.actions.callService).toHaveBeenCalledWith(
       "climate",
       "set_temperature",
@@ -325,7 +323,7 @@ describe("heating sheet", () => {
       .getByText("Kanal 6", { selector: ".list .row-name" })
       .closest(".row") as HTMLElement;
     await user.click(
-      within(reserveRow).getByRole("button", { name: "Increase Kanal 6" }),
+      within(reserveRow).getByRole("button", { name: "Hæv Kanal 6" }),
     );
     expect(props.actions.callService).toHaveBeenCalledWith(
       "climate",

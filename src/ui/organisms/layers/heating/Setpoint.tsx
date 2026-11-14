@@ -1,5 +1,5 @@
 import { formatNumber } from "../../../../format";
-import type { Language, TemperatureUnit } from "../../../../types";
+import type { Language, TemperatureUnit, Translator } from "../../../../types";
 import { Stepper } from "../../../molecules/Stepper";
 import { c } from "../../../styles/classes";
 
@@ -11,6 +11,7 @@ interface SetpointProps {
   label: string;
   language: Language;
   unit: TemperatureUnit;
+  t: Translator;
   dataAct: string;
   onChange: (value: number) => void;
 }
@@ -24,6 +25,7 @@ export function Setpoint({
   label,
   language,
   unit,
+  t,
   dataAct,
   onChange,
 }: SetpointProps) {
@@ -42,6 +44,7 @@ export function Setpoint({
         step={0.5}
         unit={unit === "°F" ? "°F" : "°"}
         label={label}
+        t={t}
         formatValue={(next) => formatNumber(next, 1, language)}
         onChange={onChange}
       />

@@ -47,6 +47,7 @@ export function HeatingReserveRow({
         label={zone.name}
         language={language}
         unit={unit}
+        t={t}
         dataAct="temp-step"
         onChange={onSetpoint}
       />

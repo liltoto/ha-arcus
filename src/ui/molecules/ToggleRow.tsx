@@ -12,7 +12,10 @@ export interface ToggleRowProps {
   dataEntity?: string;
 }
 
-/** A label plus the legacy pill toggle used throughout the sheets. */
+/**
+ * A label plus the legacy pill toggle used throughout the sheets. The whole
+ * row is one button so the label and the switch share a single hit target.
+ */
 export function ToggleRow({
   label,
   sub,
@@ -24,22 +27,22 @@ export function ToggleRow({
   dataEntity,
 }: ToggleRowProps) {
   return (
-    <div className={c("row", isOn && "on")}>
+    <button
+      type="button"
+      className={c("row", "row-button", isOn && "on")}
+      aria-pressed={isOn}
+      aria-label={label}
+      data-act={dataAct}
+      data-entity={dataEntity}
+      disabled={disabled}
+      onClick={onChange}
+    >
       {icon ? <Icon name={icon} /> : null}
-      <div className={c("row-main")}>
-        <div className={c("row-name")}>{label}</div>
-        {sub ? <div className={c("row-sub")}>{sub}</div> : null}
-      </div>
-      <button
-        type="button"
-        className={c("toggle", isOn && "on")}
-        aria-pressed={isOn}
-        aria-label={label}
-        data-act={dataAct}
-        data-entity={dataEntity}
-        disabled={disabled}
-        onClick={onChange}
-      />
-    </div>
+      <span className={c("row-main")}>
+        <span className={c("row-name")}>{label}</span>
+        {sub ? <span className={c("row-sub")}>{sub}</span> : null}
+      </span>
+      <span className={c("toggle", isOn && "on")} aria-hidden="true" />
+    </button>
   );
 }

@@ -1,4 +1,3 @@
-import type { KeyboardEvent } from "react";
 import type { AlertModel } from "../../../../types";
 import { Icon } from "../../../atoms/Icon";
 import { c } from "../../../styles/classes";
@@ -26,30 +25,22 @@ export interface AlertRowProps {
 export function AlertRow({ alert, label, see, onOpen }: AlertRowProps) {
   const cls = severityClass(alert);
 
-  const activate = (event: KeyboardEvent<HTMLDivElement>): void => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    onOpen();
-  };
-
   return (
-    <div
-      className={c("row alert-row")}
+    <button
+      type="button"
+      className={c("row", "row-button", "alert-row")}
       data-nav={alert.route}
-      role="button"
-      tabIndex={0}
       onClick={onOpen}
-      onKeyDown={activate}
     >
       <span className={c("alert-dot", cls)} />
       <span className={c("row-main")}>
-        <div className={c("row-name")}>{alert.title}</div>
-        <div className={c("row-sub")}>{alert.text}</div>
+        <span className={c("row-name")}>{alert.title}</span>
+        <span className={c("row-sub")}>{alert.text}</span>
       </span>
       <span className={c("chip", cls)}>{label}</span>
       <span className={c("row-link")}>
         {see} <Icon name="arrow" />
       </span>
-    </div>
+    </button>
   );
 }

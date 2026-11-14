@@ -14,13 +14,16 @@ export const atomsStyles: Record<string, string> = {
   }),
   toggle: css({
     position: "relative",
+    display: "inline-block",
     width: "40px",
     height: "23px",
     flex: "0 0 auto",
     borderRadius: "99px",
     border: "1px solid var(--line-strong)",
     background: "rgba(255, 255, 255, 0.04)",
+    touchAction: "manipulation",
     transition: "background 0.2s ease, border-color 0.2s ease",
+    "&:disabled": { opacity: 0.45, cursor: "not-allowed" },
     "&::after": {
       content: '""',
       position: "absolute",
@@ -58,7 +61,10 @@ export const atomsStyles: Record<string, string> = {
     textTransform: "uppercase",
     color: "var(--text-2)",
     background: "rgba(255, 255, 255, 0.03)",
-    transition: "all 0.2s ease",
+    touchAction: "manipulation",
+    transition:
+      "color 0.2s ease, background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease",
+    "&:disabled": { opacity: 0.45, cursor: "not-allowed" },
     "&:hover": {
       color: "var(--text)",
       borderColor: "var(--text-2)",
@@ -100,8 +106,11 @@ export const atomsStyles: Record<string, string> = {
       alignItems: "center",
       justifyContent: "center",
       color: "var(--text-2)",
-      transition: "all 0.18s ease",
+      transition:
+        "color 0.18s ease, background 0.18s ease, border-color 0.18s ease",
       "&:hover": { color: "var(--text)", background: "var(--panel-2)" },
+      "&:disabled": { opacity: 0.4, cursor: "not-allowed" },
+      "&:disabled:hover": { color: "var(--text-2)", background: "transparent" },
       "& .ico": { width: "15px", height: "15px" },
     },
     "& .val": {
@@ -132,7 +141,8 @@ export const atomsStyles: Record<string, string> = {
       letterSpacing: "0.08em",
       textTransform: "uppercase",
       color: "var(--muted)",
-      transition: "all 0.2s ease",
+      transition:
+        "color 0.2s ease, background 0.2s ease, border-color 0.2s ease",
       "&.active": { background: "var(--panel-2)", color: "var(--text)" },
       "&:hover:not(.active)": { color: "var(--text-2)" },
     },
@@ -553,7 +563,8 @@ export const atomsStyles: Record<string, string> = {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-    margin: "14px calc(-1 * var(--arcus-sheet-pad)) -48px",
+    margin:
+      "14px calc(-1 * var(--arcus-sheet-pad)) calc(-48px - env(safe-area-inset-bottom, 0px))",
     padding:
       "12px var(--arcus-sheet-pad) calc(12px + env(safe-area-inset-bottom, 0px))",
     background: "color-mix(in srgb, var(--bg-1) 90%, transparent)",

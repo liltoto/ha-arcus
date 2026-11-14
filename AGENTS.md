@@ -68,11 +68,11 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
   `templates/` (layout shells), `pages/` (data-wired composition). Put a
   component in the smallest layer that fits.
 - `src/ui/providers/store.ts` creates one Zustand store per card; `src/card.ts`
-  publishes `hass`, `model`, `config`, `bindings`, `route`, `atmo`, and `dark`
-  into it. `src/ui/providers/ArcusProvider.tsx` injects the store and the hooks
-  in `src/ui/hooks.ts` subscribe to individual slices. Organisms/pages use the
-  hooks; atoms/molecules do not. Never use a module-global store: tests and
-  stories create one with `createArcusStore`.
+  publishes `hass`, `model`, `config`, `bindings`, `route`, `atmo`, `atmoMode`,
+  and `dark` into it. `src/ui/providers/ArcusProvider.tsx` injects the store and
+  the hooks in `src/ui/hooks.ts` subscribe to individual slices. Organisms/pages
+  use the hooks; atoms/molecules do not. Never use a module-global store: tests
+  and stories create one with `createArcusStore`.
 - Chart sheets use `useHistoryFrame()` from `src/ui/hooks/useLayerFrame.ts`;
   sheets without charts use the individual hooks so they do not subscribe to
   history updates. `useLightActions` shares the room/lights service calls.
