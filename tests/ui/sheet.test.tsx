@@ -12,7 +12,7 @@ import { buildModel } from "../../src/model/build";
 import type { ArcusHass } from "../../src/types";
 import type { ArcusActions, ArcusRoute } from "../../src/ui/types";
 import { ArcusProvider } from "../../src/ui/providers/ArcusProvider";
-import { SheetFrame } from "../../src/ui/organisms/SheetFrame";
+import { SheetFrame } from "../../src/ui/pages/SheetFrame";
 import { makeConfig, makeHass } from "../fixtures/home";
 import {
   makeActions,

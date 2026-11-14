@@ -1,10 +1,10 @@
+import type { ReactNode } from "react";
 import type { AtmosphereSetting, DensitySetting } from "../../types";
 import { ChapterGrid } from "../organisms/ChapterGrid";
 import { Footer } from "../organisms/Footer";
 import { Hero } from "../organisms/Hero";
 import { QuickActions } from "../organisms/QuickActions";
 import { RoomGrid } from "../organisms/RoomGrid";
-import { SheetFrame } from "../organisms/SheetFrame";
 import { TopBar } from "../organisms/TopBar";
 import { Vitals } from "../organisms/Vitals";
 import { c } from "../styles/classes";
@@ -13,6 +13,7 @@ export interface HomeTemplateProps {
   atmo: AtmosphereSetting;
   dark: boolean;
   density: DensitySetting;
+  sheet: ReactNode;
 }
 
 /** The eighteen-point star field from the original home view. */
@@ -34,7 +35,12 @@ const STARS = STAR_X.map((x, index) => ({
  * legacy `renderHome` markup so the card's sheet, toast, graph, and theme
  * helpers keep working while the organisms are ported.
  */
-export function HomeTemplate({ atmo, dark, density }: HomeTemplateProps) {
+export function HomeTemplate({
+  atmo,
+  dark,
+  density,
+  sheet,
+}: HomeTemplateProps) {
   return (
     <div
       className={c("app", !dark && "light")}
@@ -77,7 +83,7 @@ export function HomeTemplate({ atmo, dark, density }: HomeTemplateProps) {
           </footer>
         </main>
       </div>
-      <SheetFrame />
+      {sheet}
       <div className={c("toast")} data-toast />
       <div className={c("graph-tip")} data-graph-tip aria-hidden="true" />
       <div className={c("graph-cursor")} data-graph-cursor aria-hidden="true" />

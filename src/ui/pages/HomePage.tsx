@@ -1,6 +1,7 @@
 import type { AtmosphereSetting } from "../../types";
 import { useConfig } from "../hooks";
 import { HomeTemplate } from "../templates/HomeTemplate";
+import { SheetFrame } from "./SheetFrame";
 
 export interface HomePageProps {
   atmo: AtmosphereSetting;
@@ -15,6 +16,11 @@ export function HomePage({ atmo, dark }: HomePageProps) {
   const config = useConfig();
 
   return (
-    <HomeTemplate atmo={atmo} dark={dark} density={config.density} />
+    <HomeTemplate
+      atmo={atmo}
+      dark={dark}
+      density={config.density}
+      sheet={<SheetFrame />}
+    />
   );
 }
