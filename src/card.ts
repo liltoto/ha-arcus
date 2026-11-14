@@ -1862,6 +1862,9 @@ export class ArcusCard extends HTMLElement {
 
   private _click(event: Event): void {
     const target = event.target as Element | null;
+    // React owns the home tree and the sheet frame now. Delegation is kept
+    // only for the legacy `arcus-sheets` element until the last layer lands.
+    if (!target?.closest?.("arcus-sheets")) return;
 
     if (target?.closest?.("[data-scrim]")) {
       event.preventDefault();
@@ -1885,6 +1888,9 @@ export class ArcusCard extends HTMLElement {
 
   private _input(event: Event): void {
     const target = event.target as Element | null;
+    // React controls handle their own input events. Only the legacy sheet
+    // still relies on the card's delegation.
+    if (!target?.closest?.("arcus-sheets")) return;
 
     const range = target?.closest?.(
       "input[data-range-entity]",
@@ -1916,6 +1922,7 @@ export class ArcusCard extends HTMLElement {
 
   private _change(event: Event): void {
     const target = event.target as Element | null;
+    if (!target?.closest?.("arcus-sheets")) return;
 
     const range = target?.closest?.(
       "input[data-range-entity]",
