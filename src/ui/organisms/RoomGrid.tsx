@@ -1,4 +1,5 @@
 import { resolveLanguage } from "../../localize";
+import { Icon } from "../atoms/Icon";
 import {
   useActions,
   useBindings,
@@ -26,6 +27,7 @@ export function RoomGrid() {
 
   const displayRooms = model.rooms.filter((room) => room.id !== "skur");
   const skurRoom = model.rooms.find((room) => room.id === "skur");
+  const hasRooms = model.rooms.length > 0;
 
   return (
     <>
@@ -39,6 +41,7 @@ export function RoomGrid() {
           dangerouslySetInnerHTML={{ __html: bindings.roomsMeta }}
         />
       </div>
+      {hasRooms ? (
       <div className="room-grid">
         {displayRooms.map((room) => (
           <RoomCard
@@ -77,6 +80,16 @@ export function RoomGrid() {
           />
         ) : null}
       </div>
+      ) : (
+        <div className="empty">
+          <Icon name="home" />
+          <div>
+            <b>{t("empty.areas")}</b>
+            <br />
+            {t("empty.areasHint")}
+          </div>
+        </div>
+      )}
     </>
   );
 }

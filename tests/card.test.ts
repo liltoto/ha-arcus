@@ -177,10 +177,13 @@ describe("ArcusCard", () => {
     const callService = vi.spyOn(hass, "callService");
     const card = await mount(makeConfig(), hass);
 
+    // Delegation now belongs to the legacy sheet only; React owns the home.
+    const sheet = document.createElement("arcus-sheets");
     const button = document.createElement("button");
     button.dataset.act = "toggle-light";
     button.dataset.entity = "light.kokken";
-    card.shadowRoot!.appendChild(button);
+    sheet.appendChild(button);
+    card.shadowRoot!.appendChild(sheet);
 
     button.click();
     await Promise.resolve();
