@@ -825,7 +825,7 @@ export class ArcusCard extends HTMLElement {
         config: this._config,
         t: this._t,
         bindings: this._binds(),
-        route: this._route as SheetRoute,
+        route: this._route,
         actions: this.actions,
         history: this._history,
         now: () => this._now(),

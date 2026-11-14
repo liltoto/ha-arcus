@@ -1,8 +1,9 @@
 import type { Preview } from "@storybook/react";
 import { withStoryFrame } from "../src/ui/providers/StoryFrame";
+import { withArcusFixture } from "../src/ui/providers/StoryProviders";
 
 const preview: Preview = {
-  decorators: [withStoryFrame],
+  decorators: [withStoryFrame, withArcusFixture],
   parameters: {
     layout: "fullscreen",
     backgrounds: { disable: true },

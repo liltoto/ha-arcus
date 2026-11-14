@@ -6,7 +6,6 @@ import type {
   ArcusHass,
   AtmosphereSetting,
   HomeModel,
-  SheetRoute,
   Translator,
 } from "../types";
 
@@ -36,13 +35,22 @@ export interface ArcusActions {
  * Everything a page needs for one render. The card passes these values
  * straight through; the provider never copies or memoizes them.
  */
+/**
+ * The card's route. It includes the home route (`hjem`), which is not a
+ * `SheetRoute`; sheet pages narrow this once they are rendered.
+ */
+export interface ArcusRoute {
+  base: string;
+  sub: string | null;
+}
+
 export interface ArcusProviderProps {
   hass: ArcusHass;
   model: HomeModel;
   config: ArcusConfig;
   t: Translator;
   bindings: Record<string, string>;
-  route: SheetRoute;
+  route: ArcusRoute;
   actions: ArcusActions;
   history: HistoryCache;
   now: () => Date;

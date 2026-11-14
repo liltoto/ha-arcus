@@ -4,10 +4,13 @@ import type {
   ArcusConfig,
   ArcusHass,
   HomeModel,
-  SheetRoute,
   Translator,
 } from "../../types";
-import type { ArcusActions, ArcusProviderProps } from "../types";
+import type {
+  ArcusActions,
+  ArcusProviderProps,
+  ArcusRoute,
+} from "../types";
 
 export type { ArcusActions, ArcusProviderProps } from "../types";
 
@@ -24,7 +27,7 @@ const ModelContext = createContext<HomeModel | null>(null);
 const ConfigContext = createContext<ArcusConfig | null>(null);
 const TranslatorContext = createContext<Translator | null>(null);
 const BindingsContext = createContext<Record<string, string> | null>(null);
-const RouteContext = createContext<SheetRoute | null>(null);
+const RouteContext = createContext<ArcusRoute | null>(null);
 const ActionsContext = createContext<ArcusActions | null>(null);
 const HistoryContext = createContext<HistoryCache | null>(null);
 const NowContext = createContext<(() => Date) | null>(null);
@@ -57,7 +60,7 @@ export function useBindings(): Record<string, string> {
   return useRequired(BindingsContext, "useBindings");
 }
 
-export function useRoute(): SheetRoute {
+export function useRoute(): ArcusRoute {
   return useRequired(RouteContext, "useRoute");
 }
 

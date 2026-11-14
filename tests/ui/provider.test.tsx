@@ -8,7 +8,6 @@ import type {
   ArcusConfig,
   ArcusHass,
   HomeModel,
-  SheetRoute,
   Translator,
 } from "../../src/types";
 import {
@@ -25,7 +24,11 @@ import {
   useRoute,
   useTranslator,
 } from "../../src/ui/hooks";
-import type { ArcusActions, ArcusProviderProps } from "../../src/ui/types";
+import type {
+  ArcusActions,
+  ArcusProviderProps,
+  ArcusRoute,
+} from "../../src/ui/types";
 import { makeConfig, makeHass } from "../fixtures/home";
 
 /** The sheet tests use the same minimal cache; the provider only forwards it. */
@@ -77,7 +80,7 @@ interface Snapshot {
   config: ArcusConfig;
   t: Translator;
   bindings: Record<string, string>;
-  route: SheetRoute;
+  route: ArcusRoute;
   actions: ArcusActions;
   history: HistoryCache;
   now: () => Date;
