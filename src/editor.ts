@@ -12,6 +12,11 @@
 import { normalizeConfig } from "./config";
 import { clone, isRecord } from "./editor-utils";
 import type { ConfigRecord } from "./editor-utils";
+import {
+  datalistId,
+  suggestEntities,
+  type EntitySuggestionSpec,
+} from "./editor-entities";
 import { escapeHtml } from "./format";
 import type {
   ArcusConfigInput,
@@ -26,6 +31,8 @@ interface EntityField {
   placeholder?: string;
   /** False for free-text values such as a name; defaults to an entity ID. */
   entity?: boolean;
+  /** Field-specific entity filter for the native datalist. */
+  suggest?: EntitySuggestionSpec;
 }
 
 interface EntityGroup {
@@ -33,59 +40,248 @@ interface EntityGroup {
   fields: EntityField[];
 }
 
+const PRICE_SENSOR: EntitySuggestionSpec = {
+  domains: ["sensor"],
+  name: /price|pris|elpris|spot|nord_?pool|energi_data|tibber|octopus|amber|electricity/i,
+};
+const POWER_SENSOR: EntitySuggestionSpec = {
+  domains: ["sensor"],
+  deviceClasses: ["power"],
+};
+const ENERGY_SENSOR: EntitySuggestionSpec = {
+  domains: ["sensor"],
+  deviceClasses: ["energy"],
+};
+const TEMP_SENSOR: EntitySuggestionSpec = {
+  domains: ["sensor"],
+  deviceClasses: ["temperature"],
+};
+const HUMIDITY_SENSOR: EntitySuggestionSpec = {
+  domains: ["sensor"],
+  deviceClasses: ["humidity"],
+};
+const BATTERY_SENSOR: EntitySuggestionSpec = {
+  domains: ["sensor"],
+  deviceClasses: ["battery"],
+};
+const PRAYER_SENSOR: EntitySuggestionSpec = {
+  domains: ["sensor"],
+  name: /prayer|fajr|dhuhr|asr|maghrib|isha|sunrise/i,
+};
+/**
+ * EV/charger names, delimiter-aware so `car` no longer matches `carbon`,
+ * `ev` no longer matches `level`, and `bil` no longer matches `bilresa`.
+ * `charge`/`plug` are deliberately excluded: they also name wall plugs and
+ * home-battery counters.
+ */
+const EV_NAME =
+  /(^|[._\s-])(ev|elbil|bil|car)([._\s-]|$)|tesla|wall_connector|charger|charging_station|ladestander/i;
+
+/** EV sensors that also mention the field marker. */
+function evName(marker: RegExp): RegExp {
+  return new RegExp(
+    `(?=.*(?:${EV_NAME.source}))(?=.*(?:${marker.source}))`,
+    "i",
+  );
+}
+
+/** Water sensors that also mention the field marker (order-independent). */
+function waterName(field: RegExp): RegExp {
+  return new RegExp(
+    `(?=.*(?:water|vand|bwt|softener|salt))(?=.*(?:${field.source}))`,
+    "i",
+  );
+}
+
 const ENTITY_GROUPS: EntityGroup[] = [
   {
     title: "Weather",
     fields: [
-      { path: "weather", label: "Weather entity", placeholder: "weather.home" },
+      {
+        path: "weather",
+        label: "Weather entity",
+        placeholder: "weather.home",
+        suggest: { domains: ["weather"] },
+      },
     ],
   },
   {
     title: "Energy price",
     fields: [
-      { path: "price.current", label: "Current price" },
-      { path: "price.sell", label: "Sell price" },
-      { path: "price.forecast", label: "Price forecast" },
+      { path: "price.current", label: "Current price", suggest: PRICE_SENSOR },
+      { path: "price.sell", label: "Sell price", suggest: PRICE_SENSOR },
+      {
+        path: "price.forecast",
+        label: "Price forecast",
+        suggest: {
+          domains: ["sensor"],
+          requireAttributes: ["raw_today", "today", "prices", "forecast"],
+        },
+      },
     ],
   },
   {
     title: "Energy & EV",
     fields: [
-      { path: "energy.standby", label: "Standby power" },
+      {
+        path: "energy.standby",
+        label: "Standby power",
+        suggest: POWER_SENSOR,
+      },
       {
         path: "energy.ev.name",
         label: "EV name",
         placeholder: "EV",
         entity: false,
       },
-      { path: "energy.ev.plugged", label: "EV plugged in" },
-      { path: "energy.ev.power", label: "EV charge power" },
-      { path: "energy.ev.soc", label: "EV battery SoC" },
+      {
+        path: "energy.ev.plugged",
+        label: "EV plugged in",
+        suggest: {
+          domains: ["binary_sensor", "sensor", "input_boolean"],
+          name: evName(/plug|tilsluttet|connected|charging|status|koretoj|vehicle/),
+          strict: true,
+        },
+      },
+      {
+        path: "energy.ev.power",
+        label: "EV charge power",
+        suggest: {
+          ...POWER_SENSOR,
+          name: evName(/power|effekt|watt|charging/),
+          strict: true,
+        },
+      },
+      {
+        path: "energy.ev.soc",
+        label: "EV battery SoC",
+        suggest: {
+          ...BATTERY_SENSOR,
+          name: evName(/soc|battery|level|percent|procent|charge/),
+          strict: true,
+        },
+      },
     ],
   },
   {
     title: "Solar",
     fields: [
-      { path: "solar.power", label: "Power now" },
-      { path: "solar.today", label: "Production today" },
-      { path: "solar.forecastToday", label: "Forecast today" },
-      { path: "solar.batterySoc", label: "Battery state of charge" },
-      { path: "solar.load", label: "Home load" },
-      { path: "solar.grid", label: "Grid power" },
-      { path: "solar.batteryPower", label: "Battery power" },
-      { path: "solar.pv1", label: "PV string 1" },
-      { path: "solar.pv2", label: "PV string 2" },
+      {
+        path: "solar.power",
+        label: "Power now",
+        suggest: {
+          ...POWER_SENSOR,
+          name: /pv.*power|solar.*power|inverter.*power|mppt/i,
+          strict: true,
+        },
+      },
+      {
+        path: "solar.today",
+        label: "Production today",
+        suggest: {
+          ...ENERGY_SENSOR,
+          name: /(?!.*(remaining|tomorrow|next|forecast|_d[23]))(daily_production|production_today|today.*production|energy_today|generation_today|sol.*i_dag)/i,
+          strict: true,
+        },
+      },
+      {
+        path: "solar.forecastToday",
+        label: "Forecast today",
+        suggest: {
+          domains: ["sensor"],
+          name: /energy_production_today(?!_)|solar.*forecast.*today|forecast.*solar.*today|solcast.*today|prognose.*i_dag/i,
+          strict: true,
+        },
+      },
+      {
+        path: "solar.batterySoc",
+        label: "Battery state of charge",
+        suggest: {
+          ...BATTERY_SENSOR,
+          name: /soc|state_of_charge|battery_level|battery_percent|batteri.*(niveau|procent)|battery_soc/i,
+          strict: true,
+        },
+      },
+      {
+        path: "solar.load",
+        label: "Home load",
+        suggest: {
+          ...POWER_SENSOR,
+          name: /load.*power|house.*load.*power|home.*power|hus.*bruger/i,
+          strict: true,
+        },
+      },
+      {
+        path: "solar.grid",
+        label: "Grid power",
+        suggest: {
+          ...POWER_SENSOR,
+          name: /grid.*(power|total)|net.*(power|total)|export|import/i,
+          strict: true,
+        },
+      },
+      {
+        path: "solar.batteryPower",
+        label: "Battery power",
+        suggest: {
+          ...POWER_SENSOR,
+          name: /battery.*power|batteri.*effekt|charge.*power|discharge.*power/i,
+          strict: true,
+        },
+      },
+      {
+        path: "solar.pv1",
+        label: "PV string 1",
+        suggest: {
+          ...POWER_SENSOR,
+          name: /pv1|mppt1|string1/i,
+          strict: true,
+        },
+      },
+      {
+        path: "solar.pv2",
+        label: "PV string 2",
+        suggest: {
+          ...POWER_SENSOR,
+          name: /pv2|mppt2|string2/i,
+          strict: true,
+        },
+      },
     ],
   },
   {
     title: "Prayers",
     fields: [
-      { path: "prayers.fajr", label: "Fajr" },
-      { path: "prayers.dhuhr", label: "Dhuhr" },
-      { path: "prayers.asr", label: "Asr" },
-      { path: "prayers.maghrib", label: "Maghrib" },
-      { path: "prayers.isha", label: "Isha" },
-      { path: "prayers.sunrise", label: "Sunrise" },
+      {
+        path: "prayers.fajr",
+        label: "Fajr",
+        suggest: { ...PRAYER_SENSOR, name: /fajr/i },
+      },
+      {
+        path: "prayers.dhuhr",
+        label: "Dhuhr",
+        suggest: { ...PRAYER_SENSOR, name: /dhuhr|zuhr/i },
+      },
+      {
+        path: "prayers.asr",
+        label: "Asr",
+        suggest: { ...PRAYER_SENSOR, name: /asr/i },
+      },
+      {
+        path: "prayers.maghrib",
+        label: "Maghrib",
+        suggest: { ...PRAYER_SENSOR, name: /maghrib/i },
+      },
+      {
+        path: "prayers.isha",
+        label: "Isha",
+        suggest: { ...PRAYER_SENSOR, name: /isha/i },
+      },
+      {
+        path: "prayers.sunrise",
+        label: "Sunrise",
+        suggest: { ...PRAYER_SENSOR, name: /sunrise|solopgang|sol_op/i },
+      },
     ],
   },
   {
@@ -97,14 +293,77 @@ const ENTITY_GROUPS: EntityGroup[] = [
         placeholder: "BWT Perla",
         entity: false,
       },
-      { path: "water.state", label: "State" },
-      { path: "water.flow", label: "Flow" },
-      { path: "water.day", label: "Today" },
-      { path: "water.month", label: "This month" },
-      { path: "water.total", label: "Total" },
-      { path: "water.salt", label: "Salt level" },
-      { path: "water.saltDays", label: "Salt days left" },
-      { path: "water.holiday", label: "Holiday mode" },
+      {
+        path: "water.state",
+        label: "State",
+        suggest: {
+          domains: ["sensor"],
+          name: waterName(/state|status|softener/),
+          strict: true,
+        },
+      },
+      {
+        path: "water.flow",
+        label: "Flow",
+        suggest: {
+          domains: ["sensor"],
+          name: waterName(/flow|gennemstr|current_flow/),
+          strict: true,
+        },
+      },
+      {
+        path: "water.day",
+        label: "Today",
+        suggest: {
+          domains: ["sensor"],
+          name: waterName(/day_output|today|dag\b/),
+          strict: true,
+        },
+      },
+      {
+        path: "water.month",
+        label: "This month",
+        suggest: {
+          domains: ["sensor"],
+          name: waterName(/month|måned|maned/),
+          strict: true,
+        },
+      },
+      {
+        path: "water.total",
+        label: "Total",
+        suggest: {
+          domains: ["sensor"],
+          name: waterName(/(?!.*(udgift|cost))(total|i_alt)/),
+          strict: true,
+        },
+      },
+      {
+        path: "water.salt",
+        label: "Salt level",
+        suggest: {
+          domains: ["sensor"],
+          name: waterName(/salt.*(level|procent|percent|niveau)|regener.*level/),
+          strict: true,
+        },
+      },
+      {
+        path: "water.saltDays",
+        label: "Salt days left",
+        suggest: {
+          domains: ["sensor"],
+          name: waterName(/salt.*(dag|day)|regener.*day/),
+          strict: true,
+        },
+      },
+      {
+        path: "water.holiday",
+        label: "Holiday mode",
+        suggest: {
+          domains: ["input_boolean", "switch", "binary_sensor"],
+          name: /holiday|ferie|vacation/i,
+        },
+      },
     ],
   },
   {
@@ -114,26 +373,97 @@ const ENTITY_GROUPS: EntityGroup[] = [
         path: "security.alarm",
         label: "Alarm panel",
         placeholder: "alarm_control_panel.home",
+        suggest: { domains: ["alarm_control_panel"] },
       },
-      { path: "security.windowAlert", label: "Window alert" },
+      {
+        path: "security.windowAlert",
+        label: "Window alert",
+        suggest: {
+          domains: ["input_boolean", "switch"],
+          name: /window|vindue|alert|alarm/i,
+        },
+      },
     ],
   },
   {
     title: "Network",
     fields: [
-      { path: "network.router", label: "Router" },
-      { path: "network.routerState", label: "Router state" },
-      { path: "network.google", label: "Google" },
-      { path: "network.cloudflare", label: "Cloudflare" },
+      {
+        path: "network.router",
+        label: "Router",
+        suggest: {
+          domains: ["sensor"],
+          name: /router.*(rtt|round_trip|ping|latency)|192_168_110_1.*(round_trip|rtt)|gateway.*(rtt|latency)/i,
+          strict: true,
+        },
+      },
+      {
+        path: "network.routerState",
+        label: "Router state",
+        suggest: {
+          domains: ["binary_sensor"],
+          name: /router|gateway|192_168_110_1\b/i,
+          strict: true,
+        },
+      },
+      {
+        path: "network.google",
+        label: "Google",
+        suggest: {
+          domains: ["sensor"],
+          name: /8_8_8_8.*(round_trip|rtt|latency)|google.*(rtt|latency|ping)/i,
+          strict: true,
+        },
+      },
+      {
+        path: "network.cloudflare",
+        label: "Cloudflare",
+        suggest: {
+          domains: ["sensor"],
+          name: /1_1_1_1.*(round_trip|rtt|latency)|cloudflare.*(rtt|latency|ping)/i,
+          strict: true,
+        },
+      },
     ],
   },
   {
     title: "Economy",
     fields: [
-      { path: "economy.bond", label: "Bond price" },
-      { path: "economy.change", label: "Change" },
-      { path: "economy.yield", label: "Yield" },
-      { path: "economy.duration", label: "Duration" },
+      {
+        path: "economy.bond",
+        label: "Bond price",
+        suggest: {
+          domains: ["sensor"],
+          name: /bond|obligation|kurs|rente/i,
+          strict: true,
+        },
+      },
+      {
+        path: "economy.change",
+        label: "Change",
+        suggest: {
+          domains: ["sensor"],
+          name: /aendring|ændring|change_percent|change_today/i,
+          strict: true,
+        },
+      },
+      {
+        path: "economy.yield",
+        label: "Yield",
+        suggest: {
+          domains: ["sensor"],
+          name: /yield|effektiv_rente|rente\b/i,
+          strict: true,
+        },
+      },
+      {
+        path: "economy.duration",
+        label: "Duration",
+        suggest: {
+          domains: ["sensor"],
+          name: /duration|varighed/i,
+        },
+      },
     ],
   },
   {
@@ -145,11 +475,38 @@ const ENTITY_GROUPS: EntityGroup[] = [
         placeholder: "Dantherm HCV 400",
         entity: false,
       },
-      { path: "ventilation.climate", label: "Climate entity" },
-      { path: "ventilation.temperature", label: "Temperature" },
-      { path: "ventilation.humidity", label: "Humidity" },
-      { path: "ventilation.step", label: "Fan step" },
-      { path: "ventilation.filter", label: "Filter status" },
+      {
+        path: "ventilation.climate",
+        label: "Climate entity",
+        suggest: {
+          domains: ["climate", "fan"],
+          name: /nilan|vallox|dantherm|flexit|duka|komfovent|vent|hrv|erv|air/i,
+          strict: true,
+        },
+      },
+      {
+        path: "ventilation.temperature",
+        label: "Temperature",
+        suggest: TEMP_SENSOR,
+      },
+      {
+        path: "ventilation.humidity",
+        label: "Humidity",
+        suggest: HUMIDITY_SENSOR,
+      },
+      {
+        path: "ventilation.step",
+        label: "Fan step",
+        suggest: {
+          domains: ["sensor"],
+          name: /fan|step|trin|speed|hastighed/i,
+        },
+      },
+      {
+        path: "ventilation.filter",
+        label: "Filter status",
+        suggest: { domains: ["sensor"], name: /filter/i },
+      },
     ],
   },
 ];
@@ -530,9 +887,9 @@ function textMarkup(
   value: string,
   placeholder = "",
   hint = "",
-  entity = false,
+  listId?: string,
 ): string {
-  const list = entity ? ' list="arcus-entities"' : "";
+  const list = listId ? ` list="${escapeHtml(listId)}"` : "";
   return `<label class="field">
     <span>${escapeHtml(label)}</span>
     <input type="text" name="${escapeHtml(name)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}"${list} spellcheck="false" autocomplete="off">
@@ -694,7 +1051,7 @@ export class ArcusConfigEditor extends HTMLElement {
                 this.stringAt(field.path),
                 field.placeholder ?? "entity_id",
                 "",
-                field.entity !== false,
+                field.suggest ? datalistId(field.path) : undefined,
               ),
             )
             .join("")}</div>
@@ -753,7 +1110,7 @@ export class ArcusConfigEditor extends HTMLElement {
         <section class="section">
           <h3>Entities</h3>
           <p class="hint">Optional entity overrides. An entity does not have to exist right now; it may be provided later.</p>
-          ${this.entityDatalist()}
+          ${this.entityDatalists()}
           ${entityGroups}
         </section>
         <details class="group">
@@ -1046,14 +1403,29 @@ export class ArcusConfigEditor extends HTMLElement {
     return chapters[key] !== false;
   }
 
-  private entityDatalist(): string {
-    const ids = Object.keys(this._hass?.states ?? {});
-    if (!ids.length) return "";
-    ids.sort();
-    const options = ids
-      .map((id) => `<option value="${escapeHtml(id)}"></option>`)
-      .join("");
-    return `<datalist id="arcus-entities">${options}</datalist>`;
+  /**
+   * One filtered `<datalist>` per entity field. Fields with the same purpose
+   * share a spec, so the native suggestion popup only shows the sensors a
+   * field can actually use instead of every entity in the home.
+   */
+  private entityDatalists(): string {
+    const hass = this._hass;
+    if (!hass?.states) return "";
+    const blocks: string[] = [];
+    for (const group of ENTITY_GROUPS) {
+      for (const field of group.fields) {
+        if (!field.suggest) continue;
+        const ids = suggestEntities(hass, field.suggest);
+        if (!ids.length) continue;
+        const options = ids
+          .map((id) => `<option value="${escapeHtml(id)}"></option>`)
+          .join("");
+        blocks.push(
+          `<datalist id="${datalistId(field.path)}">${options}</datalist>`,
+        );
+      }
+    }
+    return blocks.join("");
   }
 
   private selectValue(name: string, fallback: string): string {
