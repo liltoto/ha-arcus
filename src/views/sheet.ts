@@ -88,8 +88,17 @@ export class ArcusSheets extends HTMLElement {
   }
 
   connectedCallback(): void {
+    window.addEventListener("resize", this._onResize);
     if (this._app && this._route) this.render();
   }
+
+  disconnectedCallback(): void {
+    window.removeEventListener("resize", this._onResize);
+  }
+
+  private _onResize = (): void => {
+    this._syncTabs();
+  };
 
   render(): void {
     if (!this._app || !this._route) return;
@@ -102,6 +111,66 @@ export class ArcusSheets extends HTMLElement {
       app,
     };
     this.innerHTML = renderSheet(this._route, ctx);
+    this._syncTabs();
+    this._scheduleTabSync();
+  }
+
+  /**
+   * The first layout pass can run before the sheet and its web fonts have
+   * their final widths (for example while the sheet is still sliding in).
+   * Sync again on the next frame and once the fonts are ready so the active
+   * tab is always brought into view.
+   */
+  private _scheduleTabSync(): void {
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => {
+        if (this.isConnected) this._syncTabs();
+      });
+    }
+    const fonts = this.ownerDocument?.fonts;
+    if (fonts?.ready) {
+      void fonts.ready
+        .then(() => {
+          if (this.isConnected) this._syncTabs();
+        })
+        .catch(() => {
+          /* fonts.ready never rejects in current browsers */
+        });
+    }
+  }
+
+  /**
+   * Re-rendering resets the tab strip's scroll position to the start, which
+   * can hide the active tab on a phone. Centre it again and toggle the edge
+   * fades that signal hidden tabs.
+   */
+  private _syncTabs(): void {
+    const strip = this.querySelector<HTMLElement>(".sheet-tabs");
+    if (!strip) return;
+    const max = strip.scrollWidth - strip.clientWidth;
+    if (max <= 1) {
+      strip.classList.remove("scrollable", "can-left", "can-right");
+      return;
+    }
+    strip.classList.add("scrollable");
+    const active = strip.querySelector<HTMLElement>(".tab.active");
+    if (active) {
+      const stripRect = strip.getBoundingClientRect();
+      const activeRect = active.getBoundingClientRect();
+      const offset = activeRect.left - stripRect.left + strip.scrollLeft;
+      const target = offset - (strip.clientWidth - active.offsetWidth) / 2;
+      strip.scrollLeft = Math.min(max, Math.max(0, target));
+    }
+    this._updateTabEdges();
+    strip.onscroll = () => this._updateTabEdges();
+  }
+
+  private _updateTabEdges(): void {
+    const strip = this.querySelector<HTMLElement>(".sheet-tabs");
+    if (!strip || !strip.classList.contains("scrollable")) return;
+    const max = strip.scrollWidth - strip.clientWidth;
+    strip.classList.toggle("can-left", strip.scrollLeft > 1);
+    strip.classList.toggle("can-right", strip.scrollLeft < max - 1);
   }
 
   update(): void {

@@ -1366,6 +1366,23 @@ arcus-sheets {
 }
 .sheet-tabs::-webkit-scrollbar { display: none; }
 
+/* Fade only the edges that hide more tabs. The classes are set by the sheet
+   element after render and on scroll, so a strip that fits stays untouched. */
+.sheet-tabs.can-left {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 100%);
+}
+
+.sheet-tabs.can-right {
+  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 18px), transparent 100%);
+}
+
+.sheet-tabs.can-left.can-right {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+}
+
 .tab {
   flex: 0 0 auto;
   height: 30px;
