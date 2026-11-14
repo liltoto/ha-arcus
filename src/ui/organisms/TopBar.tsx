@@ -41,10 +41,14 @@ export function TopBar({ className }: TopBarProps = {}) {
   const hass = useHass();
   const [atmo, setAtmo] = useState<AtmosphereSetting>("auto");
 
-  const personHome = Object.keys(hass.states).some(
-    (entityId) =>
-      entityId.startsWith("person.") && hass.states[entityId]?.state === "home",
-  );
+  const configuredPerson = config.person?.trim();
+  const personHome = configuredPerson
+    ? hass.states[configuredPerson]?.state === "home"
+    : Object.keys(hass.states).some(
+        (entityId) =>
+          entityId.startsWith("person.") &&
+          hass.states[entityId]?.state === "home",
+      );
 
   const cycleAtmo = () => {
     const next = ATMO_ORDER[(ATMO_ORDER.indexOf(atmo) + 1) % ATMO_ORDER.length];

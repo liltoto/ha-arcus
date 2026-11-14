@@ -13,12 +13,19 @@ import { normalizeConfig } from "./config";
 import { clone, isRecord } from "./editor-utils";
 import type { ConfigRecord } from "./editor-utils";
 import { escapeHtml } from "./format";
-import type { ArcusConfigInput, ArcusHass, AreaRegistryEntry } from "./types";
+import type {
+  ArcusConfigInput,
+  ArcusHass,
+  AreaRegistryEntry,
+  ChapterKey,
+} from "./types";
 
 interface EntityField {
   path: string;
   label: string;
   placeholder?: string;
+  /** False for free-text values such as a name; defaults to an entity ID. */
+  entity?: boolean;
 }
 
 interface EntityGroup {
@@ -42,6 +49,21 @@ const ENTITY_GROUPS: EntityGroup[] = [
     ],
   },
   {
+    title: "Energy & EV",
+    fields: [
+      { path: "energy.standby", label: "Standby power" },
+      {
+        path: "energy.ev.name",
+        label: "EV name",
+        placeholder: "EV",
+        entity: false,
+      },
+      { path: "energy.ev.plugged", label: "EV plugged in" },
+      { path: "energy.ev.power", label: "EV charge power" },
+      { path: "energy.ev.soc", label: "EV battery SoC" },
+    ],
+  },
+  {
     title: "Solar",
     fields: [
       { path: "solar.power", label: "Power now" },
@@ -51,6 +73,8 @@ const ENTITY_GROUPS: EntityGroup[] = [
       { path: "solar.load", label: "Home load" },
       { path: "solar.grid", label: "Grid power" },
       { path: "solar.batteryPower", label: "Battery power" },
+      { path: "solar.pv1", label: "PV string 1" },
+      { path: "solar.pv2", label: "PV string 2" },
     ],
   },
   {
@@ -67,6 +91,12 @@ const ENTITY_GROUPS: EntityGroup[] = [
   {
     title: "Water",
     fields: [
+      {
+        path: "water.softenerName",
+        label: "Softener name",
+        placeholder: "BWT Perla",
+        entity: false,
+      },
       { path: "water.state", label: "State" },
       { path: "water.flow", label: "Flow" },
       { path: "water.day", label: "Today" },
@@ -75,6 +105,17 @@ const ENTITY_GROUPS: EntityGroup[] = [
       { path: "water.salt", label: "Salt level" },
       { path: "water.saltDays", label: "Salt days left" },
       { path: "water.holiday", label: "Holiday mode" },
+    ],
+  },
+  {
+    title: "Security",
+    fields: [
+      {
+        path: "security.alarm",
+        label: "Alarm panel",
+        placeholder: "alarm_control_panel.home",
+      },
+      { path: "security.windowAlert", label: "Window alert" },
     ],
   },
   {
@@ -98,6 +139,12 @@ const ENTITY_GROUPS: EntityGroup[] = [
   {
     title: "Ventilation",
     fields: [
+      {
+        path: "ventilation.name",
+        label: "System name",
+        placeholder: "Dantherm HCV 400",
+        entity: false,
+      },
       { path: "ventilation.climate", label: "Climate entity" },
       { path: "ventilation.temperature", label: "Temperature" },
       { path: "ventilation.humidity", label: "Humidity" },
@@ -105,6 +152,25 @@ const ENTITY_GROUPS: EntityGroup[] = [
       { path: "ventilation.filter", label: "Filter status" },
     ],
   },
+];
+
+const TEMPERATURE_UNIT_OPTIONS = [
+  ["", "Auto"],
+  ["°C", "°C"],
+  ["°F", "°F"],
+] as const;
+
+const CHAPTER_OPTIONS: ReadonlyArray<readonly [ChapterKey, string]> = [
+  ["energi", "Energy"],
+  ["sol", "Solar"],
+  ["vand", "Water"],
+  ["sikkerhed", "Security"],
+  ["ventilation", "Ventilation"],
+  ["teknik", "Tech & network"],
+  ["oekonomi", "Economy"],
+  ["lys", "Lighting"],
+  ["varme", "Heating"],
+  ["alarmer", "Alerts"],
 ];
 
 const LANGUAGE_OPTIONS = [
@@ -380,11 +446,25 @@ function textMarkup(
   value: string,
   placeholder = "",
   hint = "",
+  entity = false,
 ): string {
+  const list = entity ? ' list="arcus-entities"' : "";
   return `<label class="field">
     <span>${escapeHtml(label)}</span>
-    <input type="text" name="${escapeHtml(name)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" spellcheck="false" autocomplete="off">
+    <input type="text" name="${escapeHtml(name)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}"${list} spellcheck="false" autocomplete="off">
     ${hint ? `<small>${escapeHtml(hint)}</small>` : ""}
+  </label>`;
+}
+
+function checkMarkup(
+  name: string,
+  label: string,
+  checked: boolean,
+  hint = "",
+): string {
+  return `<label class="check">
+    <input type="checkbox" name="${escapeHtml(name)}"${checked ? " checked" : ""}>
+    <span>${escapeHtml(label)}${hint ? ` <small>${escapeHtml(hint)}</small>` : ""}</span>
   </label>`;
 }
 
@@ -404,6 +484,7 @@ export class ArcusConfigEditor extends HTMLElement {
   private _config: ConfigRecord = {};
   private _hass?: ArcusHass;
   private _areaSignature = "";
+  private _stateCount = 0;
   private _hasRendered = false;
   private _lastEmitted = "";
 
@@ -413,13 +494,18 @@ export class ArcusConfigEditor extends HTMLElement {
     this.render();
   }
 
-  /** Home Assistant frontend object. Used for the area registry only. */
+  /** Home Assistant frontend object. Used for the area registry and entity IDs. */
   set hass(value: ArcusHass | undefined) {
     const nextSignature = areasSignature(value);
     const hadHass = this._hass !== undefined;
     const areasChanged = nextSignature !== this._areaSignature;
+    const stateCount = Object.keys(value?.states ?? {}).length;
+    const statesAppeared = this._stateCount === 0 && stateCount > 0;
     this._hass = value;
-    if (!this._hasRendered || areasChanged || !hadHass) this.render();
+    this._stateCount = stateCount;
+    if (!this._hasRendered || areasChanged || !hadHass || statesAppeared) {
+      this.render();
+    }
   }
 
   get hass(): ArcusHass | undefined {
@@ -479,9 +565,24 @@ export class ArcusConfigEditor extends HTMLElement {
       (group) => `<details class="group">
         <summary>${escapeHtml(group.title)}</summary>
         <div class="details-body">
-          <div class="grid">${group.fields.map((field) => textMarkup(field.path, field.label, this.stringAt(field.path), field.placeholder ?? "entity_id")).join("")}</div>
+          <div class="grid">${group.fields
+            .map((field) =>
+              textMarkup(
+                field.path,
+                field.label,
+                this.stringAt(field.path),
+                field.placeholder ?? "entity_id",
+                "",
+                field.entity !== false,
+              ),
+            )
+            .join("")}</div>
         </div>
       </details>`,
+    ).join("");
+
+    const chapters = CHAPTER_OPTIONS.map(([key, label]) =>
+      checkMarkup(`chapters.${key}`, label, this.chapterEnabled(key)),
     ).join("");
 
     const areaOrder = areaConfig.order.join(", ");
@@ -504,6 +605,14 @@ export class ArcusConfigEditor extends HTMLElement {
           ${selectMarkup("density", "Density", DENSITY_OPTIONS, this.selectValue("density", "comfortable"))}
         </div>
         <section class="section">
+          <h3>Discovery</h3>
+          <p class="hint">Arc fills the dashboard from the Home Assistant registries. Turn discovery off to use only the areas and entities configured here.</p>
+          <div class="grid">
+            ${checkMarkup("auto_discover", "Auto-discover rooms and entities", this._config.auto_discover !== false, "Recommended")}
+            ${checkMarkup("group_by_floor", "Group rooms by floor", this._config.group_by_floor === true, "Uses the floor registry when available")}
+          </div>
+        </section>
+        <section class="section">
           <h3>Areas</h3>
           <p class="hint">Leave the include list empty to show every area. An area can be included or excluded, not both. The order is a comma-separated list of area IDs.</p>
           ${areaError}
@@ -522,8 +631,27 @@ export class ArcusConfigEditor extends HTMLElement {
         <section class="section">
           <h3>Entities</h3>
           <p class="hint">Optional entity overrides. An entity does not have to exist right now; it may be provided later.</p>
+          ${this.entityDatalist()}
           ${entityGroups}
         </section>
+        <details class="group">
+          <summary>Units &amp; region</summary>
+          <div class="details-body">
+            <p class="hint">Leave a field empty to use Home Assistant's own units and currency.</p>
+            <div class="grid">
+              ${textMarkup("units.currency", "Currency", this.stringAt("units.currency"), "kr / EUR / USD")}
+              ${textMarkup("units.price_unit", "Price unit", this.stringAt("units.price_unit"), "kr/kWh")}
+              ${selectMarkup("units.temperature", "Temperature unit", TEMPERATURE_UNIT_OPTIONS, this.stringAt("units.temperature"))}
+            </div>
+          </div>
+        </details>
+        <details class="group">
+          <summary>Chapters</summary>
+          <div class="details-body">
+            <p class="hint">Uncheck a chapter to hide it from the dashboard. Every chapter is shown by default.</p>
+            <div class="grid">${chapters}</div>
+          </div>
+        </details>
         <details class="advanced">
           <summary>Advanced JSON</summary>
           <div class="details-body">
@@ -572,37 +700,66 @@ export class ArcusConfigEditor extends HTMLElement {
       return;
     }
 
-    if (name === "areas.include" || name === "areas.exclude") {
+    if (name.startsWith("areas.")) {
+      this.applyAreaField(name, target);
+    } else if (name === "auto_discover" || name === "group_by_floor") {
+      this.applyDiscoveryToggle(name, target);
+    } else if (name.startsWith("chapters.")) {
       if (!(target instanceof HTMLInputElement)) return;
-      this.setAreaMembership(
-        name === "areas.include" ? "include" : "exclude",
-        target.value,
-        target.checked,
-      );
-    } else if (name === "areas.order") {
-      const order = target.value
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean);
-      this.setAreas({ order });
-    } else if (name === "title" || name === "subtitle") {
-      setPath(this._config, name, target.value);
-    } else if (
-      name === "language" ||
-      name === "appearance" ||
-      name === "atmosphere" ||
-      name === "density"
-    ) {
-      setPath(this._config, name, target.value);
+      setPath(this._config, name, target.checked);
     } else {
-      const value = target.value.trim();
-      if (value) setPath(this._config, name, value);
-      else deletePath(this._config, name);
+      this.applyScalarField(name, target.value);
     }
 
     this.syncAdvancedJson();
     this.commit();
   };
+
+  private applyAreaField(
+    name: string,
+    target: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+  ): void {
+    if (name === "areas.order") {
+      const order = target.value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+      this.setAreas({ order });
+      return;
+    }
+    if (!(target instanceof HTMLInputElement)) return;
+    if (name !== "areas.include" && name !== "areas.exclude") return;
+    this.setAreaMembership(
+      name === "areas.include" ? "include" : "exclude",
+      target.value,
+      target.checked,
+    );
+  }
+
+  private applyDiscoveryToggle(name: string, target: HTMLElement): void {
+    if (!(target instanceof HTMLInputElement)) return;
+    const enabledByDefault = name === "auto_discover";
+    const on = target.checked;
+    if (on === enabledByDefault) deletePath(this._config, name);
+    else setPath(this._config, name, on);
+  }
+
+  private applyScalarField(name: string, raw: string): void {
+    if (
+      name === "title" ||
+      name === "subtitle" ||
+      name === "language" ||
+      name === "appearance" ||
+      name === "atmosphere" ||
+      name === "density"
+    ) {
+      setPath(this._config, name, raw);
+      return;
+    }
+    const value = raw.trim();
+    if (value) setPath(this._config, name, value);
+    else deletePath(this._config, name);
+  }
 
   /**
    * Apply the advanced JSON field.
@@ -757,6 +914,22 @@ export class ArcusConfigEditor extends HTMLElement {
   private stringAt(path: string): string {
     const value = getPath(this._config, path);
     return typeof value === "string" ? value : "";
+  }
+
+  private chapterEnabled(key: ChapterKey): boolean {
+    const chapters = this._config.chapters;
+    if (!isRecord(chapters)) return true;
+    return chapters[key] !== false;
+  }
+
+  private entityDatalist(): string {
+    const ids = Object.keys(this._hass?.states ?? {});
+    if (!ids.length) return "";
+    ids.sort();
+    const options = ids
+      .map((id) => `<option value="${escapeHtml(id)}"></option>`)
+      .join("");
+    return `<datalist id="arcus-entities">${options}</datalist>`;
   }
 
   private selectValue(name: string, fallback: string): string {

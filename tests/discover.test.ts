@@ -482,6 +482,17 @@ describe("buildModel", () => {
     expect(model.chapters.sikkerhed).toBe(true);
   });
 
+  test("respects a configured heating reserve list", () => {
+    const model = buildModel(
+      makeHass(),
+      makeConfig({ heating: { reserve: ["climate.wavin_kanal_6"] } }),
+      NOW,
+    );
+    expect(model.heatingReserve.map((zone) => zone.entity.entityId)).toEqual([
+      "climate.wavin_kanal_6",
+    ]);
+  });
+
   test("an empty home returns a valid model with every chapter off", () => {
     const hass = makeHass({
       areas: {},

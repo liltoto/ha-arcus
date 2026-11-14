@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { formatNumber } from "../../../format";
+import { formatNumber, resolveCurrency } from "../../../format";
 import { areaPath, sparkPath } from "../../../render/charts";
 import { graphAttrs, type GraphInput } from "../../../render/graph";
 import type {
@@ -80,14 +80,37 @@ function isOn(hass: ArcusHass, entityId: string, fallback = false): boolean {
   return false;
 }
 
+function friendlyNameOf(hass: ArcusHass, entityId: string): string | null {
+  const friendly = hass.states[entityId]?.attributes?.friendly_name;
+  return typeof friendly === "string" && friendly.trim() ? friendly : null;
+}
+
+function entityAreaId(hass: ArcusHass, entityId: string): string | null {
+  const entry = hass.entities?.[entityId];
+  if (entry?.area_id) return entry.area_id;
+  const deviceId = entry?.device_id;
+  return deviceId ? (hass.devices?.[deviceId]?.area_id ?? null) : null;
+}
+
+function areaNameForEntity(hass: ArcusHass, entityId: string): string | null {
+  const areaId = entityAreaId(hass, entityId);
+  if (!areaId) return null;
+  const name = hass.areas?.[areaId]?.name;
+  return typeof name === "string" && name.trim() ? name : null;
+}
+
 function entityName(
   hass: ArcusHass,
   entityId: string,
   index: number,
   t: Translator,
 ): string {
-  const friendly = hass.states[entityId]?.attributes?.friendly_name;
-  if (typeof friendly === "string" && friendly.trim()) return friendly;
+  const friendly = friendlyNameOf(hass, entityId);
+  if (friendly) return friendly;
+  const registry = hass.entities?.[entityId]?.name;
+  if (typeof registry === "string" && registry.trim()) return registry;
+  const area = areaNameForEntity(hass, entityId);
+  if (area) return area;
   if (index === 0) return t("water.kitchen");
   if (index === 1) return t("water.utility");
   return `${t("water.leak")} ${index + 1}`;
@@ -206,6 +229,7 @@ function WaterToday({ day, month, total, fmt, t }: WaterTodayProps) {
 }
 
 interface WaterSoftenerProps {
+  title: string;
   state: string;
   salt: number | null;
   saltDays: number | null;
@@ -220,6 +244,7 @@ interface WaterSoftenerProps {
 
 /** The BWT salt/capacity readings plus the holiday toggle. */
 function WaterSoftener({
+  title,
   state,
   salt,
   saltDays,
@@ -234,7 +259,7 @@ function WaterSoftener({
   return (
     <div className={c("block")}>
       <div className={c("block-head")}>
-        <div className={c("block-label")}>{t("water.bwt")}</div>
+        <div className={c("block-label")}>{title}</div>
         <div className={c("block-label")}>
           <b>{state}</b>
         </div>
@@ -310,7 +335,13 @@ function WaterLeaks({
           <Icon name="battery" />
           <div className={c("row-main")}>
             <div className={c("row-name")}>{t("water.battery")}</div>
-            <div className={c("row-sub")}>{t("water.leakBattery")}</div>
+            <div className={c("row-sub")}>
+              {!leakBattery.name ||
+              leakBattery.name === leakBattery.entityId ||
+              /klippbok/i.test(leakBattery.entityId)
+                ? t("water.leakBattery")
+                : leakBattery.name}
+            </div>
           </div>
           <span className={c("row-val")}>
             {leakBattery.level === null ? "–" : fmt(leakBattery.level, 0)}
@@ -374,6 +405,7 @@ export function WaterBody(_props: LayerBodyProps) {
     model.language === "en" || config.language === "en" ? "en" : "da";
   const fmt = (value: number | null | undefined, digits = 1) =>
     formatNumber(value, digits, language);
+  const currency = resolveCurrency(hass, config, language);
 
   const day = water.day ?? null;
   const month = water.month ?? null;
@@ -385,6 +417,17 @@ export function WaterBody(_props: LayerBodyProps) {
   const capacity = water.capacity ?? null;
   const state = water.state || "–";
   const holidayId = config.water?.holiday;
+  const customSoftenerName =
+    water.softenerName || config.water?.softenerName || null;
+  const softenerTitle = customSoftenerName || t("water.bwt");
+  const hasSoftener = Boolean(
+    water.state ||
+      salt !== null ||
+      saltDays !== null ||
+      capacity !== null ||
+      holidayId ||
+      customSoftenerName,
+  );
   const holidayOn = holidayId
     ? isOn(hass, holidayId, Boolean(water.holiday))
     : Boolean(water.holiday);
@@ -422,6 +465,20 @@ export function WaterBody(_props: LayerBodyProps) {
     );
   };
 
+  const baseSummary = t("water.summary", {
+    day: fmt(day, 1),
+    state,
+    salt: fmt(salt, 0),
+  });
+  const summary = hasSoftener
+    ? customSoftenerName
+      ? baseSummary.replace("BWT", customSoftenerName)
+      : baseSummary
+    : t("water.meterSummary", {
+        day: fmt(day, 1),
+        month: fmt(month, 0),
+      });
+
   return (
     <div
       data-react-layer
@@ -435,11 +492,7 @@ export function WaterBody(_props: LayerBodyProps) {
       <SheetHeader
         kicker={t("sheet.kickerWater")}
         title={t("sheet.titleWater")}
-        sum={t("water.summary", {
-          day: fmt(day, 1),
-          state,
-          salt: fmt(salt, 0),
-        })}
+        sum={summary}
         closeLabel={t("sheet.close")}
         onClose={actions.closeSheet}
       />
@@ -457,7 +510,7 @@ export function WaterBody(_props: LayerBodyProps) {
             value={fmt(total === null ? null : total / 1000, 1)}
             unit="m³"
           />
-          <Readout label={t("water.cost")} value={fmt(cost, 0)} unit="kr" />
+          <Readout label={t("water.cost")} value={fmt(cost, 0)} unit={currency} />
           <Readout
             label={t("water.flowNow")}
             value={fmt(flow, 2)}
@@ -465,18 +518,21 @@ export function WaterBody(_props: LayerBodyProps) {
           />
         </div>
 
-        <WaterSoftener
-          state={state}
-          salt={salt}
-          saltDays={saltDays}
-          capacity={capacity}
-          flow={flow}
-          holidayId={holidayId}
-          holidayOn={holidayOn}
-          onToggleHoliday={toggleHoliday}
-          fmt={fmt}
-          t={t}
-        />
+        {hasSoftener ? (
+          <WaterSoftener
+            title={softenerTitle}
+            state={state}
+            salt={salt}
+            saltDays={saltDays}
+            capacity={capacity}
+            flow={flow}
+            holidayId={holidayId}
+            holidayOn={holidayOn}
+            onToggleHoliday={toggleHoliday}
+            fmt={fmt}
+            t={t}
+          />
+        ) : null}
 
         <WaterLeaks
           hass={hass}
@@ -496,7 +552,7 @@ export function WaterBody(_props: LayerBodyProps) {
           t={t}
         />
 
-        <WaterNote t={t} />
+        {hasSoftener ? <WaterNote t={t} /> : null}
       </div>
     </div>
   );

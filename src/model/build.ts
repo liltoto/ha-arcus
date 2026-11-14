@@ -16,10 +16,12 @@ import type {
   PriceModel,
   RoomModel,
   SecurityBatteryModel,
+  SecurityLockModel,
   SecurityModel,
   SkurModel,
   SolarModel,
   SolarPoint,
+  SunModel,
   SystemCardModel,
   TechModel,
   VentilationModel,
@@ -33,6 +35,7 @@ import {
   isEntityAvailable,
   resolveEntityRef,
 } from "./discover";
+import { discoverSystems } from "./discover-systems";
 import { lightIdsForGroups } from "./lights";
 
 const MAX_CHEAP_HOURS = 3;
@@ -370,12 +373,36 @@ function weatherIcon(condition: string | undefined): string {
   }
 }
 
+function parseDate(value: unknown): Date | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function buildSun(hass: ArcusHass): SunModel | undefined {
+  const sunState = stateOf(hass, "sun.sun");
+  if (!sunState) return undefined;
+  const attrs = sunState.attributes ?? {};
+  return {
+    state: sunState.state,
+    elevation: numberFrom(attrs.elevation),
+    rising: Boolean(attrs.rising),
+    nextRising: parseDate(attrs.next_rising),
+    nextSetting: parseDate(attrs.next_setting),
+    nextNoon: parseDate(attrs.next_noon),
+  };
+}
+
 function buildWeather(
   hass: ArcusHass,
   config: ArcusConfig,
 ): WeatherModel | undefined {
-  if (!config.weather) return undefined;
-  const state = stateOf(hass, config.weather);
+  const state = config.weather
+    ? stateOf(hass, config.weather)
+    : config.auto_discover !== false
+      ? (stateOf(hass, "weather.forecast_home") ??
+        stateOf(hass, "weather.home"))
+      : undefined;
   if (!state) return undefined;
   const attributes = state.attributes ?? {};
   const forecast = Array.isArray(attributes.forecast)
@@ -501,6 +528,8 @@ const SOLAR_NUMERIC_KEYS = [
   "load",
   "grid",
   "batteryPower",
+  "pv1",
+  "pv2",
   "pv3",
   "pv4",
   "totalProduction",
@@ -520,6 +549,10 @@ const SOLAR_NUMERIC_KEYS = [
   "gridL1",
   "gridL2",
   "gridL3",
+  "pv1Voltage",
+  "pv1Current",
+  "pv2Voltage",
+  "pv2Current",
   "pv3Voltage",
   "pv3Current",
   "pv4Voltage",
@@ -553,6 +586,8 @@ function buildSolar(hass: ArcusHass, config: ArcusConfig): SolarModel | undefine
     load: null,
     grid: null,
     batteryPower: null,
+    pv1: null,
+    pv2: null,
     pv3: null,
     pv4: null,
     totalProduction: null,
@@ -592,6 +627,7 @@ function buildWater(hass: ArcusHass, config: ArcusConfig): WaterModel | undefine
   const waterConfig = config.water;
   if (!waterConfig) return undefined;
   return {
+    softenerName: waterConfig.softenerName ?? null,
     state: stringState(hass, waterConfig.state),
     flow: numState(hass, waterConfig.flow),
     day: numState(hass, waterConfig.day),
@@ -622,7 +658,44 @@ function buildSecurity(
       isOnState(stringState(hass, entityId)),
     );
 
-  if (!openings.length && !config.security) return undefined;
+  const locks: SecurityLockModel[] = config.security?.locks
+    ? config.security.locks.map((entityId) => {
+        const ref = resolveEntityRef(hass, entityId);
+        const state = ref?.state;
+        const matchedRoom = rooms.find(
+          (room) =>
+            room.lock?.entityId === entityId ||
+            room.areaId === entityAreaId(hass, entityId),
+        );
+        return {
+          entityId,
+          name: ref?.name ?? entityId,
+          locked: state === "locked",
+          state: state ?? "unknown",
+          room: matchedRoom?.name,
+        };
+      })
+    : rooms
+        .filter(
+          (room): room is RoomModel & { lock: EntityRef } => !!room.lock,
+        )
+        .map((room) => {
+          const ref = room.lock;
+          const state = ref.state;
+          return {
+            entityId: ref.entityId,
+            name: ref.name ?? ref.entityId,
+            locked: state === "locked",
+            state: state ?? "unknown",
+            room: room.name,
+          };
+        });
+
+  const alarm = config.security?.alarm
+    ? resolveEntityRef(hass, config.security.alarm)
+    : null;
+
+  if (!openings.length && !locks.length && !config.security) return undefined;
 
   const batteries: SecurityBatteryModel[] = (
     config.security?.batteries ?? []
@@ -646,6 +719,8 @@ function buildSecurity(
     leak,
     openings,
     batteries,
+    locks,
+    alarm,
     windowAlert: config.security?.windowAlert
       ? isOnState(stringState(hass, config.security.windowAlert))
       : false,
@@ -707,6 +782,7 @@ function buildVentilation(
   const climateState = stateOf(hass, ventilation.climate);
   const climateAttributes = climateState?.attributes ?? {};
   return {
+    name: ventilation.name ?? null,
     temperature: numState(hass, ventilation.temperature),
     humidity: numState(hass, ventilation.humidity),
     step: numState(hass, ventilation.step),
@@ -804,6 +880,82 @@ function configuredReserveIds(config: ArcusConfig): string[] {
   );
 }
 
+interface RankedClimateEntry {
+  id: string;
+  name: string;
+  areaId: string | null;
+  rank: number;
+}
+
+function rankedClimateEntries(
+  hass: ArcusHass,
+  config: ArcusConfig,
+): RankedClimateEntry[] {
+  const order = areaOrderMap(hass, config);
+  return climateEntries(hass)
+    .map((entry) => ({
+      ...entry,
+      rank: entry.areaId ? (order.get(entry.areaId) ?? 9999) : 10000,
+    }))
+    .sort((a, b) => a.rank - b.rank);
+}
+
+function explicitlyIncluded(config: ArcusConfig, id: string): boolean {
+  return (config.heating?.include ?? []).includes(id);
+}
+
+function skipHeatingEntry(
+  entry: RankedClimateEntry,
+  config: ArcusConfig,
+  ventilationClimate: string | undefined,
+): boolean {
+  if ((config.heating?.exclude ?? []).includes(entry.id)) return true;
+  if (explicitlyIncluded(config, entry.id)) return false;
+  if (entry.id === ventilationClimate) return true;
+  return /nilan|tesla/i.test(`${entry.id} ${entry.name}`);
+}
+
+function isReserveEntry(
+  entry: RankedClimateEntry,
+  config: ArcusConfig,
+  configuredReserve: Set<string>,
+): boolean {
+  if (config.heating?.reserve?.includes(entry.id)) return true;
+  if (configuredReserve.has(entry.id)) return true;
+  if (explicitlyIncluded(config, entry.id)) return false;
+  return /kanal|reserve/i.test(`${entry.id} ${entry.name}`);
+}
+
+function supportsClimateMode(hass: ArcusHass, entityId: string): boolean {
+  const modes = attributesOf(hass, entityId).hvac_modes;
+  if (!Array.isArray(modes)) return false;
+  return modes
+    .map(String)
+    .some((mode) => ["heat", "heat_cool", "cool", "auto"].includes(mode));
+}
+
+function inHeatingScope(entry: RankedClimateEntry, config: ArcusConfig): boolean {
+  const include = config.heating?.include ?? [];
+  return include.length === 0 || include.includes(entry.id);
+}
+
+function buildConfiguredReserve(
+  hass: ArcusHass,
+  config: ArcusConfig,
+): HeatingReserveModel[] {
+  const exclude = new Set(config.heating?.exclude ?? []);
+  const reserve: HeatingReserveModel[] = [];
+  for (const id of configuredReserveIds(config)) {
+    if (exclude.has(id)) continue;
+    if (!isEntityAvailable(stateOf(hass, id)?.state)) continue;
+    reserve.push({
+      name: nameOf(hass, id),
+      entity: resolveEntityRef(hass, id) as EntityRef,
+    });
+  }
+  return reserve;
+}
+
 function buildHeating(
   hass: ArcusHass,
   config: ArcusConfig,
@@ -811,32 +963,19 @@ function buildHeating(
   heating: HeatingModel[];
   heatingReserve: HeatingReserveModel[];
 } {
-  const order = areaOrderMap(hass, config);
   const ventilationClimate = config.ventilation?.climate;
   const configuredReserve = configuredReserveIds(config);
-  const reserveSet = new Set(configuredReserve);
+  const configuredReserveSet = new Set(configuredReserve);
   const heating: HeatingModel[] = [];
-  const reserve: HeatingReserveModel[] = [];
+  const scannedReserve: HeatingReserveModel[] = [];
 
-  const entries = climateEntries(hass)
-    .map((entry) => ({
-      ...entry,
-      rank: entry.areaId ? (order.get(entry.areaId) ?? 9999) : 10000,
-    }))
-    .sort((a, b) => a.rank - b.rank);
-
-  for (const entry of entries) {
-    if (entry.id === ventilationClimate) continue;
-    if (/nilan|tesla/i.test(`${entry.id} ${entry.name}`)) continue;
-    const reserveMatch = /kanal|reserve/i.test(`${entry.id} ${entry.name}`);
+  for (const entry of rankedClimateEntries(hass, config)) {
+    if (skipHeatingEntry(entry, config, ventilationClimate)) continue;
     const available = isEntityAvailable(stateOf(hass, entry.id)?.state);
-    if (
-      reserveMatch ||
-      reserveSet.has(entry.id) ||
-      configuredReserve.includes(entry.id)
-    ) {
+
+    if (isReserveEntry(entry, config, configuredReserveSet)) {
       if (available) {
-        reserve.push({
+        scannedReserve.push({
           name: entry.name,
           entity: resolveEntityRef(hass, entry.id) as EntityRef,
         });
@@ -844,11 +983,13 @@ function buildHeating(
       continue;
     }
 
-    const attributes = attributesOf(hass, entry.id);
-    const hvacModes = Array.isArray(attributes.hvac_modes)
-      ? attributes.hvac_modes.map(String)
-      : [];
-    if (!hvacModes.includes("heat")) continue;
+    if (!inHeatingScope(entry, config)) continue;
+    if (
+      !explicitlyIncluded(config, entry.id) &&
+      !supportsClimateMode(hass, entry.id)
+    ) {
+      continue;
+    }
 
     heating.push({
       name: entry.name,
@@ -859,16 +1000,9 @@ function buildHeating(
   }
 
   // The configured reserve list is authoritative when it is present.
-  if (configuredReserve.length) {
-    reserve.length = 0;
-    for (const id of configuredReserve) {
-      if (!isEntityAvailable(stateOf(hass, id)?.state)) continue;
-      reserve.push({
-        name: nameOf(hass, id),
-        entity: resolveEntityRef(hass, id) as EntityRef,
-      });
-    }
-  }
+  const reserve = configuredReserve.length
+    ? buildConfiguredReserve(hass, config)
+    : scannedReserve;
 
   return { heating, heatingReserve: reserve };
 }
@@ -886,7 +1020,7 @@ function buildSystemCards(
   return [
     {
       id: "ventilation",
-      name: "Ventilation",
+      name: ventilation.name || "Ventilation",
       icon: "fan",
       tint: ROOM_TINTS[0] ?? "#7FAFC4",
       temp: resolveEntityRef(hass, ventilation.temperature),
@@ -906,20 +1040,11 @@ function pushRoomLeakAlerts(
 ): void {
   for (const room of rooms) {
     if (!refStateIsOn(room.leak)) continue;
-    const kitchen = room.id === "kokken";
     alerts.push({
       sev: 3,
       key: `leak_${room.id}`,
-      title: kitchen
-        ? t("alerts.leakKitchenTitle")
-        : room.id === "bryggers"
-          ? t("alerts.leakUtilityTitle")
-          : `${t("water.leak")} · ${room.name}`,
-      text: kitchen
-        ? t("alerts.leakKitchenText")
-        : room.id === "bryggers"
-          ? t("alerts.leakUtilityText")
-          : t("water.waterDetected"),
+      title: `${t("water.leak")} · ${room.name}`,
+      text: t("water.waterDetected"),
       route: `rum/${room.id}`,
     });
   }
@@ -986,10 +1111,13 @@ function pushFilterAlert(
       )) ||
     filterAlarm
   ) {
+    const title = config.ventilation?.name
+      ? t("alerts.filterTitle").replace(/^Nilan\b/, config.ventilation.name)
+      : t("alerts.filterTitle");
     alerts.push({
       sev: 2,
       key: "nilanfilter",
-      title: t("alerts.filterTitle"),
+      title,
       text: t("alerts.filterText", {
         status: filterState ?? t("alerts.filterTitle"),
       }),
@@ -998,31 +1126,51 @@ function pushFilterAlert(
   }
 }
 
+function pushSoftenerAlert(
+  alerts: AlertModel[],
+  water: WaterModel,
+  t: ReturnType<typeof createTranslator>,
+): void {
+  const state = water.state;
+  if (!state || state === "OK") return;
+  const defaultTitle = t("alerts.bwtTitle", { state: state.toLowerCase() });
+  const custom = water.softenerName;
+  alerts.push({
+    sev: 3,
+    key: "bwt",
+    title: custom && custom !== "BWT"
+      ? defaultTitle.replace(/^BWT\b/, custom)
+      : defaultTitle,
+    text: t("alerts.bwtText"),
+    route: "vand",
+  });
+}
+
+function pushSaltAlert(
+  alerts: AlertModel[],
+  water: WaterModel,
+  t: ReturnType<typeof createTranslator>,
+): void {
+  if (water.salt === null || water.salt === undefined || water.salt >= 15) {
+    return;
+  }
+  alerts.push({
+    sev: 2,
+    key: "salt",
+    title: t("alerts.saltTitle"),
+    text: t("alerts.saltText", { percent: Math.round(water.salt) }),
+    route: "vand",
+  });
+}
+
 function pushWaterAlerts(
   alerts: AlertModel[],
   water: WaterModel | undefined,
   t: ReturnType<typeof createTranslator>,
 ): void {
-  const bwtState = water?.state;
-  if (bwtState && bwtState !== "OK") {
-    alerts.push({
-      sev: 3,
-      key: "bwt",
-      title: t("alerts.bwtTitle", { state: bwtState.toLowerCase() }),
-      text: t("alerts.bwtText"),
-      route: "vand",
-    });
-  }
-
-  if (water?.salt !== null && water?.salt !== undefined && water.salt < 15) {
-    alerts.push({
-      sev: 2,
-      key: "salt",
-      title: t("alerts.saltTitle"),
-      text: t("alerts.saltText", { percent: Math.round(water.salt) }),
-      route: "vand",
-    });
-  }
+  if (!water) return;
+  pushSoftenerAlert(alerts, water, t);
+  pushSaltAlert(alerts, water, t);
 }
 
 function pushBatteryAlert(
@@ -1142,6 +1290,8 @@ function buildChapters(
       model.solar.load,
       model.solar.grid,
       model.solar.batteryPower,
+      model.solar.pv1,
+      model.solar.pv2,
       model.solar.pv3,
       model.solar.pv4,
     ]) ||
@@ -1163,6 +1313,8 @@ function buildChapters(
     ((model.security.openings?.length ?? 0) > 0 ||
       !!model.security.leak ||
       !!model.security.batteries?.length ||
+      !!model.security.locks?.length ||
+      !!model.security.alarm ||
       !!model.security.windowAlert);
   const hasVentilation =
     model.systemCards.some((card) => card.id === "ventilation") ||
@@ -1222,27 +1374,31 @@ export function buildModel(
   config: ArcusConfig,
   now: Date = new Date(),
 ): HomeModel {
-  const language = resolveLanguage(hass.language, config);
+  const resolved = discoverSystems(hass, config);
+  const language = resolveLanguage(hass.language, resolved);
   const t = createTranslator(language);
 
-  const rooms = discoverRooms(hass, config);
+  const rooms = discoverRooms(hass, resolved);
   const lights = rooms.flatMap((room) => room.lights);
-  const { heating, heatingReserve } = buildHeating(hass, config);
-  const systemCards = buildSystemCards(hass, config);
+  const { heating, heatingReserve } = buildHeating(hass, resolved);
+  const systemCards = buildSystemCards(hass, resolved);
 
   const stats: Record<string, RoomStats> = {};
   for (const room of rooms) stats[room.id] = roomStats(hass, room);
 
-  const price = buildPrice(hass, config, now);
-  const weather = buildWeather(hass, config);
-  const prayers = buildPrayers(hass, config, now, t);
-  const solar = buildSolar(hass, config);
-  const water = buildWater(hass, config);
-  const security = buildSecurity(hass, config, rooms, stats);
-  const tech = buildTech(hass, config);
-  const economy = buildEconomy(hass, config);
-  const ventilation = buildVentilation(hass, config);
-  const skurRoom = rooms.find((room) => room.id === "skur");
+  const price = buildPrice(hass, resolved, now);
+  const sun = buildSun(hass);
+  const weather = buildWeather(hass, resolved);
+  const prayers = buildPrayers(hass, resolved, now, t);
+  const solar = buildSolar(hass, resolved);
+  const water = buildWater(hass, resolved);
+  const security = buildSecurity(hass, resolved, rooms, stats);
+  const tech = buildTech(hass, resolved);
+  const economy = buildEconomy(hass, resolved);
+  const ventilation = buildVentilation(hass, resolved);
+  const skurRoom =
+    rooms.find((room) => room.id === "skur") ??
+    rooms.find((room) => room.kind === "outdoor");
   const skur: SkurModel | null = skurRoom
     ? { temp: skurRoom.temp ?? null, humidity: skurRoom.humidity ?? null }
     : null;
@@ -1259,7 +1415,7 @@ export function buildModel(
   );
 
   const lightSummary = lightStats(hass, lights);
-  const chapters = buildChapters(config, {
+  const chapters = buildChapters(resolved, {
     lights,
     heating,
     heatingReserve,
@@ -1281,6 +1437,7 @@ export function buildModel(
     heatingReserve,
     systemCards,
     skur,
+    sun,
     weather,
     price,
     energy: price,

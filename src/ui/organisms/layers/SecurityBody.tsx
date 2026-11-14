@@ -6,6 +6,7 @@ import type {
   HomeModel,
   OpeningModel,
   SecurityBatteryModel,
+  Translator,
 } from "../../../types";
 import {
   useActions,
@@ -41,6 +42,13 @@ const HOUSE_CELLS = [
 
 function languageOf(model: HomeModel, config: ArcusConfig): "da" | "en" {
   return model.language === "en" || config.language === "en" ? "en" : "da";
+}
+
+function alarmStateLabel(t: Translator, state: string | null): string {
+  if (state === "armed_home") return t("security.armedHome");
+  if (state === "armed_away") return t("security.armedAway");
+  if (state === "disarmed") return t("security.disarmed");
+  return state || "–";
 }
 
 function liveOn(hass: ArcusHass, entityId: string): boolean | null {
@@ -141,6 +149,11 @@ export function SecurityBody(_props: LayerBodyProps) {
   const language = languageOf(model, config);
   const fmt = (value: number | null | undefined, digits = 0) =>
     formatNumber(value, digits, language);
+  const locks = security.locks ?? [];
+  const alarmId = security.alarm?.entityId ?? config.security?.alarm ?? null;
+  const alarmState = alarmId
+    ? (hass.states?.[alarmId]?.state ?? security.alarm?.state ?? "unknown")
+    : null;
 
   const leakIds = config.security?.leaks ?? [];
   const leakSet = new Set(leakIds);
@@ -396,6 +409,107 @@ export function SecurityBody(_props: LayerBodyProps) {
             </div>
           </div>
         </div>
+
+        {locks.length ? (
+          <div className={c("block")}>
+            <div className={c("block-label")}>{t("security.locks")}</div>
+            <div className={c("list")}>
+              {locks.map((lock) => (
+                <div className={c("row")} key={lock.entityId}>
+                  <Icon name="shield" />
+                  <div className={c("row-main")}>
+                    <div className={c("row-name")}>{lock.name}</div>
+                    {lock.room ? (
+                      <div className={c("row-sub")}>{lock.room}</div>
+                    ) : null}
+                  </div>
+                  <span className={c("chip", lock.locked ? "on" : "warn")}>
+                    {lock.locked
+                      ? t("security.locked")
+                      : t("security.unlocked")}
+                  </span>
+                  <button
+                    type="button"
+                    className={c("toggle", lock.locked && "on")}
+                    data-act="toggle-lock"
+                    data-entity={lock.entityId}
+                    aria-label={lock.name}
+                    aria-pressed={lock.locked}
+                    onClick={() =>
+                      actions.callService(
+                        "lock",
+                        lock.locked ? "unlock" : "lock",
+                        {},
+                        { entity_id: lock.entityId },
+                      )
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {alarmId ? (
+          <div className={c("block")}>
+            <div className={c("block-head")}>
+              <div className={c("block-label")}>{t("security.alarmPanel")}</div>
+              <div className={c("block-label")}>
+                <b>{alarmStateLabel(t, alarmState)}</b>
+              </div>
+            </div>
+            <div className={c("btn-row")}>
+              <button
+                type="button"
+                className={c("btn small")}
+                data-act="alarm-arm-home"
+                data-entity={alarmId}
+                onClick={() =>
+                  actions.callService(
+                    "alarm_control_panel",
+                    "alarm_arm_home",
+                    {},
+                    { entity_id: alarmId },
+                  )
+                }
+              >
+                {t("security.armedHome")}
+              </button>
+              <button
+                type="button"
+                className={c("btn small")}
+                data-act="alarm-arm-away"
+                data-entity={alarmId}
+                onClick={() =>
+                  actions.callService(
+                    "alarm_control_panel",
+                    "alarm_arm_away",
+                    {},
+                    { entity_id: alarmId },
+                  )
+                }
+              >
+                {t("security.armedAway")}
+              </button>
+              <button
+                type="button"
+                className={c("btn small")}
+                data-act="alarm-disarm"
+                data-entity={alarmId}
+                onClick={() =>
+                  actions.callService(
+                    "alarm_control_panel",
+                    "alarm_disarm",
+                    {},
+                    { entity_id: alarmId },
+                  )
+                }
+              >
+                {t("security.disarmed")}
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         <div className={c("block")}>
           <div className={c("block-head")}>

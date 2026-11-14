@@ -1,3 +1,4 @@
+import { createTranslator, resolveLanguage } from "../localize";
 import type {
   ArcusConfig,
   ArcusHass,
@@ -5,7 +6,9 @@ import type {
   EntityRegistryEntry,
   LightGroupModel,
   OpeningModel,
+  RoomKind,
   RoomModel,
+  Translator,
 } from "../types";
 
 /**
@@ -43,6 +46,7 @@ const AREA_ICON_KEYS: Record<string, string> = {
   "washing-machine": "washer",
   "washing-machine-outline": "washer",
   "tumble-dryer": "washer",
+  washer: "washer",
   door: "door",
   "door-open": "door",
   "door-closed": "door",
@@ -65,13 +69,43 @@ const AREA_ICON_KEYS: Record<string, string> = {
 
 const OPENING_CLASSES = new Set(["door", "window", "garage_door", "opening"]);
 
-/** Danish-ish labels for the opening cards; override with `rooms.<id>.openings`. */
-const OPENING_KINDS: Record<string, string> = {
-  door: "Dør",
-  window: "Vindue",
-  garage_door: "Garageport",
-  opening: "Åbning",
-};
+function openingKind(deviceClass: string, t: Translator): string {
+  switch (deviceClass) {
+    case "door":
+      return t("room.openingDoor");
+    case "window":
+      return t("room.openingWindow");
+    case "garage_door":
+      return t("room.openingGarage");
+    case "opening":
+      return t("room.openingGeneric");
+    default:
+      return deviceClass || t("room.openingGeneric");
+  }
+}
+
+function inferRoomKind(
+  areaId: string,
+  roomName: string,
+  overrideKind?: RoomKind,
+): RoomKind {
+  if (overrideKind) return overrideKind;
+  if (
+    areaId === "skur" ||
+    /^(skur|outdoor|outside|ude|garage|shed|garden|have|terrasse|patio|carport|balcony|altan)$/i.test(
+      areaId,
+    ) ||
+    /\b(skur|outdoor|outside|garage|shed|garden|terrasse|carport|balcony)\b/i.test(
+      roomName,
+    )
+  ) {
+    return "outdoor";
+  }
+  if (/bryggers|utility|laundry|teknik/i.test(`${areaId} ${roomName}`)) {
+    return "utility";
+  }
+  return "indoor";
+}
 
 function uniqueStrings(values: unknown): string[] {
   if (!Array.isArray(values)) return [];
@@ -250,6 +284,7 @@ function buildOpenings(
   hass: ArcusHass,
   entities: EntityRegistryEntry[],
   roomName: string,
+  t: Translator,
 ): OpeningModel[] {
   return entities
     .filter((entity) => {
@@ -266,7 +301,7 @@ function buildOpenings(
       return {
         id: entity.entity_id,
         name: displayName(hass, entity.entity_id),
-        kind: OPENING_KINDS[deviceClass] ?? deviceClass,
+        kind: openingKind(deviceClass, t),
         room: roomName,
       };
     });
@@ -276,6 +311,7 @@ function overrideOpenings(
   hass: ArcusHass,
   overrides: NonNullable<ArcusConfig["rooms"][string]>["openings"],
   roomName: string,
+  t: Translator,
 ): OpeningModel[] {
   if (!Array.isArray(overrides)) return [];
   const out: OpeningModel[] = [];
@@ -287,8 +323,7 @@ function overrideOpenings(
     out.push({
       id: item.id,
       name: item.name ?? displayName(hass, item.id),
-      kind:
-        item.kind ?? OPENING_KINDS[deviceClass] ?? (deviceClass || "Åbning"),
+      kind: item.kind ?? openingKind(deviceClass, t),
       room: roomName,
     });
   }
@@ -461,12 +496,33 @@ export function discoverRooms(
   config: ArcusConfig,
 ): RoomModel[] {
   const rooms: RoomModel[] = [];
+  const language = resolveLanguage(hass.language, config);
+  const t = createTranslator(language);
+  const hasExplicitWide = Object.values(config.rooms ?? {}).some(
+    (room) => room?.wide === true,
+  );
 
   selectedAreas(hass, config).forEach((area, index) => {
     const entities = entitiesForArea(hass, area.areaId);
     const overrides = config.rooms[area.areaId] ?? {};
     const roomName = overrides.name ?? area.name;
-    const icon = area.icon ? areaIconKey(area.icon) : areaNameIcon(roomName);
+    const icon = overrides.icon
+      ? areaIconKey(overrides.icon)
+      : area.icon
+        ? areaIconKey(area.icon)
+        : areaNameIcon(roomName);
+    const kind = inferRoomKind(area.areaId, roomName, overrides.kind);
+    const wide =
+      overrides.wide !== undefined
+        ? overrides.wide
+        : hasExplicitWide
+          ? false
+          : index === 0;
+    const areaEntry = hass.areas?.[area.areaId];
+    const floorId = areaEntry?.floor_id ?? null;
+    const floor = floorId ? hass.floors?.[floorId] : undefined;
+    const floorName = typeof floor?.name === "string" ? floor.name : null;
+    const floorLevel = typeof floor?.level === "number" ? floor.level : null;
     const tint =
       overrides.tint ?? ROOM_TINTS[index % ROOM_TINTS.length] ?? "#7FAFC4";
 
@@ -624,15 +680,38 @@ export function discoverRooms(
         : buildLightGroups(hass, entities, area.areaId, icon);
     const openings =
       overrides.openings !== undefined
-        ? overrideOpenings(hass, overrides.openings, roomName)
-        : buildOpenings(hass, entities, roomName);
+        ? overrideOpenings(hass, overrides.openings, roomName, t)
+        : buildOpenings(hass, entities, roomName, t);
+    const covers =
+      overrides.covers !== undefined
+        ? uniqueStrings(overrides.covers)
+            .map((id) => resolveEntityRef(hass, id))
+            .filter((ref): ref is EntityRef => ref !== null)
+        : entities
+            .filter((entity) => domainOf(entity.entity_id) === "cover")
+            .map((entity) => resolveEntityRef(hass, entity.entity_id))
+            .filter((ref): ref is EntityRef => ref !== null);
+    const lock = overrides.lock
+      ? resolveEntityRef(hass, overrides.lock)
+      : refForEntity(
+          hass,
+          pickFirst(
+            hass,
+            entities,
+            (entity) => domainOf(entity.entity_id) === "lock",
+          ),
+        );
 
     rooms.push({
       id: area.areaId,
       areaId: area.areaId,
       name: roomName,
       icon,
-      wide: index === 0,
+      wide,
+      kind,
+      floorId,
+      floorName,
+      floorLevel,
       tint,
       temp: overrides.temp ? resolveEntityRef(hass, overrides.temp) : temp,
       tempFallback,
@@ -643,6 +722,8 @@ export function discoverRooms(
       pm25: overrides.pm25 ? resolveEntityRef(hass, overrides.pm25) : pm25,
       lights,
       openings,
+      covers,
+      lock,
       climate,
       media: overrides.media
         ? resolveEntityRef(hass, overrides.media)

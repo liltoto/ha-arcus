@@ -1,7 +1,8 @@
-import { formatNumber, numberFrom } from "../../../format";
+import { formatNumber, numberFrom, resolveTempUnit } from "../../../format";
 import type {
   ArcusHass,
   EntityRef,
+  TemperatureUnit,
   Translator,
   VentilationModel,
 } from "../../../types";
@@ -19,26 +20,11 @@ import {
 } from "../../hooks";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { c } from "../../styles/classes";
-
-type SheetLanguage = "da" | "en";
-
-const FILTER_OK = new Set([
-  "ok",
-  "nej",
-  "neutral",
-  "off",
-  "unknown",
-  "unavailable",
-]);
-
-function filterOk(filter: string | null | undefined): boolean {
-  return !filter || FILTER_OK.has(filter.toLowerCase());
-}
-
-function filterLabel(t: Translator, filter: string | null | undefined): string {
-  if (!filter) return "–";
-  return filterOk(filter) ? t("ventilation.filterOk") : filter;
-}
+import {
+  filterOk,
+  resolveVentilationView,
+  type SheetLanguage,
+} from "./ventilation/ventilation-view";
 
 function countText(value: number | null | undefined, fallback = "–"): string {
   return value === null || value === undefined
@@ -49,20 +35,11 @@ function countText(value: number | null | undefined, fallback = "–"): string {
 function temperatureText(
   value: number | null | undefined,
   language: SheetLanguage,
+  unit: TemperatureUnit = "°C",
 ): string {
   return value === null || value === undefined
     ? "–"
-    : `${formatNumber(value, 1, language)}°`;
-}
-
-/** Live number from hass, falling back to the ref snapshot on the model. */
-function refNumber(
-  hass: ArcusHass,
-  ref: EntityRef | null | undefined,
-): number | null {
-  if (!ref) return null;
-  const live = hass.states[ref.entityId]?.state;
-  return numberFrom(live) ?? numberFrom(ref.state);
+    : `${formatNumber(value, 1, language)}${unit === "°F" ? "°F" : "°"}`;
 }
 
 function optionsFor(hass: ArcusHass, entityId: string | undefined): string[] {
@@ -106,11 +83,24 @@ interface AirflowProps {
   ventilation: VentilationModel;
   temperature: number | null;
   language: SheetLanguage;
+  systemName: string | null;
+  unit: TemperatureUnit;
   t: Translator;
 }
 
 /** The five-node Nilan airflow, kept as the same SVG as the legacy sheet. */
-function Airflow({ ventilation, temperature, language, t }: AirflowProps) {
+function Airflow({
+  ventilation,
+  temperature,
+  language,
+  systemName,
+  unit,
+  t,
+}: AirflowProps) {
+  const pathLabel = systemName
+    ? `${systemName.toUpperCase()} · ${t("ventilation.airPath").toUpperCase()}`
+    : t("ventilation.nilanPath");
+
   return (
     <div className={c("block")}>
       <div className={c("block-label")}>{t("ventilation.airPath")}</div>
@@ -204,34 +194,34 @@ function Airflow({ ventilation, temperature, language, t }: AirflowProps) {
             {t("ventilation.outside")}
           </text>
           <text x="56" y="57" className={c("flow-val")} textAnchor="middle">
-            {temperatureText(ventilation.outdoor, language)}
+            {temperatureText(ventilation.outdoor, language, unit)}
           </text>
           <text x="166" y="18" className={c("flow-label")} textAnchor="middle">
             {t("ventilation.inlet")}
           </text>
           <text x="166" y="57" className={c("flow-val")} textAnchor="middle">
-            {temperatureText(ventilation.inlet, language)}
+            {temperatureText(ventilation.inlet, language, unit)}
           </text>
           <text x="280" y="18" className={c("flow-label")} textAnchor="middle">
             {t("ventilation.room")}
           </text>
           <text x="280" y="58" className={c("flow-val")} textAnchor="middle">
-            {temperatureText(temperature, language)}
+            {temperatureText(temperature, language, unit)}
           </text>
           <text x="394" y="18" className={c("flow-label")} textAnchor="middle">
             {t("ventilation.exhaust")}
           </text>
           <text x="394" y="57" className={c("flow-val")} textAnchor="middle">
-            {temperatureText(ventilation.exhaust, language)}
+            {temperatureText(ventilation.exhaust, language, unit)}
           </text>
           <text x="504" y="18" className={c("flow-label")} textAnchor="middle">
             {t("ventilation.outlet")}
           </text>
           <text x="504" y="57" className={c("flow-val")} textAnchor="middle">
-            {temperatureText(ventilation.outlet, language)}
+            {temperatureText(ventilation.outlet, language, unit)}
           </text>
           <text x="280" y="102" className={c("flow-label")} textAnchor="middle">
-            {t("ventilation.nilanPath")}
+            {pathLabel}
           </text>
         </svg>
       </div>
@@ -265,6 +255,7 @@ interface VentilationReadingsProps {
   step: number | null | undefined;
   efficiency: number | null | undefined;
   language: SheetLanguage;
+  unit: TemperatureUnit;
   t: Translator;
 }
 
@@ -275,6 +266,7 @@ function VentilationReadings({
   step,
   efficiency,
   language,
+  unit,
   t,
 }: VentilationReadingsProps) {
   return (
@@ -282,7 +274,7 @@ function VentilationReadings({
       <Readout
         label={t("ventilation.roomTemp")}
         value={formatNumber(temperature, 1, language)}
-        unit="°C"
+        unit={unit}
       />
       <Readout
         label={t("ventilation.humidity")}
@@ -312,6 +304,8 @@ interface ClimateControlsProps {
   minTemp: number;
   maxTemp: number;
   language: SheetLanguage;
+  systemName: string | null;
+  unit: TemperatureUnit;
   onTemperature: (value: number) => void;
   onMode: (value: string) => void;
   onFan: (value: number) => void;
@@ -328,6 +322,8 @@ function ClimateControls({
   minTemp,
   maxTemp,
   language,
+  systemName,
+  unit,
   onTemperature,
   onMode,
   onFan,
@@ -344,7 +340,11 @@ function ClimateControls({
       <div className={c("row")} data-act="temp-step" data-entity={climateId}>
         <span className={c("row-main")}>
           <div className={c("row-name")}>{t("ventilation.setpoint")}</div>
-          <div className={c("row-sub")}>{t("ventilation.autoSub")}</div>
+          <div className={c("row-sub")}>
+            {systemName
+              ? t("ventilation.autoSub").replace("Nilan", systemName)
+              : t("ventilation.autoSub")}
+          </div>
         </span>
         <Stepper
           value={target ?? 0}
@@ -353,7 +353,7 @@ function ClimateControls({
           step={1}
           label={t("ventilation.setpoint")}
           formatValue={(value) =>
-            target === null ? "–" : temperatureText(value, language)
+            target === null ? "–" : temperatureText(value, language, unit)
           }
           onChange={onTemperature}
         />
@@ -626,32 +626,27 @@ export function VentilationBody(_props: LayerBodyProps) {
 
   const language: SheetLanguage =
     model.language === "en" || config.language === "en" ? "en" : "da";
-
-  // The ventilation card carries the same refs as the section; use it as a
-  // fallback when a value is missing from the flattened model.
-  const card = model.systemCards.find((entry) => entry.id === "ventilation");
-  const temperatureValue =
-    ventilation.temperature ?? refNumber(hass, card?.temp);
-  const humidityValue = ventilation.humidity ?? refNumber(hass, card?.humidity);
-  const stepValue = ventilation.step ?? refNumber(hass, card?.step);
-  const filterValue = ventilation.filter ?? card?.filter?.state ?? null;
-  const status = filterLabel(t, filterValue);
-  const climateId = config.ventilation?.climate ?? card?.climate?.entityId;
-  const climate = climateId ? hass.states[climateId] : undefined;
-  const mode = ventilation.climateMode ?? climate?.state ?? null;
-  const fan = ventilation.fanMode ?? climate?.attributes?.fan_mode ?? null;
-  const target =
-    ventilation.target ?? numberFrom(climate?.attributes?.temperature);
-  const minTemp = numberFrom(climate?.attributes?.min_temp) ?? 5;
-  const maxTemp = numberFrom(climate?.attributes?.max_temp) ?? 35;
-  const resetId = config.ventilation?.resetButton;
-
-  const modeLabel =
-    mode === "heat"
-      ? t("ventilation.heating")
-      : mode === "cool"
-        ? t("ventilation.cooling")
-        : t("ventilation.autoLower");
+  const view = resolveVentilationView(hass, model, config, ventilation, t);
+  const {
+    tempUnit,
+    degree,
+    systemName,
+    temperature: temperatureValue,
+    humidity: humidityValue,
+    step: stepValue,
+    filterValue,
+    status,
+    climateId,
+    climate,
+    mode,
+    fan,
+    target,
+    minTemp,
+    maxTemp,
+    resetId,
+    hasDucts,
+    modeLabel,
+  } = view;
 
   const setTemperature = (value: number): void => {
     if (!climateId) return;
@@ -715,7 +710,7 @@ export function VentilationBody(_props: LayerBodyProps) {
           temp: formatNumber(temperatureValue, 1, language),
           step: stepValue ?? "–",
           filter: status,
-        })}
+        }).replace("°", degree)}
         closeLabel={t("sheet.close")}
         onClose={actions.closeSheet}
       />
@@ -726,15 +721,20 @@ export function VentilationBody(_props: LayerBodyProps) {
           step={stepValue}
           efficiency={ventilation.efficiency}
           language={language}
+          unit={tempUnit}
           t={t}
         />
 
-        <Airflow
-          ventilation={ventilation}
-          temperature={temperatureValue}
-          language={language}
-          t={t}
-        />
+        {hasDucts ? (
+          <Airflow
+            ventilation={ventilation}
+            temperature={temperatureValue}
+            language={language}
+            systemName={systemName}
+            unit={tempUnit}
+            t={t}
+          />
+        ) : null}
 
         {climateId ? (
           <ClimateControls
@@ -746,6 +746,8 @@ export function VentilationBody(_props: LayerBodyProps) {
             minTemp={minTemp}
             maxTemp={maxTemp}
             language={language}
+            systemName={systemName}
+            unit={tempUnit}
             onTemperature={setTemperature}
             onMode={setMode}
             onFan={setFan}

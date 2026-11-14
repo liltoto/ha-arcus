@@ -3,6 +3,7 @@ import {
   formatPrice,
   formatUnit,
   numberFrom,
+  resolvePriceUnit,
 } from "../format";
 import type {
   ArcusConfig,
@@ -212,6 +213,7 @@ function systemCardSub(
 
 function energySummary(
   model: HomeModel,
+  priceUnit: string,
   language: string,
   t: Translator,
 ): string {
@@ -220,7 +222,7 @@ function energySummary(
     price?.now !== null && price?.now !== undefined
       ? formatPrice(price.now, language)
       : "–";
-  return `<b>${priceNow} ${t("common.perKwh")}</b> · ${lower(
+  return `<b>${priceNow} ${priceUnit}</b> · ${lower(
     t("solar.load"),
   )} ${formatNumber(model.solar?.load, 0, language)} W`;
 }
@@ -243,14 +245,28 @@ function solarSummary(
 
 function waterSummary(
   model: HomeModel,
+  config: ArcusConfig,
   language: string,
   t: Translator,
 ): string {
+  if (model.water?.state === null && model.water?.salt === null) {
+    return `<b>${formatNumber(
+      model.water?.day,
+      1,
+      language,
+    )} L ${lower(t("common.today"))}</b> · ${formatNumber(
+      model.water?.month,
+      0,
+      language,
+    )} L ${lower(t("water.thisMonth"))}`;
+  }
+  const softenerName =
+    model.water?.softenerName || config.water?.softenerName || "BWT";
   return `<b>${formatNumber(
     model.water?.day,
     1,
     language,
-  )} L ${lower(t("common.today"))}</b> · BWT ${
+  )} L ${lower(t("common.today"))}</b> · ${softenerName} ${
     model.water?.state ?? "–"
   } · ${lower(t("water.salt"))} ${formatNumber(
     model.water?.salt,
@@ -396,13 +412,15 @@ function defaultSummary(): string {
 
 function chapterSummaries(
   model: HomeModel,
+  config: ArcusConfig,
+  priceUnit: string,
   language: string,
   t: Translator,
 ): Record<string, string> {
   const out: Record<string, string> = {
-    ch_energi_sum: energySummary(model, language, t),
+    ch_energi_sum: energySummary(model, priceUnit, language, t),
     ch_sol_sum: solarSummary(model, language, t),
-    ch_vand_sum: waterSummary(model, language, t),
+    ch_vand_sum: waterSummary(model, config, language, t),
     ch_sikkerhed_sum: securitySummary(model, t),
     ch_ventilation_sum: ventilationSummary(model, language, t),
     ch_teknik_sum: techSummary(model, language, t),
@@ -431,6 +449,7 @@ export function buildBindings(
   t: Translator,
 ): Record<string, string> {
   const language = languageOf(model, config, t);
+  const priceUnit = resolvePriceUnit(undefined, config, language);
   const stats = allStats(model);
   const lights = lightsSummary(model);
   const open =
@@ -463,7 +482,7 @@ export function buildBindings(
     indoor: formatNumber(indoor, 1, language),
     indoorSub: t("hero.indoorSub"),
     price: formatPrice(model.price?.now, language),
-    priceSub: t("hero.priceSub"),
+    priceSub: `${priceUnit} · ${t("common.now").toLocaleLowerCase()}`,
     battery: formatNumber(batterySoc, 0, language),
     batterySub:
       batterySoc === null
@@ -500,6 +519,9 @@ export function buildBindings(
     bindings[`s_${card.id}_sub`] = systemCardSub(card, language, t);
   }
 
-  Object.assign(bindings, chapterSummaries(model, language, t));
+  Object.assign(
+    bindings,
+    chapterSummaries(model, config, priceUnit, language, t),
+  );
   return bindings;
 }

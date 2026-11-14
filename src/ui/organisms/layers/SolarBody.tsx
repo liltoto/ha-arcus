@@ -1,5 +1,6 @@
 import { useEffect, type CSSProperties, type ReactNode } from "react";
 import type { HistoryCache } from "../../../data/history";
+import { resolveCurrency, resolveTempUnit } from "../../../format";
 import type {
   ArcusConfig,
   ArcusHass,
@@ -29,7 +30,7 @@ import { BatteryRing } from "./solar/BatteryRing";
 import { DayBars } from "./solar/DayBars";
 import { EnergyFlow } from "./solar/EnergyFlow";
 import { SolarArc } from "./solar/SolarArc";
-import { SolarChart } from "./solar/SolarChart";
+import { SolarChart, type SolarSeries } from "./solar/SolarChart";
 import {
   DAY_MS,
   dailyProductionDays,
@@ -41,6 +42,7 @@ import {
   historySeries,
   dayWindow,
   installedAtValue,
+  isFiniteNumber,
   languageOf,
   normalizeSub,
   pointsOnDate,
@@ -61,6 +63,22 @@ interface SolarContext {
   language: Language;
   now: Date;
   actions: ArcusActions;
+  pv: SolarPvActive;
+}
+
+interface SolarPvActive {
+  pv1: boolean;
+  pv2: boolean;
+  pv3: boolean;
+  pv4: boolean;
+}
+
+/** A string is live when it is wired in config or the model reports a value. */
+function isPvActive(
+  configured: string | undefined,
+  value: number | null | undefined,
+): boolean {
+  return Boolean(configured) || isFiniteNumber(value);
 }
 
 function MiniStat({
@@ -121,48 +139,141 @@ function SolarTotals({ readings }: { readings: SolarReading[] }) {
   );
 }
 
-/** MPPT 3/4 power and voltage plus the current note, shared by two tabs. */
+/** MPPT power and voltage readings for every connected string. */
 function MpptReadings({
   solar,
   t,
   language,
+  pv,
 }: {
   solar: SolarModel;
   t: Translator;
   language: Language;
+  pv: SolarPvActive;
 }) {
+  const show12 = pv.pv1 || pv.pv2;
+  const show34 = !show12 || pv.pv3 || pv.pv4;
+
   return (
     <>
-      <div className={c("readings")}>
-        <Readout
-          label={t("solar.mppt3")}
-          value={fmt(solar.pv3, 0, language)}
-          unit={t("energy.w")}
-        />
-        <Readout
-          label={t("solar.mppt4")}
-          value={fmt(solar.pv4, 0, language)}
-          unit={t("energy.w")}
-        />
-        <Readout
-          label={t("solar.voltage3")}
-          value={fmt(solar.pv3Voltage, 1, language)}
-          unit="V"
-        />
-        <Readout
-          label={t("solar.voltage4")}
-          value={fmt(solar.pv4Voltage, 1, language)}
-          unit="V"
-        />
-      </div>
-      <div className={c("block-note")}>
-        {t("solar.mpptNote", {
-          i3: fmt(solar.pv3Current, 1, language),
-          i4: fmt(solar.pv4Current, 1, language),
-        })}
-      </div>
+      {show12 ? (
+        <div className={c("readings")}>
+          <Readout
+            label={t("solar.mppt1")}
+            value={fmt(solar.pv1, 0, language)}
+            unit={t("energy.w")}
+          />
+          <Readout
+            label={t("solar.mppt2")}
+            value={fmt(solar.pv2, 0, language)}
+            unit={t("energy.w")}
+          />
+          <Readout
+            label={t("solar.voltage1")}
+            value={fmt(solar.pv1Voltage, 1, language)}
+            unit="V"
+          />
+          <Readout
+            label={t("solar.voltage2")}
+            value={fmt(solar.pv2Voltage, 1, language)}
+            unit="V"
+          />
+        </div>
+      ) : null}
+      {show34 ? (
+        <div
+          className={c("readings")}
+          style={show12 ? { marginTop: 10 } : undefined}
+        >
+          <Readout
+            label={t("solar.mppt3")}
+            value={fmt(solar.pv3, 0, language)}
+            unit={t("energy.w")}
+          />
+          <Readout
+            label={t("solar.mppt4")}
+            value={fmt(solar.pv4, 0, language)}
+            unit={t("energy.w")}
+          />
+          <Readout
+            label={t("solar.voltage3")}
+            value={fmt(solar.pv3Voltage, 1, language)}
+            unit="V"
+          />
+          <Readout
+            label={t("solar.voltage4")}
+            value={fmt(solar.pv4Voltage, 1, language)}
+            unit="V"
+          />
+        </div>
+      ) : null}
+      {show12 ? null : (
+        <div className={c("block-note")}>
+          {t("solar.mpptNote", {
+            i3: fmt(solar.pv3Current, 1, language),
+            i4: fmt(solar.pv4Current, 1, language),
+          })}
+        </div>
+      )}
     </>
   );
+}
+
+/** The active string series for a chart, oldest MPPT pair first. */
+function stringChartSeries(
+  config: ArcusConfig,
+  pv: SolarPvActive,
+  t: Translator,
+  values: (entityId: string | undefined) => Array<number | null>,
+): SolarSeries[] {
+  const show12 = pv.pv1 || pv.pv2;
+  const show34 = !show12 || pv.pv3 || pv.pv4;
+  const series: SolarSeries[] = [];
+
+  if (show12) {
+    series.push(
+      {
+        key: windowKey(config.solar?.pv1),
+        values: values(config.solar?.pv1),
+        color: "var(--amber)",
+        label: t("solar.mppt1"),
+      },
+      {
+        key: windowKey(config.solar?.pv2),
+        values: values(config.solar?.pv2),
+        color: "var(--sage)",
+        label: t("solar.mppt2"),
+      },
+    );
+  }
+
+  if (show34) {
+    series.push(
+      {
+        key: windowKey(config.solar?.pv3),
+        values: values(config.solar?.pv3),
+        color: "var(--brass)",
+        label: t("solar.mppt3"),
+      },
+      {
+        key: windowKey(config.solar?.pv4),
+        values: values(config.solar?.pv4),
+        color: "var(--sky)",
+        label: t("solar.mppt4"),
+      },
+    );
+  }
+
+  return series;
+}
+
+function seriesLegend(
+  series: SolarSeries[],
+): Array<{ color: string; label: string }> {
+  return series.map((item) => ({
+    color: item.color,
+    label: item.label ?? "",
+  }));
 }
 
 function entityBounds(
@@ -232,199 +343,257 @@ function ControlRow({
   );
 }
 
-function SolarOverview({ ctx }: { ctx: SolarContext }) {
-  const { solar, config, history, t, language, now, actions } = ctx;
+function gridSeriesFor(
+  config: ArcusConfig,
+  history: HistoryCache,
+  now: Date,
+): SolarSeries[] {
+  const onePhase =
+    Boolean(config.solar?.gridL1) &&
+    !config.solar?.gridL2 &&
+    !config.solar?.gridL3;
+  const series: SolarSeries[] = [
+    {
+      key: windowKey(config.solar?.gridL1),
+      values: historyDaySeries(history, config.solar?.gridL1, now),
+      color: "var(--sky)",
+      label: "L1",
+    },
+  ];
+  if (onePhase) return series;
+  return [
+    ...series,
+    {
+      key: windowKey(config.solar?.gridL2),
+      values: historyDaySeries(history, config.solar?.gridL2, now),
+      color: "var(--brass)",
+      label: "L2",
+    },
+    {
+      key: windowKey(config.solar?.gridL3),
+      values: historyDaySeries(history, config.solar?.gridL3, now),
+      color: "var(--plum)",
+      label: "L3",
+    },
+  ];
+}
+
+interface OverviewReadingsProps {
+  solar: SolarModel;
+  language: Language;
+  t: Translator;
+}
+
+function OverviewReadings({ solar, language, t }: OverviewReadingsProps) {
+  return (
+    <div className={c("readings")}>
+      <Readout
+        label={t("solar.battery")}
+        value={fmt(solar.batterySoc, 0, language)}
+        unit="%"
+      />
+      <Readout
+        label={t("solar.today")}
+        value={fmt(solar.today, 1, language)}
+        unit={t("energy.kwh")}
+      />
+      <Readout
+        label={t("solar.productionNow")}
+        value={fmt(solar.power, 0, language)}
+        unit={t("energy.w")}
+      />
+      <Readout
+        label={t("solar.load")}
+        value={fmt(solar.load, 0, language)}
+        unit={t("energy.w")}
+      />
+    </div>
+  );
+}
+
+interface OverviewPowerChartProps {
+  ctx: SolarContext;
+}
+
+function OverviewPowerChart({ ctx }: OverviewPowerChartProps) {
+  const { solar, config, history, t, now } = ctx;
+  const day = dayWindow(now);
+  return (
+    <div className={c("block")}>
+      <div className={c("block-head")}>
+        <div className={c("block-label")}>{t("solar.power24")}</div>
+        <Legend
+          items={[
+            { color: "var(--amber)", label: t("solar.legendSolar") },
+            { color: "var(--sky)", label: t("solar.legendHouse") },
+            { color: "var(--sage)", label: t("solar.legendBattery") },
+            { color: "var(--muted)", label: t("solar.legendGrid") },
+          ]}
+        />
+      </div>
+      <SolarChart
+        chart="solar-24h"
+        height={150}
+        now={now}
+        empty={t("empty.chart")}
+        shared
+        start={day.start}
+        end={day.end}
+        series={[
+          {
+            key: "solarForecast",
+            values: todayForecastValues(solar, now),
+            color: "var(--amber)",
+            label: t("solar.legendSolar"),
+          },
+          {
+            key: windowKey(config.solar?.load),
+            values: historyDaySeries(history, config.solar?.load, now),
+            color: "var(--sky)",
+            label: t("solar.legendHouse"),
+          },
+          {
+            key: windowKey(config.solar?.batteryPower),
+            values: historyDaySeries(history, config.solar?.batteryPower, now),
+            color: "var(--sage)",
+            label: t("solar.legendBattery"),
+          },
+          {
+            key: windowKey(config.solar?.grid),
+            values: historyDaySeries(history, config.solar?.grid, now),
+            color: "var(--muted)",
+            label: t("solar.legendGrid"),
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
+function OverviewGrid({ ctx }: { ctx: SolarContext }) {
+  const { solar, config, history, t, language, now } = ctx;
   const day = dayWindow(now);
   const grid = solar.grid;
   const gridLabel =
     grid !== null && grid < 0 ? t("solar.gridBuy") : t("solar.gridSell");
-  const heliosPath = config.solar?.heliosPath;
-
   return (
-    <>
+    <div className={c("block")}>
+      <div className={c("block-label")}>{t("solar.gridPhases")}</div>
       <div className={c("readings")}>
+        <Readout label="L1" value={fmt(solar.gridL1, 1, language)} unit="A" />
+        <Readout label="L2" value={fmt(solar.gridL2, 1, language)} unit="A" />
+        <Readout label="L3" value={fmt(solar.gridL3, 1, language)} unit="A" />
         <Readout
-          label={t("solar.battery")}
-          value={fmt(solar.batterySoc, 0, language)}
-          unit="%"
-        />
-        <Readout
-          label={t("solar.today")}
-          value={fmt(solar.today, 1, language)}
-          unit={t("energy.kwh")}
-        />
-        <Readout
-          label={t("solar.productionNow")}
-          value={fmt(solar.power, 0, language)}
-          unit={t("energy.w")}
-        />
-        <Readout
-          label={t("solar.load")}
-          value={fmt(solar.load, 0, language)}
+          label={gridLabel}
+          value={fmt(grid === null ? null : Math.abs(grid), 0, language)}
           unit={t("energy.w")}
         />
       </div>
+      <SolarChart
+        chart="solar-grid-24h"
+        height={110}
+        now={now}
+        empty={t("empty.chart")}
+        shared
+        unit="A"
+        decimals={1}
+        start={day.start}
+        end={day.end}
+        series={gridSeriesFor(config, history, now)}
+      />
+    </div>
+  );
+}
+
+function OverviewButtons({ ctx }: { ctx: SolarContext }) {
+  const { config, t, actions } = ctx;
+  const heliosPath = config.solar?.heliosPath;
+  return (
+    <div className={c("btn-row")}>
+      {heliosPath ? (
+        <button
+          type="button"
+          className={c("btn")}
+          data-act="helios"
+          onClick={() =>
+            actions.performAction({
+              action: "navigate",
+              navigation_path: heliosPath,
+            })
+          }
+        >
+          <Icon name="solar" /> {t("solar.helios")}
+        </button>
+      ) : null}
+      <button
+        type="button"
+        className={c("btn small")}
+        data-nav="sol/produktion"
+        onClick={() => actions.navigate("sol/produktion")}
+      >
+        {t("sheet.tabProduction")}
+      </button>
+      <button
+        type="button"
+        className={c("btn small")}
+        data-nav="sol/batteri"
+        onClick={() => actions.navigate("sol/batteri")}
+      >
+        {t("sheet.tabBattery")}
+      </button>
+      <button
+        type="button"
+        className={c("btn small")}
+        data-nav="sol/prognose"
+        onClick={() => actions.navigate("sol/prognose")}
+      >
+        {t("sheet.tabForecast")}
+      </button>
+      <button
+        type="button"
+        className={c("btn small")}
+        data-nav="sol/afkast"
+        onClick={() => actions.navigate("sol/afkast")}
+      >
+        {t("sheet.tabPayback")}
+      </button>
+    </div>
+  );
+}
+
+function SolarOverview({ ctx }: { ctx: SolarContext }) {
+  const { solar, t, language } = ctx;
+  return (
+    <>
+      <OverviewReadings solar={solar} language={language} t={t} />
       <div className={c("block")}>
         <div className={c("block-label")}>{t("solar.flow")}</div>
         <EnergyFlow solar={solar} language={language} t={t} />
       </div>
-      <div className={c("block")}>
-        <div className={c("block-head")}>
-          <div className={c("block-label")}>{t("solar.power24")}</div>
-          <Legend
-            items={[
-              { color: "var(--amber)", label: t("solar.legendSolar") },
-              { color: "var(--sky)", label: t("solar.legendHouse") },
-              { color: "var(--sage)", label: t("solar.legendBattery") },
-              { color: "var(--muted)", label: t("solar.legendGrid") },
-            ]}
-          />
-        </div>
-        <SolarChart
-          chart="solar-24h"
-          height={150}
-          now={now}
-          empty={t("empty.chart")}
-          shared
-          start={day.start}
-          end={day.end}
-          series={[
-            {
-              key: "solarForecast",
-              values: todayForecastValues(solar, now),
-              color: "var(--amber)",
-              label: t("solar.legendSolar"),
-            },
-            {
-              key: windowKey(config.solar?.load),
-              values: historyDaySeries(history, config.solar?.load, now),
-              color: "var(--sky)",
-              label: t("solar.legendHouse"),
-            },
-            {
-              key: windowKey(config.solar?.batteryPower),
-              values: historyDaySeries(
-                history,
-                config.solar?.batteryPower,
-                now,
-              ),
-              color: "var(--sage)",
-              label: t("solar.legendBattery"),
-            },
-            {
-              key: windowKey(config.solar?.grid),
-              values: historyDaySeries(history, config.solar?.grid, now),
-              color: "var(--muted)",
-              label: t("solar.legendGrid"),
-            },
-          ]}
-        />
-      </div>
-      <div className={c("block")}>
-        <div className={c("block-label")}>{t("solar.gridPhases")}</div>
-        <div className={c("readings")}>
-          <Readout label="L1" value={fmt(solar.gridL1, 1, language)} unit="A" />
-          <Readout label="L2" value={fmt(solar.gridL2, 1, language)} unit="A" />
-          <Readout label="L3" value={fmt(solar.gridL3, 1, language)} unit="A" />
-          <Readout
-            label={gridLabel}
-            value={fmt(grid === null ? null : Math.abs(grid), 0, language)}
-            unit={t("energy.w")}
-          />
-        </div>
-        <SolarChart
-          chart="solar-grid-24h"
-          height={110}
-          now={now}
-          empty={t("empty.chart")}
-          shared
-          unit="A"
-          decimals={1}
-          start={day.start}
-          end={day.end}
-          series={[
-            {
-              key: windowKey(config.solar?.gridL1),
-              values: historyDaySeries(history, config.solar?.gridL1, now),
-              color: "var(--sky)",
-              label: "L1",
-            },
-            {
-              key: windowKey(config.solar?.gridL2),
-              values: historyDaySeries(history, config.solar?.gridL2, now),
-              color: "var(--brass)",
-              label: "L2",
-            },
-            {
-              key: windowKey(config.solar?.gridL3),
-              values: historyDaySeries(history, config.solar?.gridL3, now),
-              color: "var(--plum)",
-              label: "L3",
-            },
-          ]}
-        />
-      </div>
+      <OverviewPowerChart ctx={ctx} />
+      <OverviewGrid ctx={ctx} />
       <div className={c("block")}>
         <div className={c("block-label")}>{t("solar.mppt")}</div>
-        <MpptReadings solar={solar} t={t} language={language} />
+        <MpptReadings solar={solar} t={t} language={language} pv={ctx.pv} />
       </div>
-      <div className={c("btn-row")}>
-        {heliosPath ? (
-          <button
-            type="button"
-            className={c("btn")}
-            data-act="helios"
-            onClick={() =>
-              actions.performAction({
-                action: "navigate",
-                navigation_path: heliosPath,
-              })
-            }
-          >
-            <Icon name="solar" /> {t("solar.helios")}
-          </button>
-        ) : null}
-        <button
-          type="button"
-          className={c("btn small")}
-          data-nav="sol/produktion"
-          onClick={() => actions.navigate("sol/produktion")}
-        >
-          {t("sheet.tabProduction")}
-        </button>
-        <button
-          type="button"
-          className={c("btn small")}
-          data-nav="sol/batteri"
-          onClick={() => actions.navigate("sol/batteri")}
-        >
-          {t("sheet.tabBattery")}
-        </button>
-        <button
-          type="button"
-          className={c("btn small")}
-          data-nav="sol/prognose"
-          onClick={() => actions.navigate("sol/prognose")}
-        >
-          {t("sheet.tabForecast")}
-        </button>
-        <button
-          type="button"
-          className={c("btn small")}
-          data-nav="sol/afkast"
-          onClick={() => actions.navigate("sol/afkast")}
-        >
-          {t("sheet.tabPayback")}
-        </button>
-      </div>
+      <OverviewButtons ctx={ctx} />
     </>
   );
 }
 
 function SolarProduction({ ctx }: { ctx: SolarContext }) {
-  const { solar, config, history, t, language, now } = ctx;
+  const { solar, config, history, t, language, now, pv } = ctx;
   const day = dayWindow(now);
   const days = dailyProductionDays(history, config.solar?.today, now, language);
+  const strings = stringChartSeries(config, pv, t, (id) =>
+    historySeries(history, id, 1, 0),
+  );
+  const productionStrings =
+    pv.pv1 || pv.pv2
+      ? stringChartSeries(config, pv, t, (id) =>
+          historyDaySeries(history, id, now, 0),
+        )
+      : [];
 
   return (
     <>
@@ -479,18 +648,20 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
               color: "var(--text)",
               label: t("solar.actual"),
             },
+            ...productionStrings,
           ]}
         />
         <Legend
           items={[
             { color: "var(--amber)", label: t("solar.forecastToday") },
             { color: "var(--text)", label: t("solar.actual") },
+            ...seriesLegend(productionStrings),
           ]}
         />
       </div>
       <div className={c("block")}>
         <div className={c("block-label")}>{t("solar.strings")}</div>
-        <MpptReadings solar={solar} t={t} language={language} />
+        <MpptReadings solar={solar} t={t} language={language} pv={pv} />
       </div>
       <div className={c("block")}>
         <div className={c("block-label")}>{t("solar.strings24")}</div>
@@ -500,27 +671,9 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
           now={now}
           empty={t("empty.chart")}
           shared
-          series={[
-            {
-              key: windowKey(config.solar?.pv3),
-              values: historySeries(history, config.solar?.pv3, 1, 0),
-              color: "var(--brass)",
-              label: t("solar.mppt3"),
-            },
-            {
-              key: windowKey(config.solar?.pv4),
-              values: historySeries(history, config.solar?.pv4, 1, 0),
-              color: "var(--sky)",
-              label: t("solar.mppt4"),
-            },
-          ]}
+          series={strings}
         />
-        <Legend
-          items={[
-            { color: "var(--brass)", label: t("solar.mppt3") },
-            { color: "var(--sky)", label: t("solar.mppt4") },
-          ]}
-        />
+        <Legend items={seriesLegend(strings)} />
       </div>
       <div className={c("block")}>
         <div className={c("block-label")}>{t("solar.total")}</div>
@@ -559,6 +712,7 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
 
 function SolarBattery({ ctx }: { ctx: SolarContext }) {
   const { solar, config, hass, history, t, language, now, actions } = ctx;
+  const tempUnit = resolveTempUnit(hass, config);
   const minSoc = solarNumber(
     solar,
     hass,
@@ -598,7 +752,7 @@ function SolarBattery({ ctx }: { ctx: SolarContext }) {
         <Readout
           label={t("solar.temperature")}
           value={fmt(solar.batteryTemperature, 1, language)}
-          unit="°C"
+          unit={tempUnit}
         />
         <Readout
           label={t("solar.voltage")}
@@ -613,7 +767,7 @@ function SolarBattery({ ctx }: { ctx: SolarContext }) {
         <Readout
           label={t("solar.inverter")}
           value={fmt(solar.inverterTemperature, 1, language)}
-          unit="°C"
+          unit={tempUnit}
         />
       </div>
       <div className={c("readings")} style={{ marginTop: 10 }}>
@@ -835,6 +989,9 @@ function SolarForecast({ ctx }: { ctx: SolarContext }) {
 
 function SolarPayback({ ctx }: { ctx: SolarContext }) {
   const { solar, config, hass, history, t, language, now, actions } = ctx;
+  const currency = resolveCurrency(hass, config, language);
+  const withCurrency = (text: string): string =>
+    text.replaceAll(t("energy.kr"), currency);
   const investmentSolar = solarNumber(
     solar,
     hass,
@@ -894,45 +1051,47 @@ function SolarPayback({ ctx }: { ctx: SolarContext }) {
           <small>{t("solar.paybackPercent", { value: "" }).trim()}</small>
         </div>
         <div className={c("block-note")}>
-          {t("solar.paybackTotalNote", {
-            total: fmt(total, 0, language),
-            rate: fmt(rate, 2, language),
-          })}
+          {withCurrency(
+            t("solar.paybackTotalNote", {
+              total: fmt(total, 0, language),
+              rate: fmt(rate, 2, language),
+            }),
+          )}
         </div>
       </div>
       <div className={c("readings")}>
         <Readout
           label={t("common.today")}
           value={fmt(today, 0, language)}
-          unit={t("energy.kr")}
+          unit={currency}
         />
         <Readout
           label={t("solar.thisMonth")}
           value={fmt(month, 0, language)}
-          unit={t("energy.kr")}
+          unit={currency}
         />
         <Readout
           label={t("solar.thisYear")}
           value={fmt(year, 0, language)}
-          unit={t("energy.kr")}
+          unit={currency}
         />
         <Readout
           label={t("solar.paybackLeft")}
           value={fmt(left, 0, language)}
-          unit={t("energy.kr")}
+          unit={currency}
         />
       </div>
       <div className={c("mini-grid")} style={{ marginTop: 10 }}>
         <MiniStat
           label={t("sheet.titleSolar")}
           value={fmt(solar.savingsSolar, 0, language)}
-          unit={t("energy.kr")}
+          unit={currency}
           sub={t("solar.paybackSavedTotal")}
         />
         <MiniStat
           label={t("solar.battery")}
           value={fmt(solar.savingsBattery, 0, language)}
-          unit={t("energy.kr")}
+          unit={currency}
           sub={t("solar.paybackSavedTotal")}
         />
       </div>
@@ -942,10 +1101,12 @@ function SolarPayback({ ctx }: { ctx: SolarContext }) {
           {dateLabel}
         </div>
         <div className={c("block-note")}>
-          {t("solar.paybackNote", {
-            rate: fmt(rate, 2, language),
-            investment: fmt(investment, 0, language),
-          })}
+          {withCurrency(
+            t("solar.paybackNote", {
+              rate: fmt(rate, 2, language),
+              investment: fmt(investment, 0, language),
+            }),
+          )}
         </div>
       </div>
       <div className={c("block")}>
@@ -955,7 +1116,7 @@ function SolarPayback({ ctx }: { ctx: SolarContext }) {
           height={110}
           now={now}
           empty={t("empty.chart")}
-          unit="kr"
+          unit={currency}
           decimals={0}
           start={now.getTime() - 30 * DAY_MS}
           end={now.getTime()}
@@ -975,7 +1136,7 @@ function SolarPayback({ ctx }: { ctx: SolarContext }) {
           height={110}
           now={now}
           empty={t("empty.chart")}
-          unit="kr"
+          unit={currency}
           decimals={0}
           start={now.getTime() - 365 * DAY_MS}
           end={now.getTime()}
@@ -1040,6 +1201,54 @@ function SolarTabBody({
   return <SolarOverview ctx={ctx} />;
 }
 
+function activePv(
+  config: ArcusConfig,
+  solar: SolarModel | undefined,
+): SolarPvActive {
+  return {
+    pv1: isPvActive(config.solar?.pv1, solar?.pv1),
+    pv2: isPvActive(config.solar?.pv2, solar?.pv2),
+    pv3: isPvActive(config.solar?.pv3, solar?.pv3),
+    pv4: isPvActive(config.solar?.pv4, solar?.pv4),
+  };
+}
+
+function hasSolarBattery(
+  config: ArcusConfig,
+  solar: SolarModel | undefined,
+): boolean {
+  if (!solar) return false;
+  return (
+    solar.batterySoc !== null ||
+    solar.batteryPower !== null ||
+    Boolean(config.solar?.batterySoc || config.solar?.batteryPower)
+  );
+}
+
+function solarHeaderSummary(
+  solar: SolarModel | undefined,
+  hasData: boolean,
+  hasBattery: boolean,
+  language: Language,
+  t: Translator,
+): string {
+  if (!hasData || !solar) return t("solar.empty");
+  if (hasBattery) {
+    return t("solar.summary", {
+      soc: fmt(solar.batterySoc, 0, language),
+      today: fmt(solar.today, 1, language),
+      power: fmt(solar.power, 0, language),
+    });
+  }
+  const today = t("common.today").toLowerCase();
+  const nowLabel = t("common.now").toLowerCase();
+  return `${fmt(solar.today, 1, language)} kWh ${today} · ${fmt(
+    solar.power,
+    0,
+    language,
+  )} W ${nowLabel}`;
+}
+
 /**
  * The solar sheet, ported from `views/layers/solar.ts`.
  *
@@ -1066,14 +1275,15 @@ export function SolarBody({ route }: LayerBodyProps) {
     ensureHistory(history, config.solar, active);
   }, [history, config.solar, active, hasData]);
 
-  const summary =
-    hasData && solar
-      ? t("solar.summary", {
-          soc: fmt(solar.batterySoc, 0, language),
-          today: fmt(solar.today, 1, language),
-          power: fmt(solar.power, 0, language),
-        })
-      : t("solar.empty");
+  const pv = activePv(config, solar);
+  const hasBattery = hasSolarBattery(config, solar);
+  const summary = solarHeaderSummary(
+    solar,
+    hasData,
+    hasBattery,
+    language,
+    t,
+  );
 
   const tabs = [
     { key: "overblik", label: t("sheet.tabOverview") },
@@ -1120,6 +1330,7 @@ export function SolarBody({ route }: LayerBodyProps) {
               language,
               now,
               actions,
+              pv,
             }}
           />
         ) : (

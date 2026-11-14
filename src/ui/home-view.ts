@@ -156,7 +156,13 @@ export function systemCardView(
   return {
     id: card.id,
     name: card.name,
-    kind: card.id === "ventilation" ? "Nilan · luftskifte" : "Ude · klima",
+    kind:
+      card.id === "ventilation"
+        ? (card.kind ??
+          t("ventilation.systemKind", {
+            name: card.name !== "Ventilation" ? card.name : "Nilan",
+          }))
+        : (card.kind ?? t("ventilation.outsideKind")),
     icon: card.icon,
     tint: card.tint,
     temp: numberFromState(card.temp?.state),

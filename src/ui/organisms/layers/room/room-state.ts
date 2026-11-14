@@ -123,9 +123,18 @@ export function resolveRoom(
   model: HomeModel,
   route: ArcusRoute,
 ): RoomModel | null {
-  const target = route.base === "skur" ? "skur" : route.sub;
+  if (route.base === "skur") {
+    return (
+      model.rooms.find((room) => room.id === "skur") ??
+      model.rooms.find((room) => room.kind === "outdoor") ??
+      null
+    );
+  }
   return (
-    model.rooms.find((room) => room.id === target) ??
+    model.rooms.find((room) => room.id === route.sub) ??
+    model.rooms.find(
+      (room) => room.id !== "skur" && room.kind !== "outdoor",
+    ) ??
     model.rooms.find((room) => room.id !== "skur") ??
     null
   );

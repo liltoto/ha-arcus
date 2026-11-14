@@ -24,6 +24,29 @@ export interface HassEntity {
   context?: Record<string, any>;
 }
 
+export interface FloorRegistryEntry {
+  floor_id?: string;
+  name?: string;
+  icon?: string | null;
+  level?: number | null;
+  [key: string]: any;
+}
+
+export interface HassUnitSystem {
+  temperature?: string;
+  length?: string;
+  volume?: string;
+  pressure?: string;
+  wind_speed?: string;
+  [key: string]: any;
+}
+
+export interface HassConfig {
+  currency?: string;
+  unit_system?: HassUnitSystem;
+  [key: string]: any;
+}
+
 export interface AreaRegistryEntry {
   area_id: string;
   name: string;
@@ -67,6 +90,8 @@ export interface ArcusHass {
   areas: Record<string, AreaRegistryEntry>;
   devices: Record<string, DeviceRegistryEntry>;
   entities: Record<string, EntityRegistryEntry>;
+  floors?: Record<string, FloorRegistryEntry | any>;
+  config?: HassConfig;
   themes?: { darkMode?: boolean };
   language?: string;
   user?: { name?: string };
@@ -133,6 +158,68 @@ export interface ArcusAreasInput {
   order?: string[];
 }
 
+export type RoomKind = "indoor" | "outdoor" | "utility";
+export type TemperatureUnit = "°C" | "°F";
+
+export interface UnitsConfig {
+  currency?: string;
+  price_unit?: string;
+  temperature?: TemperatureUnit;
+  water?: string;
+}
+
+export type VitalPresetKey =
+  | "indoor"
+  | "outdoor"
+  | "price"
+  | "battery"
+  | "solar"
+  | "power"
+  | "humidity"
+  | "co2"
+  | "water"
+  | "security"
+  | "lights";
+
+export interface CustomVitalConfig {
+  key?: VitalPresetKey;
+  label?: string;
+  entity?: string;
+  unit?: string;
+  route?: string;
+  decimals?: number;
+  color?: string;
+}
+
+export type VitalItemConfig = VitalPresetKey | CustomVitalConfig;
+
+export interface HeatingConfig {
+  include?: string[];
+  exclude?: string[];
+  reserve?: string[];
+}
+
+export interface EnergyApplianceConfig {
+  name: string;
+  entity: string;
+  icon?: string;
+}
+
+export interface EnergyEvConfig {
+  name?: string;
+  plugged?: string;
+  power?: string;
+  session?: string;
+  total?: string;
+  soc?: string;
+}
+
+export interface EnergyConfig {
+  standby?: string;
+  ev?: EnergyEvConfig;
+  appliances?: EnergyApplianceConfig[];
+}
+
 export interface PriceConfig {
   current?: string;
   sell?: string;
@@ -158,6 +245,8 @@ export interface SolarConfig {
   load?: string;
   grid?: string;
   batteryPower?: string;
+  pv1?: string;
+  pv2?: string;
   pv3?: string;
   pv4?: string;
   totalProduction?: string;
@@ -182,6 +271,10 @@ export interface SolarConfig {
   gridL1?: string;
   gridL2?: string;
   gridL3?: string;
+  pv1Voltage?: string;
+  pv1Current?: string;
+  pv2Voltage?: string;
+  pv2Current?: string;
   pv3Voltage?: string;
   pv3Current?: string;
   pv4Voltage?: string;
@@ -218,6 +311,7 @@ export interface PrayersConfig {
 }
 
 export interface WaterConfig {
+  softenerName?: string;
   state?: string;
   flow?: string;
   day?: string;
@@ -255,6 +349,7 @@ export interface EconomyConfig {
 }
 
 export interface VentilationConfig {
+  name?: string;
   temperature?: string;
   humidity?: string;
   step?: string;
@@ -285,6 +380,8 @@ export interface SecurityConfig {
   windows?: string;
   leaks?: string[];
   batteries?: string[];
+  locks?: string[];
+  alarm?: string;
 }
 
 export interface OpeningOverrideConfig {
@@ -300,21 +397,27 @@ export interface RoomOverrideConfig {
   pm25?: string;
   lights?: string[];
   openings?: OpeningOverrideConfig[];
+  covers?: string[];
+  lock?: string;
   climate?: string;
   media?: string;
   leak?: string;
   battery?: string;
   name?: string;
   tint?: string;
+  icon?: string;
+  kind?: RoomKind;
+  wide?: boolean;
 }
 
-/** YAML shape for a room override: a single light/opening may be a string. */
+/** YAML shape for a room override: a single light/opening/cover may be a string. */
 export interface RoomOverrideInput extends Omit<
   RoomOverrideConfig,
-  "lights" | "openings"
+  "lights" | "openings" | "covers"
 > {
   lights?: string | string[];
   openings?: Array<string | OpeningOverrideConfig>;
+  covers?: string | string[];
 }
 
 export type RoomsConfig = Record<string, RoomOverrideConfig>;
@@ -342,15 +445,23 @@ export interface ArcusConfigInput {
   appearance?: AppearanceSetting;
   atmosphere?: AtmosphereSetting;
   density?: DensitySetting;
+  auto_discover?: boolean;
+  group_by_floor?: boolean;
+  person?: string;
+  units?: UnitsConfig;
+  vitals?: VitalItemConfig[];
+  chapter_order?: ChapterKey[];
   areas?: string[] | ArcusAreasInput;
   weather?: string;
   price?: PriceConfig;
+  energy?: EnergyConfig;
   solar?: SolarConfig;
   prayers?: PrayersConfig;
   water?: WaterConfig;
   network?: NetworkConfig;
   economy?: EconomyConfig;
   ventilation?: VentilationConfig;
+  heating?: HeatingConfig;
   security?: SecurityConfig;
   quick_actions?: QuickActionConfig[];
   rooms?: RoomsInput;
@@ -366,15 +477,23 @@ export interface ArcusConfig {
   appearance: AppearanceSetting;
   atmosphere: AtmosphereSetting;
   density: DensitySetting;
+  auto_discover?: boolean;
+  group_by_floor?: boolean;
+  person?: string;
+  units?: UnitsConfig;
+  vitals?: VitalItemConfig[];
+  chapter_order?: ChapterKey[];
   areas: ArcusAreas;
   weather?: string;
   price?: PriceConfig;
+  energy?: EnergyConfig;
   solar?: SolarConfig;
   prayers?: PrayersConfig;
   water?: WaterConfig;
   network?: NetworkConfig;
   economy?: EconomyConfig;
   ventilation?: VentilationConfig;
+  heating?: HeatingConfig;
   security?: SecurityConfig;
   quick_actions: QuickActionConfig[];
   rooms: RoomsConfig;
@@ -421,6 +540,10 @@ export interface RoomModel {
   name: string;
   icon: string;
   wide?: boolean;
+  kind?: RoomKind;
+  floorId?: string | null;
+  floorName?: string | null;
+  floorLevel?: number | null;
   tint: string;
   temp?: EntityRef | null;
   tempFallback?: EntityRef | null;
@@ -429,6 +552,8 @@ export interface RoomModel {
   pm25?: EntityRef | null;
   lights: LightGroupModel[];
   openings: OpeningModel[];
+  covers?: EntityRef[];
+  lock?: EntityRef | null;
   climate?: EntityRef | null;
   media?: EntityRef | null;
   leak?: EntityRef | null;
@@ -476,6 +601,8 @@ export interface SolarModel {
   load: number | null;
   grid: number | null;
   batteryPower: number | null;
+  pv1?: number | null;
+  pv2?: number | null;
   pv3: number | null;
   pv4: number | null;
   totalProduction: number | null;
@@ -509,6 +636,10 @@ export interface SolarModel {
   gridL1?: number | null;
   gridL2?: number | null;
   gridL3?: number | null;
+  pv1Voltage?: number | null;
+  pv1Current?: number | null;
+  pv2Voltage?: number | null;
+  pv2Current?: number | null;
   pv3Voltage?: number | null;
   pv3Current?: number | null;
   pv4Voltage?: number | null;
@@ -541,6 +672,7 @@ export interface PrayersModel {
 }
 
 export interface WaterModel {
+  softenerName?: string | null;
   state?: string | null;
   flow?: number | null;
   day?: number | null;
@@ -602,6 +734,7 @@ export interface EconomyModel {
 }
 
 export interface VentilationModel {
+  name?: string | null;
   temperature?: number | null;
   humidity?: number | null;
   step?: number | null;
@@ -630,6 +763,14 @@ export interface SecurityBatteryModel {
   level: number | null;
 }
 
+export interface SecurityLockModel {
+  entityId: string;
+  name: string;
+  locked: boolean;
+  state: string;
+  room?: string;
+}
+
 export interface HeatingModel {
   name: string;
   entity: EntityRef;
@@ -650,6 +791,7 @@ export interface SkurModel {
 export interface SystemCardModel {
   id: string;
   name: string;
+  kind?: string;
   icon: string;
   tint: string;
   temp?: EntityRef | null;
@@ -665,8 +807,19 @@ export interface SecurityModel {
   leak?: boolean;
   openings?: OpeningModel[];
   batteries?: SecurityBatteryModel[];
+  locks?: SecurityLockModel[];
+  alarm?: EntityRef | null;
   windowAlert?: boolean;
   [key: string]: any;
+}
+
+export interface SunModel {
+  state?: string;
+  elevation?: number | null;
+  rising?: boolean;
+  nextRising?: Date | null;
+  nextSetting?: Date | null;
+  nextNoon?: Date | null;
 }
 
 export interface AlertModel {
@@ -690,6 +843,7 @@ export interface HomeModel {
   /** Ventilation/skur cards shown after the room grid. */
   systemCards: SystemCardModel[];
   skur?: SkurModel | null;
+  sun?: SunModel;
   weather?: WeatherModel;
   price?: PriceModel;
   /** Optional alias of the price/energy section used by the energy sheet. */
