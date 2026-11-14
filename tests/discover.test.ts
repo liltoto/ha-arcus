@@ -415,8 +415,7 @@ describe("discoverRooms", () => {
       ["laundry_da", null, "Bryggers"],
       ["laundry_en", null, "Laundry"],
       ["hall_da", null, "Entre"],
-      // "hall" is matched before "hallway", so the English name reads as a
-      // door rather than a staircase.
+      // "hallway" reads as a staircase while a bare "hall" stays a door.
       ["hall_en", null, "Hallway"],
       ["stairs", null, "Gang"],
       ["shed_da", null, "Skur"],
@@ -439,7 +438,7 @@ describe("discoverRooms", () => {
       "washer",
       "washer",
       "door",
-      "door",
+      "stairs",
       "stairs",
       "shed",
       "shed",
@@ -448,6 +447,12 @@ describe("discoverRooms", () => {
       "home",
       "home",
     ]);
+  });
+
+  test("a bare hall still reads as a door", () => {
+    const rooms = discoverAreaSpecs([["hall", null, "Hall"]]);
+
+    expect(rooms.map((room) => room.icon)).toEqual(["door"]);
   });
 
   test("a room icon override wins over the area icon", () => {

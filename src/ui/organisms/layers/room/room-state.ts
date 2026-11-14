@@ -12,7 +12,7 @@ import type { ArcusRoute } from "../../../types";
 
 const ON_STATES = new Set(["on", "open", "home", "playing"]);
 
-export function liveEntity(
+function liveEntity(
   hass: ArcusHass,
   entityId: string | null | undefined,
 ): HassEntity | undefined {

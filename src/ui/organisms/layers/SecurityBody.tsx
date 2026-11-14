@@ -1,12 +1,5 @@
-import { useState, type CSSProperties } from "react";
-import { formatNumber } from "../../../format";
-import type {
-  ArcusHass,
-  HomeModel,
-  OpeningModel,
-  SecurityBatteryModel,
-  Translator,
-} from "../../../types";
+import { useState } from "react";
+import type { SecurityLockModel } from "../../../types";
 import {
   useActions,
   useConfig,
@@ -14,87 +7,17 @@ import {
   useModel,
   useTranslator,
 } from "../../hooks";
-import { EmptyState } from "../../atoms/EmptyState";
-import { Icon } from "../../atoms/Icon";
-import { BatteryRow } from "../../molecules/BatteryRow";
-import { ConfirmBar } from "../../molecules/ConfirmBar";
-import { OpeningRow } from "../../molecules/OpeningRow";
 import { SheetHeader } from "../../molecules/SheetHeader";
-import { ToggleRow } from "../../molecules/ToggleRow";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { c } from "../../styles/classes";
-
-interface SecurityOpening extends OpeningModel {
-  isLeak: boolean;
-}
-
-const HOUSE_CELLS = [
-  { x: 10, y: 10, w: 125, h: 95, cx: 72, labelY: 34, dotY: 78 },
-  { x: 145, y: 10, w: 125, h: 95, cx: 207, labelY: 34, dotY: 78 },
-  { x: 280, y: 10, w: 125, h: 95, cx: 342, labelY: 34, dotY: 78 },
-  { x: 415, y: 10, w: 135, h: 95, cx: 482, labelY: 34, dotY: 78 },
-  { x: 10, y: 115, w: 125, h: 95, cx: 72, labelY: 139, dotY: 183 },
-  { x: 145, y: 115, w: 125, h: 95, cx: 207, labelY: 139, dotY: 183 },
-  { x: 280, y: 115, w: 125, h: 95, cx: 342, labelY: 139, dotY: 183 },
-  { x: 415, y: 115, w: 135, h: 95, cx: 482, labelY: 139, dotY: 183 },
-] as const;
-
-function alarmStateLabel(t: Translator, state: string | null): string {
-  if (state === "armed_home") return t("security.armedHome");
-  if (state === "armed_away") return t("security.armedAway");
-  if (state === "disarmed") return t("security.disarmed");
-  return state || "–";
-}
-
-function liveOn(hass: ArcusHass, entityId: string): boolean | null {
-  const state = hass.states?.[entityId]?.state;
-  if (state === "on" || state === "open") return true;
-  if (state === "off" || state === "closed") return false;
-  return null;
-}
-
-function entityName(
-  hass: ArcusHass,
-  entityId: string,
-  fallback: string,
-): string {
-  const friendly = hass.states?.[entityId]?.attributes?.friendly_name;
-  return typeof friendly === "string" && friendly.trim() ? friendly : fallback;
-}
-
-function openingIcon(opening: SecurityOpening): string {
-  if (opening.isLeak) return "drop";
-  if (/vindue|window/i.test(opening.kind)) return "wind";
-  return "door";
-}
-
-function roomForOpening(
-  model: HomeModel,
-  opening: SecurityOpening,
-): HomeModel["rooms"][number] | null {
-  if (!opening.room) return null;
-  return (
-    model.rooms.find(
-      (room) => room.name === opening.room || room.id === opening.room,
-    ) ?? null
-  );
-}
-
-function UnknownBatteryRow({ battery }: { battery: SecurityBatteryModel }) {
-  return (
-    <div className={c("row")}>
-      <Icon name="battery" />
-      <span className={c("row-main")}>
-        <div className={c("row-name")}>{battery.name}</div>
-        <div className={c("row-sub")}>–</div>
-      </span>
-      <div className={c("bar")} data-batt={battery.entityId}>
-        <i style={{ width: "0%" }} />
-      </div>
-      <span className={c("row-val")}>–</span>
-    </div>
-  );
-}
+import { SecurityAlarm } from "./security/SecurityAlarm";
+import { SecurityAutomation } from "./security/SecurityAutomation";
+import { SecurityBatteries } from "./security/SecurityBatteries";
+import { SecurityEmpty } from "./security/SecurityEmpty";
+import { SecurityHouseMap } from "./security/SecurityHouseMap";
+import { SecurityLocks } from "./security/SecurityLocks";
+import { SecurityOpenings } from "./security/SecurityOpenings";
+import { resolveSecurityView } from "./security/security-view";
 
 /**
  * Security: the house schematic, every door/window/leak, battery levels, the
@@ -117,194 +40,55 @@ export function SecurityBody(_props: LayerBodyProps) {
   const close = () => actions.closeSheet();
 
   if (!security) {
-    return (
-      <div
-        data-react-layer
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          flex: "1 1 auto",
-          minHeight: 0,
-        }}
-      >
-        <SheetHeader
-          kicker={t("sheet.kickerSecurity")}
-          title={t("sheet.titleSecurity")}
-          sum="–"
-          closeLabel={t("sheet.close")}
-          onClose={close}
-        />
-        <div className={c("sheet-scroll")}>
-          <EmptyState icon="shield" title={t("empty.data")} />
-        </div>
-      </div>
-    );
+    return <SecurityEmpty t={t} onClose={close} />;
   }
 
-  const language = model.language;
-  const fmt = (value: number | null | undefined, digits = 0) =>
-    formatNumber(value, digits, language);
-  const locks = security.locks ?? [];
-  const alarmId = security.alarm?.entityId ?? config.security?.alarm ?? null;
-  const alarmState = alarmId
-    ? (hass.states?.[alarmId]?.state ?? security.alarm?.state ?? "unknown")
-    : null;
-
-  const leakIds = config.security?.leaks ?? [];
-  const leakSet = new Set(leakIds);
-  const openings: SecurityOpening[] = (security.openings ?? []).map(
-    (opening) => ({
-      ...opening,
-      isLeak:
-        leakSet.has(opening.id) ||
-        /lækage|leak|vand/i.test(`${opening.kind} ${opening.name}`),
-    }),
-  );
-  for (const [index, entityId] of leakIds.entries()) {
-    if (openings.some((opening) => opening.id === entityId)) continue;
-    const fallback =
-      index === 0
-        ? t("water.kitchen")
-        : index === 1
-          ? t("water.utility")
-          : `${t("water.leak")} ${index + 1}`;
-    openings.push({
-      id: entityId,
-      name: entityName(hass, entityId, fallback),
-      kind: t("water.leak"),
-      room: "",
-      isLeak: true,
-    });
-  }
-
-  const openStates = new Map<string, boolean>();
-  let remainingOpen = security.open ?? 0;
-  for (const opening of openings) {
-    let state = liveOn(hass, opening.id);
-    if (state === null) {
-      if (opening.isLeak) {
-        state = Boolean(security.leak);
-      } else if (remainingOpen > 0) {
-        state = true;
-        remainingOpen -= 1;
-      } else {
-        state = false;
-      }
-    }
-    openStates.set(opening.id, state);
-  }
-
-  const openCount =
-    security.open ??
-    openings.filter(
-      (opening) => !opening.isLeak && openStates.get(opening.id) === true,
-    ).length;
-  const leak =
-    Boolean(security.leak) ||
-    openings.some(
-      (opening) => opening.isLeak && openStates.get(opening.id) === true,
-    );
-
-  const houseRooms = model.rooms.slice(0, HOUSE_CELLS.length);
-  const cellForOpening = (opening: SecurityOpening, index: number): number => {
-    const room = roomForOpening(model, opening);
-    const roomIndex = room
-      ? houseRooms.findIndex((candidate) => candidate.id === room.id)
-      : -1;
-    return roomIndex >= 0 ? roomIndex : index % HOUSE_CELLS.length;
-  };
-
-  const houseDots = openings.map((opening, index) => {
-    const cellIndex = cellForOpening(opening, index);
-    const cell = HOUSE_CELLS[cellIndex];
-    const slot = openings
-      .slice(0, index)
-      .filter(
-        (_candidate, candidateIndex) =>
-          cellForOpening(openings[candidateIndex], candidateIndex) ===
-          cellIndex,
-      ).length;
-    const x = cell.cx + ((slot % 3) - 1) * 13;
-    const y = cell.dotY + Math.floor(slot / 3) * 10;
-    return (
-      <circle
-        key={opening.id}
-        cx={x}
-        cy={y}
-        r="4"
-        className={c("house-dot", openStates.get(opening.id) && "open")}
-        data-open={opening.id}
-      />
-    );
-  });
-
-  const openingRows = openings.map((opening) => {
-    const open = openStates.get(opening.id) === true;
-    const room = roomForOpening(model, opening);
-    const roomName = opening.room || room?.name || "";
-    const status = opening.isLeak
-      ? open
-        ? t("security.alarm")
-        : t("security.dry")
-      : open
-        ? t("security.openUpper")
-        : t("security.closedUpper");
-    const nav = opening.isLeak ? "vand" : room ? `rum/${room.id}` : "sikkerhed";
-
-    return (
-      <div key={opening.id} data-nav={nav}>
-        <OpeningRow
-          name={opening.name}
-          kind={opening.kind}
-          room={roomName}
-          isOpen={open}
-          icon={openingIcon(opening)}
-          status={status}
-          onClick={() => actions.navigate(nav)}
-        />
-      </div>
-    );
-  });
-
-  const batteries: SecurityBatteryModel[] = [
-    ...(security.batteries ?? []),
-  ].sort((a, b) => (a.level ?? 101) - (b.level ?? 101));
-  const lowBattery = batteries.filter(
-    (battery) => battery.level !== null && battery.level < 20,
-  ).length;
-  const alertId = config.security?.windowAlert;
-  const alertOn = alertId
-    ? (liveOn(hass, alertId) ?? Boolean(security.windowAlert))
-    : Boolean(security.windowAlert);
-  const openWindows = security.windows ?? security.open ?? 0;
-  const alertCount = model.alerts?.length ?? 0;
+  const view = resolveSecurityView(hass, model, config, security, t);
 
   const toggleWindowAlert = (): void => {
-    if (!alertId) return;
-    if (alertOn) {
+    if (!view.alertId) return;
+    if (view.alertOn) {
       setConfirmingAlertOff(true);
       return;
     }
-    actions.callService("input_boolean", "toggle", {}, { entity_id: alertId });
+    actions.callService(
+      "input_boolean",
+      "toggle",
+      {},
+      { entity_id: view.alertId },
+    );
   };
 
   const confirmAlertOff = (): void => {
-    if (alertId) {
+    if (view.alertId) {
       actions.callService(
         "input_boolean",
         "toggle",
         {},
-        { entity_id: alertId },
+        { entity_id: view.alertId },
       );
     }
     setConfirmingAlertOff(false);
   };
 
-  const summary = `${
-    openCount
-      ? t("security.summaryOpen", { count: openCount })
-      : t("security.summaryClosed")
-  } · ${leak ? t("security.leakDetected") : t("security.noLeak")}`;
+  const toggleLock = (lock: SecurityLockModel): void => {
+    actions.callService(
+      "lock",
+      lock.locked ? "unlock" : "lock",
+      {},
+      { entity_id: lock.entityId },
+    );
+  };
+
+  const callAlarm = (service: string): void => {
+    if (!view.alarmId) return;
+    actions.callService(
+      "alarm_control_panel",
+      service,
+      {},
+      { entity_id: view.alarmId },
+    );
+  };
 
   return (
     <div
@@ -319,304 +103,51 @@ export function SecurityBody(_props: LayerBodyProps) {
       <SheetHeader
         kicker={t("sheet.kickerSecurity")}
         title={t("sheet.titleSecurity")}
-        sum={summary}
+        sum={view.summary}
         closeLabel={t("sheet.close")}
         onClose={close}
       />
       <div className={c("sheet-scroll")}>
-        <div className={c("block")}>
-          <div className={c("block-label")}>{t("security.houseNow")}</div>
-          <div className={c("house-wrap")}>
-            <svg
-              viewBox="0 0 560 220"
-              className={c("house-svg")}
-              aria-hidden="true"
-            >
-              {HOUSE_CELLS.map((cell, index) => {
-                const room = houseRooms[index];
-                const label = room
-                  ? (room.name.length > 12
-                      ? `${room.name.slice(0, 11)}…`
-                      : room.name
-                    ).toLocaleUpperCase()
-                  : "";
-                return (
-                  <g key={index}>
-                    <rect
-                      x={cell.x}
-                      y={cell.y}
-                      width={cell.w}
-                      height={cell.h}
-                      rx="8"
-                      className={c("house-room")}
-                    />
-                    {room ? (
-                      <text
-                        x={cell.cx}
-                        y={cell.labelY}
-                        textAnchor="middle"
-                        className={c("house-name")}
-                      >
-                        {label}
-                      </text>
-                    ) : null}
-                  </g>
-                );
-              })}
-              {houseDots}
-            </svg>
-            <div className={c("legend")}>
-              <span>
-                <i style={{ "--c": "var(--sage)" } as CSSProperties} />
-                {t("security.closed")}
-              </span>
-              <span>
-                <i style={{ "--c": "var(--coral)" } as CSSProperties} />
-                {t("security.open")}
-              </span>
-            </div>
-            <div className={c("chip-row")} data-security-chips>
-              <span
-                className={c("chip", leak ? "crit" : "on")}
-                data-chip="leak"
-                data-sev={leak ? "crit" : "ok"}
-              >
-                {leak ? t("security.leakDetected") : t("security.noLeak")}
-              </span>
-              <span
-                className={c("chip", openCount ? "warn" : "on")}
-                data-chip="open"
-                data-sev={openCount ? "warn" : "ok"}
-              >
-                {openCount
-                  ? t("security.summaryOpen", { count: openCount })
-                  : t("security.summaryClosed")}
-              </span>
-              {lowBattery ? (
-                <span
-                  className={c("chip warn")}
-                  data-chip="battery"
-                  data-sev="warn"
-                >
-                  {t("security.batteries")}
-                </span>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        {locks.length ? (
-          <div className={c("block")}>
-            <div className={c("block-label")}>{t("security.locks")}</div>
-            <div className={c("list")}>
-              {locks.map((lock) => (
-                <div className={c("row")} key={lock.entityId}>
-                  <Icon name="shield" />
-                  <div className={c("row-main")}>
-                    <div className={c("row-name")}>{lock.name}</div>
-                    {lock.room ? (
-                      <div className={c("row-sub")}>{lock.room}</div>
-                    ) : null}
-                  </div>
-                  <span className={c("chip", lock.locked ? "on" : "warn")}>
-                    {lock.locked
-                      ? t("security.locked")
-                      : t("security.unlocked")}
-                  </span>
-                  <button
-                    type="button"
-                    className={c("toggle", lock.locked && "on")}
-                    data-act="toggle-lock"
-                    data-entity={lock.entityId}
-                    aria-label={lock.name}
-                    aria-pressed={lock.locked}
-                    onClick={() =>
-                      actions.callService(
-                        "lock",
-                        lock.locked ? "unlock" : "lock",
-                        {},
-                        { entity_id: lock.entityId },
-                      )
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+        <SecurityHouseMap
+          rooms={model.rooms}
+          dots={view.dots}
+          leak={view.leak}
+          openCount={view.openCount}
+          lowBattery={view.lowBattery}
+          t={t}
+        />
+        {view.locks.length ? (
+          <SecurityLocks locks={view.locks} t={t} onToggle={toggleLock} />
         ) : null}
-
-        {alarmId ? (
-          <div className={c("block")}>
-            <div className={c("block-head")}>
-              <div className={c("block-label")}>{t("security.alarmPanel")}</div>
-              <div className={c("block-label")}>
-                <b>{alarmStateLabel(t, alarmState)}</b>
-              </div>
-            </div>
-            <div className={c("btn-row")}>
-              <button
-                type="button"
-                className={c("btn small")}
-                data-act="alarm-arm-home"
-                data-entity={alarmId}
-                onClick={() =>
-                  actions.callService(
-                    "alarm_control_panel",
-                    "alarm_arm_home",
-                    {},
-                    { entity_id: alarmId },
-                  )
-                }
-              >
-                {t("security.armedHome")}
-              </button>
-              <button
-                type="button"
-                className={c("btn small")}
-                data-act="alarm-arm-away"
-                data-entity={alarmId}
-                onClick={() =>
-                  actions.callService(
-                    "alarm_control_panel",
-                    "alarm_arm_away",
-                    {},
-                    { entity_id: alarmId },
-                  )
-                }
-              >
-                {t("security.armedAway")}
-              </button>
-              <button
-                type="button"
-                className={c("btn small")}
-                data-act="alarm-disarm"
-                data-entity={alarmId}
-                onClick={() =>
-                  actions.callService(
-                    "alarm_control_panel",
-                    "alarm_disarm",
-                    {},
-                    { entity_id: alarmId },
-                  )
-                }
-              >
-                {t("security.disarmed")}
-              </button>
-            </div>
-          </div>
+        {view.alarmId ? (
+          <SecurityAlarm
+            alarmId={view.alarmId}
+            alarmState={view.alarmState}
+            t={t}
+            onCall={callAlarm}
+          />
         ) : null}
-
-        <div className={c("block")}>
-          <div className={c("block-head")}>
-            <div className={c("block-label")}>{t("security.doorsWindows")}</div>
-            <div className={c("block-label")}>
-              <b>
-                {openCount
-                  ? t("security.summaryOpen", { count: openCount })
-                  : t("security.summaryClosed")}
-              </b>
-            </div>
-          </div>
-          <div className={c("list")}>
-            {openingRows.length ? (
-              openingRows
-            ) : (
-              <div className={c("block-note")}>{t("empty.data")}</div>
-            )}
-          </div>
-        </div>
-
-        {batteries.length ? (
-          <div className={c("block")}>
-            <div className={c("block-head")}>
-              <div className={c("block-label")}>{t("security.batteries")}</div>
-              <div className={c("block-label")}>
-                <b>{t("security.lowestFirst")}</b>
-              </div>
-            </div>
-            <div className={c("battery-list")}>
-              {batteries.map((battery) =>
-                battery.level === null ? (
-                  <UnknownBatteryRow key={battery.entityId} battery={battery} />
-                ) : (
-                  <BatteryRow
-                    key={battery.entityId}
-                    name={battery.name}
-                    value={battery.level}
-                    sub={
-                      battery.level < 20
-                        ? t("security.changeSoon")
-                        : t("security.ok")
-                    }
-                    entity={battery.entityId}
-                  />
-                ),
-              )}
-            </div>
-          </div>
+        <SecurityOpenings
+          rows={view.openings}
+          openCount={view.openCount}
+          t={t}
+          onNavigate={actions.navigate}
+        />
+        {view.batteries.length ? (
+          <SecurityBatteries batteries={view.batteries} t={t} />
         ) : null}
-
-        <div className={c("block")}>
-          <div className={c("block-label")}>{t("security.automation")}</div>
-          {alertId ? (
-            <ToggleRow
-              label={t("security.windowAlert")}
-              sub={t("security.windowAlertSub")}
-              isOn={alertOn}
-              dataAct="toggle-bool"
-              dataEntity={alertId}
-              onChange={toggleWindowAlert}
-            />
-          ) : (
-            <div className={c("row")}>
-              <span className={c("row-main")}>
-                <div className={c("row-name")}>{t("security.windowAlert")}</div>
-                <div className={c("row-sub")}>
-                  {t("security.windowAlertSub")}
-                </div>
-              </span>
-              <span className={c("row-val")}>
-                {alertOn ? t("common.on") : t("common.off")}
-              </span>
-            </div>
-          )}
-          <div className={c("row")}>
-            <span className={c("row-main")}>
-              <div className={c("row-name")}>{t("security.openWindows")}</div>
-              <div className={c("row-sub")}>{t("security.liveCount")}</div>
-            </span>
-            <span className={c("row-val")}>{fmt(openWindows, 0)}</span>
-          </div>
-          <div className={c("row")}>
-            <Icon name="bell" />
-            <div className={c("row-main")}>
-              <div className={c("row-name")}>{t("sheet.titleAlerts")}</div>
-              <div className={c("row-sub")}>
-                {alertCount
-                  ? t("alerts.summaryCount", { count: alertCount })
-                  : t("alerts.summaryCalm")}
-              </div>
-            </div>
-            <button
-              type="button"
-              className={c("btn small")}
-              data-act="alarm-action"
-              onClick={() => actions.navigate("alarmer")}
-            >
-              {t("alerts.see")}
-            </button>
-          </div>
-          {confirmingAlertOff ? (
-            <ConfirmBar
-              text={t("security.windowAlertSub")}
-              confirmAct="toggle-bool"
-              confirmLabel={t("common.confirm")}
-              cancelLabel={t("common.cancel")}
-              onConfirm={confirmAlertOff}
-              onCancel={() => setConfirmingAlertOff(false)}
-            />
-          ) : null}
-        </div>
+        <SecurityAutomation
+          alertId={view.alertId}
+          alertOn={view.alertOn}
+          openWindowsLabel={view.openWindowsLabel}
+          alertCount={view.alertCount}
+          confirming={confirmingAlertOff}
+          t={t}
+          onToggleWindowAlert={toggleWindowAlert}
+          onConfirmAlertOff={confirmAlertOff}
+          onCancelAlertOff={() => setConfirmingAlertOff(false)}
+          onOpenAlerts={() => actions.navigate("alarmer")}
+        />
       </div>
     </div>
   );

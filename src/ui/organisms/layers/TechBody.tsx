@@ -1,24 +1,20 @@
-import type { CSSProperties } from "react";
-import type { HistoryCache } from "../../../data/history";
 import { formatNumber } from "../../../format";
 import { EmptyState } from "../../atoms/EmptyState";
 import { useHistoryFrame } from "../../hooks/useLayerFrame";
-import { HistoryChart } from "../../molecules/HistoryChart";
-import { ListRow } from "../../molecules/ListRow";
-import { Readout } from "../../molecules/Readout";
 import { SheetHeader } from "../../molecules/SheetHeader";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { c } from "../../styles/classes";
+import { TechInverter } from "./tech/TechInverter";
+import { TechQuality, TechReadings } from "./tech/TechLatency";
+import { TechPulse } from "./tech/TechPulse";
+import { seriesOf, techStatus, type TechFormat } from "./tech/tech-view";
 
-function seriesOf(
-  history: HistoryCache,
-  entityId: string | undefined,
-): Array<number | null> {
-  if (!entityId) return [];
-  return typeof history.series === "function"
-    ? history.series(entityId, { fill: "hold" })
-    : [];
-}
+const SHEET_STYLE = {
+  display: "flex",
+  flexDirection: "column",
+  flex: "1 1 auto",
+  minHeight: 0,
+} as const;
 
 /**
  * Tech: router/Google/Cloudflare latency, packet loss, jitter and the
@@ -30,43 +26,13 @@ export function TechBody(_props: LayerBodyProps) {
   const { model, config, history, t, now, actions } = useHistoryFrame();
 
   const language = model.language;
-  const fmt = (value: number | null | undefined, digits = 1) =>
+  const fmt: TechFormat = (value, digits = 1) =>
     formatNumber(value, digits, language);
-  const hoursUnit = language === "da" ? "t" : "h";
-
   const tech = model.tech;
-  const router = tech?.router ?? null;
-  const google = tech?.google ?? null;
-  const cloudflare = tech?.cloudflare ?? null;
-  const loss = tech?.packetLoss ?? null;
-  const loss7 = tech?.packetLoss7d ?? null;
-  const jitter = tech?.jitter ?? null;
-  const online = tech?.routerOnline;
-  const status =
-    online === true
-      ? t("tech.responds")
-      : online === false
-        ? t("tech.notResponding")
-        : "–";
-  const statusLabel =
-    online === true ? t("common.ok") : online === false ? t("tech.down") : "–";
-
-  const routerSeries = seriesOf(history, config.network?.router);
-  const googleSeries = seriesOf(history, config.network?.google);
-  const cloudflareSeries = seriesOf(history, config.network?.cloudflare);
-  const nowMs = now().getTime();
 
   if (!tech) {
     return (
-      <div
-        data-react-layer
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          flex: "1 1 auto",
-          minHeight: 0,
-        }}
-      >
+      <div data-react-layer style={SHEET_STYLE}>
         <SheetHeader
           kicker={t("sheet.kickerTech")}
           title={t("sheet.titleTech")}
@@ -81,181 +47,33 @@ export function TechBody(_props: LayerBodyProps) {
     );
   }
 
-  const uptime =
-    tech.uptime === null || tech.uptime === undefined
-      ? "–"
-      : Math.round(tech.uptime / 3600);
+  const status = techStatus(t, tech.routerOnline);
+  const nowMs = now().getTime();
 
   return (
-    <div
-      data-react-layer
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        flex: "1 1 auto",
-        minHeight: 0,
-      }}
-    >
+    <div data-react-layer style={SHEET_STYLE}>
       <SheetHeader
         kicker={t("sheet.kickerTech")}
         title={t("sheet.titleTech")}
         sum={t("tech.summary", {
-          router: fmt(router, 1),
-          google: fmt(google, 1),
-          loss: fmt(loss7, 2),
+          router: fmt(tech.router, 1),
+          google: fmt(tech.google, 1),
+          loss: fmt(tech.packetLoss7d, 2),
         })}
         closeLabel={t("sheet.close")}
         onClose={actions.closeSheet}
       />
       <div className={c("sheet-scroll")}>
-        <div className={c("readings")}>
-          <Readout label={t("tech.router")} value={fmt(router, 1)} unit="ms" />
-          <Readout label={t("tech.google")} value={fmt(google, 1)} unit="ms" />
-          <Readout
-            label={t("tech.cloudflare")}
-            value={fmt(cloudflare, 1)}
-            unit="ms"
-          />
-          <Readout label={t("tech.packetLoss")} value={fmt(loss, 1)} unit="%" />
-        </div>
-        <div className={c("block")}>
-          <div className={c("block-head")}>
-            <div className={c("block-label")}>{t("tech.pulse")}</div>
-            <div className={c("legend")}>
-              <span>
-                <i style={{ "--c": "var(--sky)" } as CSSProperties} />
-                {t("tech.router")}
-              </span>
-              <span>
-                <i style={{ "--c": "var(--sage)" } as CSSProperties} />
-                {t("tech.google")}
-              </span>
-              <span>
-                <i style={{ "--c": "var(--plum)" } as CSSProperties} />
-                {t("tech.cloudflare")}
-              </span>
-            </div>
-          </div>
-          <HistoryChart
-            series={[
-              {
-                values: routerSeries,
-                color: "var(--sky)",
-                label: t("tech.router"),
-              },
-              {
-                values: googleSeries,
-                color: "var(--sage)",
-                label: t("tech.google"),
-              },
-              {
-                values: cloudflareSeries,
-                color: "var(--plum)",
-                label: t("tech.cloudflare"),
-              },
-            ]}
-            t={t}
-            nowMs={nowMs}
-            windowMs={86_400_000}
-            unit="ms"
-            decimals={1}
-            idPrefix="tech-chart"
-          />
-        </div>
-        <div className={c("block")}>
-          <div className={c("block-label")}>{t("tech.quality")}</div>
-          <div className={c("list")}>
-            <ListRow
-              name={t("tech.router")}
-              sub={status}
-              icon="network"
-              trailing={
-                <span className={c("status-line")}>
-                  <i className={c("dot", online === false && "warn")} />
-                  {statusLabel}
-                </span>
-              }
-            />
-            <ListRow
-              name={t("tech.jitter")}
-              sub={t("tech.router")}
-              icon="wind"
-              value={fmt(jitter, 2)}
-              unit="ms"
-            />
-            <ListRow
-              name={t("tech.packetLoss7d")}
-              icon="alert"
-              value={fmt(loss7, 2)}
-              unit="%"
-            />
-            <ListRow
-              name={t("tech.google")}
-              sub="8.8.8.8"
-              icon="network"
-              value={fmt(google, 1)}
-              unit="ms"
-            />
-            <ListRow
-              name={t("tech.cloudflare")}
-              sub="1.1.1.1"
-              icon="network"
-              value={fmt(cloudflare, 1)}
-              unit="ms"
-            />
-          </div>
-        </div>
-        <div className={c("block")}>
-          <div className={c("block-label")}>{t("tech.inverter")}</div>
-          <div className={c("list")}>
-            <ListRow
-              name={t("tech.wifi")}
-              icon="network"
-              value={fmt(tech.wifiSignal, 0)}
-              unit="dBm"
-            />
-            <ListRow
-              name={t("tech.uptime")}
-              icon="clock"
-              trailing={
-                <span className={c("row-val")} style={{ fontSize: 13 }}>
-                  {uptime}
-                  <small>{hoursUnit}</small>
-                </span>
-              }
-            />
-            <ListRow
-              name={t("tech.pulseTemp")}
-              icon="thermometer"
-              value={fmt(tech.temperature, 1)}
-              unit="°C"
-            />
-            <ListRow
-              name={t("tech.frequency")}
-              icon="bolt"
-              value={fmt(tech.frequency, 2)}
-              unit="Hz"
-            />
-            <ListRow
-              name={t("tech.model")}
-              icon="info"
-              trailing={
-                <span className={c("row-val")} style={{ fontSize: 11 }}>
-                  {tech.inverterModel || "–"}
-                </span>
-              }
-            />
-            <ListRow
-              name={t("tech.datalogger")}
-              icon="info"
-              trailing={
-                <span className={c("row-val")} style={{ fontSize: 11 }}>
-                  {tech.dataloggerVersion || "–"}
-                </span>
-              }
-            />
-          </div>
-        </div>
+        <TechReadings tech={tech} fmt={fmt} t={t} />
+        <TechPulse
+          t={t}
+          nowMs={nowMs}
+          router={seriesOf(history, config.network?.router)}
+          google={seriesOf(history, config.network?.google)}
+          cloudflare={seriesOf(history, config.network?.cloudflare)}
+        />
+        <TechQuality tech={tech} fmt={fmt} t={t} status={status} />
+        <TechInverter tech={tech} fmt={fmt} t={t} language={language} />
         <div className={c("note")}>{t("tech.footer")}</div>
       </div>
     </div>

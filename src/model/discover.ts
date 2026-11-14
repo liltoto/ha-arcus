@@ -8,6 +8,7 @@ import type {
   OpeningModel,
   RoomKind,
   RoomModel,
+  RoomOverrideConfig,
   Translator,
 } from "../types";
 
@@ -216,8 +217,8 @@ function areaNameIcon(name: string): string {
   if (/sove|bedroom/.test(value)) return "bed";
   if (/kontor|office|desk/.test(value)) return "desk";
   if (/bryggers|laundry|utility/.test(value)) return "washer";
-  if (/entre|entré|hall|entry/.test(value)) return "door";
   if (/gang|hallway|corridor/.test(value)) return "stairs";
+  if (/entre|entré|\bhall\b|entry/.test(value)) return "door";
   if (/skur|shed|garage|outdoor|ude/.test(value)) return "shed";
   return "home";
 }
@@ -483,6 +484,345 @@ function selectedAreas(hass: ArcusHass, config: ArcusConfig): SelectedArea[] {
     });
 }
 
+function tempFallbackFor(climate: EntityRef | null): EntityRef | null {
+  const current = Number(climate?.attributes?.current_temperature);
+  return Number.isFinite(current) ? climate : null;
+}
+
+function pickClimate(
+  hass: ArcusHass,
+  climateEntities: EntityRegistryEntry[],
+  override: string | undefined,
+): EntityRef | null {
+  if (override) return resolveEntityRef(hass, override);
+  return refForEntity(hass, pickFirst(hass, climateEntities));
+}
+
+function isTemperatureCandidate(
+  hass: ArcusHass,
+  entity: EntityRegistryEntry,
+): boolean {
+  if (attrOf(hass, entity.entity_id, "device_class") !== "temperature") {
+    return false;
+  }
+  return !/batteri|battery/i.test(
+    `${entity.entity_id} ${displayName(hass, entity.entity_id)}`,
+  );
+}
+
+function siblingTemperature(
+  hass: ArcusHass,
+  fallback: EntityRef | null,
+): EntityRegistryEntry | null {
+  const deviceId = fallback?.entityId
+    ? hass.entities?.[fallback.entityId]?.device_id
+    : null;
+  if (!deviceId) return null;
+  return (
+    Object.values(hass.entities ?? {}).find((entity) => {
+      if (entity.device_id !== deviceId) return false;
+      if (domainOf(entity.entity_id) !== "sensor") return false;
+      if (!isTemperatureCandidate(hass, entity)) return false;
+      return isAvailable(hass.states[entity.entity_id]?.state);
+    }) ?? null
+  );
+}
+
+/**
+ * A temperature sensor wins over the climate fallback. Available sensors are
+ * preferred, then a name that looks like a temperature reading, then a sensor
+ * on the thermostat's own device.
+ */
+function pickTemperatureSensor(
+  hass: ArcusHass,
+  sensors: EntityRegistryEntry[],
+  tempFallback: EntityRef | null,
+  override: string | undefined,
+): EntityRef | null {
+  if (override) return resolveEntityRef(hass, override);
+  const candidates = sensors.filter((entity) =>
+    isTemperatureCandidate(hass, entity),
+  );
+  const available = candidates.filter((entity) =>
+    isAvailable(hass.states[entity.entity_id]?.state),
+  );
+  const pool = available.length ? available : candidates;
+  const named = byName(hass, pool, /temp|temperatur/i);
+  const picked = refForEntity(hass, named[0] ?? pool[0] ?? null);
+  if (picked) return picked;
+  return refForEntity(hass, siblingTemperature(hass, tempFallback));
+}
+
+function pickDeviceClass(
+  hass: ArcusHass,
+  entities: EntityRegistryEntry[],
+  deviceClass: string,
+): EntityRef | null {
+  return refForEntity(
+    hass,
+    pickFirst(
+      hass,
+      entities,
+      (entity) =>
+        attrOf(hass, entity.entity_id, "device_class") === deviceClass,
+    ),
+  );
+}
+
+function pickBattery(
+  hass: ArcusHass,
+  sensors: EntityRegistryEntry[],
+): EntityRef | null {
+  const batterySensors = sensors.filter((entity) => {
+    const text = `${entity.entity_id} ${displayName(hass, entity.entity_id)}`;
+    return (
+      attrOf(hass, entity.entity_id, "device_class") === "battery" ||
+      /batteri|battery/i.test(text)
+    );
+  });
+  return (
+    pickDeviceClass(hass, batterySensors, "battery") ??
+    refForEntity(hass, pickFirst(hass, batterySensors))
+  );
+}
+
+function pickFilter(
+  hass: ArcusHass,
+  sensors: EntityRegistryEntry[],
+): EntityRef | null {
+  const filters = sensors.filter((entity) => {
+    const text = `${entity.entity_id} ${displayName(hass, entity.entity_id)}`;
+    return /filter/i.test(text) && !/alarm|larm|rens/i.test(text);
+  });
+  return refForEntity(hass, pickFirst(hass, filters));
+}
+
+function pickFilterAlarm(
+  hass: ArcusHass,
+  binarySensors: EntityRegistryEntry[],
+): EntityRef | null {
+  const alarms = binarySensors.filter((entity) =>
+    /filter|filtr/i.test(
+      `${entity.entity_id} ${displayName(hass, entity.entity_id)}`,
+    ),
+  );
+  return refForEntity(hass, pickFirst(hass, alarms));
+}
+
+function pickPlug(
+  hass: ArcusHass,
+  entities: EntityRegistryEntry[],
+): EntityRef | null {
+  const candidates = entities.filter((entity) => {
+    if (!["sensor", "switch"].includes(domainOf(entity.entity_id))) {
+      return false;
+    }
+    return /plug|stik/i.test(
+      `${entity.entity_id} ${displayName(hass, entity.entity_id)}`,
+    );
+  });
+  const sensors = candidates.filter(
+    (entity) => domainOf(entity.entity_id) === "sensor",
+  );
+  return refForEntity(
+    hass,
+    pickFirst(hass, sensors) ?? pickFirst(hass, candidates),
+  );
+}
+
+function refByDomain(
+  hass: ArcusHass,
+  entities: EntityRegistryEntry[],
+  domain: string,
+): EntityRef | null {
+  return refForEntity(
+    hass,
+    pickFirst(
+      hass,
+      entities,
+      (entity) => domainOf(entity.entity_id) === domain,
+    ),
+  );
+}
+
+interface RoomEnvironment {
+  temp: EntityRef | null;
+  tempFallback: EntityRef | null;
+  humidity: EntityRef | null;
+  co2: EntityRef | null;
+  pm25: EntityRef | null;
+  battery: EntityRef | null;
+  motion: EntityRef | null;
+  illuminance: EntityRef | null;
+}
+
+function roomEnvironment(
+  hass: ArcusHass,
+  sensors: EntityRegistryEntry[],
+  binarySensors: EntityRegistryEntry[],
+  climate: EntityRef | null,
+  overrides: RoomOverrideConfig,
+): RoomEnvironment {
+  const tempFallback = tempFallbackFor(climate);
+  return {
+    temp: pickTemperatureSensor(hass, sensors, tempFallback, overrides.temp),
+    tempFallback,
+    humidity: overrides.humidity
+      ? resolveEntityRef(hass, overrides.humidity)
+      : pickDeviceClass(hass, sensors, "humidity"),
+    co2: overrides.co2
+      ? resolveEntityRef(hass, overrides.co2)
+      : pickDeviceClass(hass, sensors, "carbon_dioxide"),
+    pm25: overrides.pm25
+      ? resolveEntityRef(hass, overrides.pm25)
+      : pickDeviceClass(hass, sensors, "pm25"),
+    battery: overrides.battery
+      ? resolveEntityRef(hass, overrides.battery)
+      : pickBattery(hass, sensors),
+    motion: pickDeviceClass(hass, binarySensors, "motion"),
+    illuminance: pickDeviceClass(hass, sensors, "illuminance"),
+  };
+}
+
+function roomLights(
+  hass: ArcusHass,
+  entities: EntityRegistryEntry[],
+  overrides: RoomOverrideConfig,
+  areaId: string,
+  roomIcon: string,
+): LightGroupModel[] {
+  return overrides.lights !== undefined
+    ? overrideLightGroups(hass, overrides.lights, areaId, roomIcon)
+    : buildLightGroups(hass, entities, areaId, roomIcon);
+}
+
+function roomOpenings(
+  hass: ArcusHass,
+  entities: EntityRegistryEntry[],
+  overrides: RoomOverrideConfig,
+  roomName: string,
+  t: Translator,
+): OpeningModel[] {
+  return overrides.openings !== undefined
+    ? overrideOpenings(hass, overrides.openings, roomName, t)
+    : buildOpenings(hass, entities, roomName, t);
+}
+
+function roomCovers(
+  hass: ArcusHass,
+  entities: EntityRegistryEntry[],
+  override: string[] | undefined,
+): EntityRef[] {
+  const ids =
+    override !== undefined
+      ? uniqueStrings(override)
+      : entities
+          .filter((entity) => domainOf(entity.entity_id) === "cover")
+          .map((entity) => entity.entity_id);
+  return ids
+    .map((id) => resolveEntityRef(hass, id))
+    .filter((ref): ref is EntityRef => ref !== null);
+}
+
+function roomLock(
+  hass: ArcusHass,
+  entities: EntityRegistryEntry[],
+  override: string | undefined,
+): EntityRef | null {
+  if (override) return resolveEntityRef(hass, override);
+  return refByDomain(hass, entities, "lock");
+}
+
+function roomFromArea(
+  hass: ArcusHass,
+  config: ArcusConfig,
+  area: SelectedArea,
+  index: number,
+  hasExplicitWide: boolean,
+  t: Translator,
+): RoomModel {
+  const entities = entitiesForArea(hass, area.areaId);
+  const overrides = config.rooms[area.areaId] ?? {};
+  const name = overrides.name ?? area.name;
+  const icon = overrides.icon
+    ? areaIconKey(overrides.icon)
+    : area.icon
+      ? areaIconKey(area.icon)
+      : areaNameIcon(name);
+  const kind = inferRoomKind(area.areaId, name, overrides.kind);
+  const wide =
+    overrides.wide !== undefined
+      ? overrides.wide
+      : hasExplicitWide
+        ? false
+        : index === 0;
+  const floorId = hass.areas?.[area.areaId]?.floor_id ?? null;
+  const floor = floorId ? hass.floors?.[floorId] : undefined;
+  const floorName = typeof floor?.name === "string" ? floor.name : null;
+  const floorLevel = typeof floor?.level === "number" ? floor.level : null;
+  const tint =
+    overrides.tint ?? ROOM_TINTS[index % ROOM_TINTS.length] ?? "#7FAFC4";
+
+  const sensors = entities.filter(
+    (entity) => domainOf(entity.entity_id) === "sensor",
+  );
+  const binarySensors = entities.filter(
+    (entity) => domainOf(entity.entity_id) === "binary_sensor",
+  );
+  const climate = pickClimate(
+    hass,
+    entities.filter((entity) => domainOf(entity.entity_id) === "climate"),
+    overrides.climate,
+  );
+  const environment = roomEnvironment(
+    hass,
+    sensors,
+    binarySensors,
+    climate,
+    overrides,
+  );
+  const lights = roomLights(hass, entities, overrides, area.areaId, icon);
+  const openings = roomOpenings(hass, entities, overrides, name, t);
+  const covers = roomCovers(hass, entities, overrides.covers);
+  const lock = roomLock(hass, entities, overrides.lock);
+
+  return {
+    id: area.areaId,
+    areaId: area.areaId,
+    name,
+    icon,
+    wide,
+    kind,
+    floorId,
+    floorName,
+    floorLevel,
+    tint,
+    temp: environment.temp,
+    tempFallback: environment.tempFallback,
+    humidity: environment.humidity,
+    co2: environment.co2,
+    pm25: environment.pm25,
+    lights,
+    openings,
+    covers,
+    lock,
+    climate,
+    media: overrides.media
+      ? resolveEntityRef(hass, overrides.media)
+      : refByDomain(hass, entities, "media_player"),
+    leak: overrides.leak
+      ? resolveEntityRef(hass, overrides.leak)
+      : pickDeviceClass(hass, binarySensors, "moisture"),
+    fan: refByDomain(hass, entities, "fan"),
+    filter: pickFilter(hass, sensors),
+    filterAlarm: pickFilterAlarm(hass, binarySensors),
+    battery: environment.battery,
+    motion: environment.motion,
+    illuminance: environment.illuminance,
+    plug: pickPlug(hass, entities),
+  };
+}
+
 /**
  * Discover the configured rooms from the HA area/device/entity registries.
  *
@@ -495,280 +835,15 @@ export function discoverRooms(
   hass: ArcusHass,
   config: ArcusConfig,
 ): RoomModel[] {
-  const rooms: RoomModel[] = [];
   const language = resolveLanguage(hass.language, config);
   const t = createTranslator(language);
   const hasExplicitWide = Object.values(config.rooms ?? {}).some(
     (room) => room?.wide === true,
   );
 
-  selectedAreas(hass, config).forEach((area, index) => {
-    const entities = entitiesForArea(hass, area.areaId);
-    const overrides = config.rooms[area.areaId] ?? {};
-    const roomName = overrides.name ?? area.name;
-    const icon = overrides.icon
-      ? areaIconKey(overrides.icon)
-      : area.icon
-        ? areaIconKey(area.icon)
-        : areaNameIcon(roomName);
-    const kind = inferRoomKind(area.areaId, roomName, overrides.kind);
-    const wide =
-      overrides.wide !== undefined
-        ? overrides.wide
-        : hasExplicitWide
-          ? false
-          : index === 0;
-    const areaEntry = hass.areas?.[area.areaId];
-    const floorId = areaEntry?.floor_id ?? null;
-    const floor = floorId ? hass.floors?.[floorId] : undefined;
-    const floorName = typeof floor?.name === "string" ? floor.name : null;
-    const floorLevel = typeof floor?.level === "number" ? floor.level : null;
-    const tint =
-      overrides.tint ?? ROOM_TINTS[index % ROOM_TINTS.length] ?? "#7FAFC4";
-
-    const sensors = entities.filter(
-      (entity) => domainOf(entity.entity_id) === "sensor",
-    );
-    const binarySensors = entities.filter(
-      (entity) => domainOf(entity.entity_id) === "binary_sensor",
-    );
-    const climateEntities = entities.filter(
-      (entity) => domainOf(entity.entity_id) === "climate",
-    );
-
-    let climate = refForEntity(hass, pickFirst(hass, climateEntities));
-
-    // A temperature sensor wins over the climate fallback. Available sensors
-    // are preferred, then a name that looks like a temperature reading.
-    const temperatureSensors = sensors.filter(
-      (entity) =>
-        attrOf(hass, entity.entity_id, "device_class") === "temperature" &&
-        !/batteri|battery/i.test(
-          `${entity.entity_id} ${displayName(hass, entity.entity_id)}`,
-        ),
-    );
-    const availableTemps = temperatureSensors.filter((entity) =>
-      isAvailable(hass.states[entity.entity_id]?.state),
-    );
-    const tempPool = availableTemps.length
-      ? availableTemps
-      : temperatureSensors;
-    const namedTemps = byName(hass, tempPool, /temp|temperatur/i);
-    let temp = refForEntity(hass, namedTemps[0] ?? tempPool[0] ?? null);
-
-    if (overrides.climate) {
-      climate = resolveEntityRef(hass, overrides.climate);
-    }
-    const currentTemp = Number(climate?.attributes?.current_temperature);
-    const tempFallback = Number.isFinite(currentTemp) ? climate : null;
-
-    // Some integrations expose the room temperature sensor on the same device
-    // as the thermostat but leave the sensor unassigned to the area. Use that
-    // sibling when the area has no temperature sensor of its own.
-    if (!temp && tempFallback?.entityId) {
-      const climateDevice = hass.entities?.[tempFallback.entityId]?.device_id;
-      if (climateDevice) {
-        const sibling = Object.values(hass.entities ?? {}).find((entity) => {
-          if (entity.device_id !== climateDevice) return false;
-          if (domainOf(entity.entity_id) !== "sensor") return false;
-          if (
-            attrOf(hass, entity.entity_id, "device_class") !== "temperature"
-          ) {
-            return false;
-          }
-          const label = `${entity.entity_id} ${displayName(
-            hass,
-            entity.entity_id,
-          )}`;
-          if (/batteri|battery/i.test(label)) return false;
-          return isAvailable(hass.states[entity.entity_id]?.state);
-        });
-        if (sibling) temp = refForEntity(hass, sibling);
-      }
-    }
-
-    const humidity = resolveEntityRef(
-      hass,
-      pickFirst(
-        hass,
-        sensors,
-        (entity) =>
-          attrOf(hass, entity.entity_id, "device_class") === "humidity",
-      )?.entity_id,
-    );
-    const co2 = resolveEntityRef(
-      hass,
-      pickFirst(
-        hass,
-        sensors,
-        (entity) =>
-          attrOf(hass, entity.entity_id, "device_class") === "carbon_dioxide",
-      )?.entity_id,
-    );
-    const pm25 = resolveEntityRef(
-      hass,
-      pickFirst(
-        hass,
-        sensors,
-        (entity) => attrOf(hass, entity.entity_id, "device_class") === "pm25",
-      )?.entity_id,
-    );
-
-    const batterySensors = sensors.filter((entity) => {
-      const idAndName = `${entity.entity_id} ${displayName(
-        hass,
-        entity.entity_id,
-      )}`;
-      return (
-        attrOf(hass, entity.entity_id, "device_class") === "battery" ||
-        /batteri|battery/i.test(idAndName)
-      );
-    });
-    const battery =
-      refForEntity(
-        hass,
-        pickFirst(
-          hass,
-          batterySensors,
-          (entity) =>
-            attrOf(hass, entity.entity_id, "device_class") === "battery",
-        ),
-      ) ?? refForEntity(hass, pickFirst(hass, batterySensors));
-
-    const filterSensors = sensors.filter((entity) => {
-      const text = `${entity.entity_id} ${displayName(hass, entity.entity_id)}`;
-      return /filter/i.test(text) && !/alarm|larm|rens/i.test(text);
-    });
-    const filterAlarms = binarySensors.filter((entity) =>
-      /filter|filtr/i.test(
-        `${entity.entity_id} ${displayName(hass, entity.entity_id)}`,
-      ),
-    );
-    const plugCandidates = entities.filter((entity) => {
-      if (!["sensor", "switch"].includes(domainOf(entity.entity_id))) {
-        return false;
-      }
-      return /plug|stik/i.test(
-        `${entity.entity_id} ${displayName(hass, entity.entity_id)}`,
-      );
-    });
-    const plugSensors = plugCandidates.filter(
-      (entity) => domainOf(entity.entity_id) === "sensor",
-    );
-
-    const motion = refForEntity(
-      hass,
-      pickFirst(
-        hass,
-        binarySensors,
-        (entity) => attrOf(hass, entity.entity_id, "device_class") === "motion",
-      ),
-    );
-    const illuminance = resolveEntityRef(
-      hass,
-      pickFirst(
-        hass,
-        sensors,
-        (entity) =>
-          attrOf(hass, entity.entity_id, "device_class") === "illuminance",
-      )?.entity_id,
-    );
-
-    const lights =
-      overrides.lights !== undefined
-        ? overrideLightGroups(hass, overrides.lights, area.areaId, icon)
-        : buildLightGroups(hass, entities, area.areaId, icon);
-    const openings =
-      overrides.openings !== undefined
-        ? overrideOpenings(hass, overrides.openings, roomName, t)
-        : buildOpenings(hass, entities, roomName, t);
-    const covers =
-      overrides.covers !== undefined
-        ? uniqueStrings(overrides.covers)
-            .map((id) => resolveEntityRef(hass, id))
-            .filter((ref): ref is EntityRef => ref !== null)
-        : entities
-            .filter((entity) => domainOf(entity.entity_id) === "cover")
-            .map((entity) => resolveEntityRef(hass, entity.entity_id))
-            .filter((ref): ref is EntityRef => ref !== null);
-    const lock = overrides.lock
-      ? resolveEntityRef(hass, overrides.lock)
-      : refForEntity(
-          hass,
-          pickFirst(
-            hass,
-            entities,
-            (entity) => domainOf(entity.entity_id) === "lock",
-          ),
-        );
-
-    rooms.push({
-      id: area.areaId,
-      areaId: area.areaId,
-      name: roomName,
-      icon,
-      wide,
-      kind,
-      floorId,
-      floorName,
-      floorLevel,
-      tint,
-      temp: overrides.temp ? resolveEntityRef(hass, overrides.temp) : temp,
-      tempFallback,
-      humidity: overrides.humidity
-        ? resolveEntityRef(hass, overrides.humidity)
-        : humidity,
-      co2: overrides.co2 ? resolveEntityRef(hass, overrides.co2) : co2,
-      pm25: overrides.pm25 ? resolveEntityRef(hass, overrides.pm25) : pm25,
-      lights,
-      openings,
-      covers,
-      lock,
-      climate,
-      media: overrides.media
-        ? resolveEntityRef(hass, overrides.media)
-        : refForEntity(
-            hass,
-            pickFirst(
-              hass,
-              entities,
-              (entity) => domainOf(entity.entity_id) === "media_player",
-            ),
-          ),
-      leak: overrides.leak
-        ? resolveEntityRef(hass, overrides.leak)
-        : refForEntity(
-            hass,
-            pickFirst(
-              hass,
-              binarySensors,
-              (entity) =>
-                attrOf(hass, entity.entity_id, "device_class") === "moisture",
-            ),
-          ),
-      fan: refForEntity(
-        hass,
-        pickFirst(
-          hass,
-          entities,
-          (entity) => domainOf(entity.entity_id) === "fan",
-        ),
-      ),
-      filter: refForEntity(hass, pickFirst(hass, filterSensors)),
-      filterAlarm: refForEntity(hass, pickFirst(hass, filterAlarms)),
-      battery: overrides.battery
-        ? resolveEntityRef(hass, overrides.battery)
-        : battery,
-      motion,
-      illuminance,
-      plug: refForEntity(
-        hass,
-        pickFirst(hass, plugSensors) ?? pickFirst(hass, plugCandidates),
-      ),
-    });
-  });
-
-  return rooms;
+  return selectedAreas(hass, config).map((area, index) =>
+    roomFromArea(hass, config, area, index, hasExplicitWide, t),
+  );
 }
 
 export { isAvailable as isEntityAvailable };
