@@ -301,37 +301,70 @@ describe("ArcusConfigEditor", () => {
     expect(changes[1].chapters).toEqual({ sol: true });
   });
 
-  test("entity inputs are backed by a datalist of hass.states", () => {
+  test("entity inputs are backed by filtered per-field datalists", () => {
     const hass = makeHass();
     const editor = new ArcusConfigEditor();
     editor.setConfig({ type: "custom:arcus-card" });
     editor.hass = hass;
     document.body.appendChild(editor);
 
-    const datalist = editor.shadowRoot!.querySelector<HTMLDataListElement>(
-      "datalist#arcus-entities",
+    const weatherInput = field<HTMLInputElement>(
+      editor.shadowRoot!,
+      "weather",
     );
-    expect(datalist).not.toBeNull();
-    const options = Array.from(datalist!.querySelectorAll("option")).map(
-      (option) => option.value,
+    const weatherListId = weatherInput.getAttribute("list")!;
+    expect(weatherListId).toBe("arcus-entities-weather");
+    const weatherOptions = Array.from(
+      editor.shadowRoot!.querySelectorAll<HTMLOptionElement>(
+        `datalist#${weatherListId} option`,
+      ),
+    ).map((option) => option.value);
+    expect(weatherOptions.length).toBeGreaterThan(0);
+    expect(weatherOptions.every((id) => id.startsWith("weather."))).toBe(true);
+
+    const alarmOptions = Array.from(
+      editor.shadowRoot!.querySelectorAll<HTMLOptionElement>(
+        "datalist#arcus-entities-security-alarm option",
+      ),
+    ).map((option) => option.value);
+    expect(alarmOptions).toEqual([]);
+
+    const powerOptions = Array.from(
+      editor.shadowRoot!.querySelectorAll<HTMLOptionElement>(
+        "datalist#arcus-entities-solar-power option",
+      ),
+    ).map((option) => option.value);
+    expect(powerOptions).toContain(
+      "sensor.sunmate_io_pulse_ee40a0_pulse_pv_totalpower",
     );
-    expect(options).toEqual(Object.keys(hass.states).sort());
-    expect(options).toContain("sensor.outdoor_temperature");
+    expect(powerOptions).not.toContain("light.stue");
   });
 
-  test("only entity fields point at the entity datalist", () => {
+  test("only entity fields point at a datalist", () => {
     const editor = new ArcusConfigEditor();
     editor.setConfig({ type: "custom:arcus-card" });
     editor.hass = makeHass();
     document.body.appendChild(editor);
 
     expect(
-      field<HTMLInputElement>(editor.shadowRoot!, "solar.power").getAttribute(
-        "list",
-      ),
-    ).toBe("arcus-entities");
+      field<HTMLInputElement>(editor.shadowRoot!, "solar.power")
+        .getAttribute("list")
+        ?.startsWith("arcus-entities-"),
+    ).toBe(true);
     expect(
       field<HTMLInputElement>(editor.shadowRoot!, "title").hasAttribute("list"),
+    ).toBe(false);
+    expect(
+      field<HTMLInputElement>(
+        editor.shadowRoot!,
+        "water.softenerName",
+      ).hasAttribute("list"),
+    ).toBe(false);
+    expect(
+      field<HTMLInputElement>(
+        editor.shadowRoot!,
+        "ventilation.name",
+      ).hasAttribute("list"),
     ).toBe(false);
   });
 
@@ -340,14 +373,10 @@ describe("ArcusConfigEditor", () => {
     editor.setConfig({ type: "custom:arcus-card" });
     editor.hass = { ...makeHass(), states: {} };
     document.body.appendChild(editor);
-    expect(
-      editor.shadowRoot!.querySelector("datalist#arcus-entities"),
-    ).toBeNull();
+    expect(editor.shadowRoot!.querySelector("datalist")).toBeNull();
 
     editor.hass = makeHass();
-    expect(
-      editor.shadowRoot!.querySelector("datalist#arcus-entities"),
-    ).not.toBeNull();
+    expect(editor.shadowRoot!.querySelector("datalist")).not.toBeNull();
   });
 });
 

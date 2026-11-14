@@ -2,6 +2,35 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.2 - 2026-11-14
+
+Editor polish: entity autocomplete now suggests the entities each field can actually use.
+
+### Added
+
+- Type-aware entity suggestions in the visual editor. Every entity field gets its own filtered `<datalist>` instead of one global list of every entity:
+  - weather fields list `weather.*`
+  - price fields list price/spot sensors, and the forecast field prefers sensors with `raw_today`/`prices`/`forecast` attributes
+  - solar power/load/grid/string fields list power sensors with solar name hints; production fields list energy sensors
+  - battery SoC/power fields list home-battery sensors, not door/window batteries
+  - prayer fields list the matching Islamic Prayer Times sensors
+  - water fields list water/softener sensors, with per-field flow/day/month/total/salt markers
+  - security lists `alarm_control_panel.*` and window-alert switches
+  - network lists RTT/latency sensors and router state entities
+  - economy lists bond/change/yield/duration sensors
+  - ventilation lists the HRV climate entity and its sensors
+  - EV fields combine EV/charger name markers with plug/power/SoC markers
+- `src/editor-entities.ts`: pure, ranked suggestion helper (`suggestEntities`). exact device class first, then name matches, then the rest of the domain; unavailable entities last; hidden/disabled skipped; capped at 60.
+- Fields without a sensible entity list (names, units) no longer show entity autocomplete at all.
+
+### Changed
+
+- Removed the single `datalist#arcus-entities` in favour of `datalist#arcus-entities-<field>`.
+
+### Verified
+
+- 366 tests, typecheck, Fallow audit, build, size budget, Storybook, and the visual suite.
+
 ## 0.4.1 - 2026-11-14
 
 Editor fix: typing in the visual configuration no longer makes the dialog jump to the top.
