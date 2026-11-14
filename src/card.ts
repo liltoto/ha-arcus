@@ -5,9 +5,8 @@ import type { Root } from "react-dom/client";
 import { performAction } from "./actions";
 import { configSignature, normalizeConfig } from "./config";
 import { HistoryCache } from "./data/history";
-import type { HistoryRow } from "./data/history";
 import {
-  countdown,
+  escapeHtml,
   formatNumber,
   formatPrice,
   formatTime,
@@ -16,15 +15,13 @@ import {
 import { createTranslator, resolveLanguage } from "./localize";
 import { buildModel } from "./model/build";
 import { buildBindings } from "./model/bindings";
-import { arcPoint, areaPath, priceColor, sparkPath } from "./render/charts";
-import { applyGraph, mountGraphTips } from "./render/graph";
+import { mountGraphTips } from "./render/graph";
 import { icon } from "./render/icons";
 import { STYLES } from "./ui/styles";
 import type {
   ArcusConfig,
   ArcusHass,
   AtmosphereSetting,
-  ChapterKey,
   HomeModel,
   Language,
   PrayerTimeModel,
@@ -36,8 +33,6 @@ import type {
 import { ArcusApp } from "./ui/ArcusApp";
 import type { ArcusActions } from "./ui/types";
 import { ARCUS_VERSION } from "./version";
-import { escapeHtml } from "./format";
-import { renderChapterArt } from "./render/chapter-art";
 
 declare global {
   interface Window {
@@ -551,60 +546,12 @@ export class ArcusCard extends HTMLElement {
     );
   }
 
-  _cheapest(count = 3): {
-    start: number;
-    end: number;
-    avg: number;
-    sum?: number;
-  } | null {
-    const price = this._model.price;
-    if (price?.cheapest && count === 3) return price.cheapest;
-    const values = price?.values ?? [];
-    if (values.length < count) return null;
-    const from = Math.max(0, this._now().getHours());
-    let best: {
-      start: number;
-      end: number;
-      avg: number;
-      sum: number;
-    } | null = null;
-    for (let start = from; start <= values.length - count; start++) {
-      const slice = values.slice(start, start + count);
-      const sum = slice.reduce((total, value) => total + value, 0);
-      if (!best || sum < best.sum) {
-        best = { start, end: start + count, sum, avg: sum / count };
-      }
-    }
-    if (!best) {
-      const slice = values.slice(0, count);
-      const sum = slice.reduce((total, value) => total + value, 0);
-      best = { start: 0, end: count, sum, avg: sum / count };
-    }
-    return best;
-  }
-
   _solarForecast(): SolarPoint[] {
     return this._model.solar?.forecastSeries ?? [];
   }
 
-  _solarTomorrow(): SolarPoint[] {
-    return this._model.solar?.tomorrowSeries ?? [];
-  }
-
-  _prayerTimes(): PrayerTimeModel[] {
-    return this._model.prayers?.times ?? [];
-  }
-
   _nextPrayer(): PrayerTimeModel | null {
     return this._model.prayers?.next ?? null;
-  }
-
-  _alerts() {
-    return this._model.alerts;
-  }
-
-  _countdown(date: Date | null | undefined): string {
-    return countdown(date, this._now(), this._language);
   }
 
   private _weatherNow(): {
@@ -762,7 +709,6 @@ export class ArcusCard extends HTMLElement {
 
     this._applyAtmo();
     this._startClock();
-    this._refresh();
     void this._loadInitial();
     this._markReady();
   }
@@ -796,422 +742,6 @@ export class ArcusCard extends HTMLElement {
     const root = this._reactRoot;
     this._reactRoot = null;
     if (root) root.unmount();
-  }
-
-  private _applyBindings(bindings: Record<string, string>): void {
-    this._root
-      .querySelectorAll<HTMLElement>("[data-bind]")
-      .forEach((element) => {
-        const key = element.dataset.bind;
-        if (key && key in bindings) {
-          const value = String(bindings[key]);
-          if (element.textContent !== value) element.textContent = value;
-        }
-      });
-    this._root
-      .querySelectorAll<HTMLElement>("[data-bind-html]")
-      .forEach((element) => {
-        const key = element.dataset.bindHtml;
-        if (key && key in bindings) {
-          const value = String(bindings[key]);
-          if (element.innerHTML !== value) element.innerHTML = value;
-        }
-      });
-  }
-
-  private _applyState(): void {
-    this._root
-      .querySelectorAll<HTMLElement>("[data-person-dot]")
-      .forEach((element) => {
-        element.style.background =
-          this._personState() === "home" ? "var(--sage)" : "var(--muted)";
-      });
-
-    const weather = this._weatherNow();
-    this._root
-      .querySelectorAll<HTMLElement>("[data-weather-icon]")
-      .forEach((element) => {
-        element.innerHTML = icon(weather.icon);
-      });
-
-    this._root.querySelectorAll<HTMLElement>("[data-on]").forEach((element) => {
-      element.classList.toggle("on", this._on(element.dataset.on));
-    });
-    this._root
-      .querySelectorAll<HTMLElement>("[data-not-off]")
-      .forEach((element) => {
-        element.classList.toggle(
-          "on",
-          this._state(element.dataset.notOff) !== "off",
-        );
-      });
-    this._root
-      .querySelectorAll<HTMLElement>("[data-open]")
-      .forEach((element) => {
-        element.classList.toggle("open", this._on(element.dataset.open));
-      });
-    this._root
-      .querySelectorAll<HTMLElement>("[data-warn]")
-      .forEach((element) => {
-        element.classList.toggle("warn", this._on(element.dataset.warn));
-      });
-    this._root
-      .querySelectorAll<HTMLElement>("[data-batt]")
-      .forEach((element) => {
-        const value = clamp(this._n(element.dataset.batt, 0) ?? 0, 0, 100);
-        const bar = element.querySelector("i");
-        if (bar) {
-          bar.style.width = `${value}%`;
-          bar.className = value < 20 ? "warn" : value < 40 ? "mid" : "";
-        }
-      });
-    this._root
-      .querySelectorAll<HTMLElement>("[data-room-open]")
-      .forEach((element) => {
-        const ids = String(element.dataset.roomOpen || "")
-          .split(",")
-          .filter(Boolean);
-        element.classList.toggle(
-          "warn",
-          ids.some((id) => this._on(id)),
-        );
-      });
-    this._root
-      .querySelectorAll<HTMLElement>("[data-room-lights]")
-      .forEach((element) => {
-        const ids = String(element.dataset.roomLights || "")
-          .split(",")
-          .filter(Boolean);
-        element.classList.toggle("off", !ids.some((id) => this._on(id)));
-      });
-
-    this._root
-      .querySelectorAll<HTMLElement>('.seg button[data-act="hvac"]')
-      .forEach((element) => {
-        element.classList.toggle(
-          "active",
-          this._state(element.dataset.entity) === element.dataset.mode,
-        );
-      });
-    this._root
-      .querySelectorAll<HTMLElement>('.seg button[data-act="fan"]')
-      .forEach((element) => {
-        const fan = String(this._attr(element.dataset.entity, "fan_mode", ""));
-        element.classList.toggle(
-          "active",
-          fan === String(element.dataset.mode),
-        );
-      });
-
-    const soc = clamp(this._model.solar?.batterySoc ?? 0, 0, 100);
-    this._root
-      .querySelectorAll<SVGCircleElement>("[data-battery-ring]")
-      .forEach((element) => {
-        element.setAttribute(
-          "stroke-dashoffset",
-          String(100.5 - (soc / 100) * 100.5),
-        );
-        element.setAttribute(
-          "stroke",
-          soc < 20 ? "var(--coral)" : soc > 80 ? "var(--sage)" : "var(--brass)",
-        );
-      });
-
-    this._root
-      .querySelectorAll<HTMLInputElement>("[data-range-entity]")
-      .forEach((element) => {
-        const state = this._get(element.dataset.rangeEntity);
-        const on = state?.state === "on";
-        const pct = on
-          ? Math.round(((state?.attributes?.brightness ?? 0) / 255) * 100)
-          : 0;
-        if (this._root.activeElement !== element) element.value = String(pct);
-        element.style.setProperty("--p", `${pct}%`);
-        const label = element
-          .closest(".slider-wrap")
-          ?.querySelector<HTMLElement>(".pct");
-        if (label) {
-          label.textContent = on ? `${pct} %` : this._t("lights.sliderOff");
-        }
-      });
-  }
-
-  _refresh(): void {
-    if (!this._built || !this._hass) return;
-    this._applyAtmo();
-
-    const bindings = this._binds();
-    this._applyBindings(bindings);
-    this._applyState();
-
-    // The sheet may have rendered new nodes; apply the same flat bindings once
-    // more before drawing charts and sparks.
-    this._applyBindings(bindings);
-    this._applyState();
-
-    this._refreshSparks();
-    this._refreshArc();
-    this._refreshCharts();
-    this._refreshBars();
-    this._refreshAlerts();
-    this._refreshArt();
-    this._refreshClockState();
-  }
-
-  private _refreshSparks(): void {
-    const now = this._now().getTime();
-    this._root
-      .querySelectorAll<SVGPathElement>("[data-spark]")
-      .forEach((element) => {
-        const key = element.dataset.spark;
-        if (!key) {
-          element.setAttribute("d", "");
-          return;
-        }
-        const values = this._seriesFor(key);
-        const svg = element.closest("svg");
-        const { h } = this._viewBox(svg, 100, 28);
-        element.setAttribute("d", sparkPath(values, 100, h, 1));
-
-        const hasData = values.filter(
-          (value): value is number => value !== null && Number.isFinite(value),
-        ).length;
-        if (hasData < 2) {
-          applyGraph(svg ?? element, null);
-          return;
-        }
-        applyGraph(svg ?? element, {
-          start: now - 86_400_000,
-          end: now,
-          unit: key === "price" ? "kr" : key === "solarActual" ? "W" : "°C",
-          decimals: key === "price" ? 2 : key === "solarActual" ? 0 : 1,
-          series: [{ values }],
-        });
-      });
-  }
-
-  private _viewBox(
-    svg: Element | null,
-    fallbackWidth: number,
-    fallbackHeight: number,
-  ): { w: number; h: number } {
-    const element = svg as SVGSVGElement | null;
-    const box = element?.viewBox?.baseVal;
-    if (box && box.width && box.height) {
-      return { w: box.width, h: box.height };
-    }
-    const raw = element?.getAttribute?.("viewBox")?.split(/\s+/).map(Number);
-    if (raw && raw.length === 4 && raw[2] && raw[3]) {
-      return { w: raw[2], h: raw[3] };
-    }
-    return { w: fallbackWidth, h: fallbackHeight };
-  }
-
-  _series(entityId: string | null | undefined): Array<number | null> {
-    if (!entityId) return [];
-    return this._history.series(entityId);
-  }
-
-  _seriesWindow(
-    entityId: string | null | undefined,
-    days: number,
-  ): Array<number | null> {
-    if (!entityId) return [];
-    return this._history.window(entityId, days);
-  }
-
-  _seriesFor(key: string): Array<number | null> {
-    if (key.startsWith("24:")) return this._seriesWindow(key.slice(3), 1);
-    if (key === "price") return this._model.price?.values ?? [];
-    if (key === "solarForecast")
-      return this._solarForecast().map((point) => point.v);
-    if (key === "solarTomorrow")
-      return this._solarTomorrow().map((point) => point.v);
-    if (key === "solar48") {
-      return [...this._solarForecast(), ...this._solarTomorrow()].map(
-        (point) => point.v,
-      );
-    }
-    if (key === "solarActual") return this._series(this._config.solar?.power);
-    if (key === "indoor") {
-      return this._series(this._config.ventilation?.temperature);
-    }
-    if (key === "savings")
-      return this._series(this._config.solar?.savingsTotal);
-    if (key === "savings30") {
-      return this._seriesWindow(this._config.solar?.savingsTotal, 30);
-    }
-    if (key === "savings365") {
-      return this._series(this._config.solar?.savingsTotal);
-    }
-    if (key === "savingsSolar") {
-      return this._series(this._config.solar?.savingsSolar);
-    }
-    if (key === "savingsBattery") {
-      return this._series(this._config.solar?.savingsBattery);
-    }
-    if (key === "bond") return this._series(this._config.economy?.bond);
-    if (key === "techRouter") return this._series(this._config.network?.router);
-    if (key === "techGoogle") return this._series(this._config.network?.google);
-    if (key === "techCf") {
-      return this._series(this._config.network?.cloudflare);
-    }
-    if (key === "waterFlow") return this._series(this._config.water?.flow);
-    if (key.startsWith("roomTemp:")) {
-      const room = this._model.rooms.find(
-        (item) => item.id === key.split(":")[1],
-      );
-      return this._series(room?.temp?.entityId);
-    }
-    return this._series(key);
-  }
-
-  private _refreshArc(): void {
-    const arc = this._root.querySelector<HTMLElement>("[data-arc]");
-    if (!arc) return;
-
-    const fraction = dayFraction(this._now());
-    const point = arcPoint(fraction);
-    const full = "M40,210 Q500,-90 960,210";
-    this._root
-      .querySelectorAll<SVGPathElement>("[data-arc-line],[data-arc-past]")
-      .forEach((element) => element.setAttribute("d", full));
-
-    const clip = this._root.querySelector<SVGRectElement>("[data-past-clip]");
-    if (clip) clip.setAttribute("width", String(Math.max(0, point.x - 40)));
-
-    const needle = this._root.querySelector<HTMLElement>("[data-now-needle]");
-    if (needle) needle.style.left = `${point.x / 10}%`;
-    for (const selector of [
-      "[data-now-bead]",
-      "[data-arc-glow]",
-      "[data-orb]",
-    ]) {
-      const element = this._root.querySelector<HTMLElement>(selector);
-      if (!element) continue;
-      element.style.left = `${point.x / 10}%`;
-      element.style.top = `${point.y / 3}%`;
-    }
-
-    const solar = this._solarForecast();
-    const actual = this._series(this._config.solar?.power);
-    const max = Math.max(
-      3000,
-      ...solar.map((item) => item.v),
-      ...actual.map((value) => value ?? 0),
-      1,
-    );
-
-    if (solar.length) {
-      const points = solar.map((item) => {
-        const position = arcPoint(dayFraction(item.t));
-        return `${position.x.toFixed(1)},${(
-          position.y -
-          (item.v / max) * 72
-        ).toFixed(1)}`;
-      });
-      this._root
-        .querySelector<SVGPathElement>("[data-solar-area]")
-        ?.setAttribute("d", `M40,210L${points.join("L")}L960,210Z`);
-      this._root
-        .querySelector<SVGPathElement>("[data-solar-line]")
-        ?.setAttribute("d", `M${points.join("L")}`);
-    } else {
-      this._root
-        .querySelector<SVGPathElement>("[data-solar-area]")
-        ?.setAttribute("d", "");
-      this._root
-        .querySelector<SVGPathElement>("[data-solar-line]")
-        ?.setAttribute("d", "");
-    }
-
-    if (actual.length) {
-      const points = actual
-        .map((value, index) => {
-          const progress = (index + 1) / actual.length;
-          if (progress > fraction) return null;
-          const position = arcPoint(progress);
-          return `${position.x.toFixed(1)},${(
-            position.y -
-            ((value ?? 0) / max) * 72
-          ).toFixed(1)}`;
-        })
-        .filter((value): value is string => value !== null);
-      this._root
-        .querySelector<SVGPathElement>("[data-solar-actual]")
-        ?.setAttribute("d", points.length ? `M${points.join("L")}` : "");
-    } else {
-      this._root
-        .querySelector<SVGPathElement>("[data-solar-actual]")
-        ?.setAttribute("d", "");
-    }
-
-    const price = this._priceToday();
-    const segments = this._root.querySelector<SVGGElement>("[data-prices]");
-    if (segments) {
-      if (!price.values.length) {
-        segments.innerHTML = "";
-      } else {
-        let html = "";
-        const hour = this._now().getHours();
-        for (let index = 0; index < 24; index++) {
-          const start = arcPoint(index / 24);
-          const end = arcPoint((index + 1) / 24);
-          const color = priceColor(price.values[index], price.min, price.max);
-          html += `<line x1="${start.x}" y1="${start.y + 9}" x2="${
-            end.x
-          }" y2="${end.y + 9}" stroke="${color}" stroke-width="${
-            index === hour ? 7 : 4.5
-          }" opacity="${index === hour ? 1 : 0.72}" stroke-linecap="butt"/>`;
-        }
-        segments.innerHTML = html;
-      }
-    }
-
-    const times = this._prayerTimes();
-    const next = this._nextPrayer();
-    const sunrise = this._model.prayers?.sunrise ?? null;
-    const marks = this._root.querySelector<SVGGElement>("[data-prayer-marks]");
-    if (marks) {
-      marks.innerHTML = times
-        .map((prayer) => {
-          const position = arcPoint(prayer.minutes / 1440);
-          return `<line x1="${position.x}" y1="${position.y - 6}" x2="${
-            position.x
-          }" y2="${position.y + 6}" stroke="var(--muted)" stroke-width="1" opacity=".6"/><circle cx="${
-            position.x
-          }" cy="${position.y}" r="2.2" fill="${
-            next && next.id === prayer.id ? "var(--accent)" : "var(--text-2)"
-          }"/>`;
-        })
-        .join("");
-    }
-
-    const labels = this._root.querySelector<HTMLElement>("[data-arc-labels]");
-    if (labels) {
-      let html = "";
-      if (sunrise) {
-        const position = arcPoint(dayFraction(sunrise));
-        html += `<span class="arc-label sun" style="left:${
-          position.x / 10
-        }%;top:${(position.y / 300) * 100 + 5}%">${escapeHtml(
-          this._t("prayers.sunrise"),
-        )}<span class="t">${formatTime(sunrise, this._language)}</span></span>`;
-      }
-      times.forEach((prayer, index) => {
-        const position = arcPoint(prayer.minutes / 1440);
-        const isNext = next && next.id === prayer.id;
-        html += `<span class="arc-label${isNext ? " next" : ""}" style="left:${
-          position.x / 10
-        }%;top:${(position.y / 300) * 100 + (index % 2 ? 9 : 5)}%">${escapeHtml(
-          prayer.name,
-        )}<span class="t">${formatTime(
-          prayer.time,
-          this._language,
-        )}</span></span>`;
-      });
-      labels.innerHTML = html;
-    }
   }
 
   private _scrubAt(clientX: number): void {
@@ -1252,198 +782,13 @@ export class ArcusCard extends HTMLElement {
       ?.classList.remove("show");
   }
 
-  private _refreshCharts(): void {
-    const svgs = new Set<SVGSVGElement>();
-    this._root
-      .querySelectorAll<SVGPathElement>("[data-chart-line]")
-      .forEach((element) => {
-        const svg = element.closest("svg");
-        if (svg) svgs.add(svg);
-      });
-
-    svgs.forEach((svg) => {
-      const paths = [
-        ...svg.querySelectorAll<SVGPathElement>("[data-chart-line]"),
-      ];
-      const { w, h } = this._viewBox(svg, 560, 130);
-      const list = paths.map((path) =>
-        this._seriesFor(path.dataset.chartLine ?? ""),
-      );
-      let range: { min: number; max: number } | null = null;
-      if (svg.dataset.chartShared === "1") {
-        const all = list
-          .flat()
-          .filter((value): value is number => value !== null);
-        if (all.length)
-          range = { min: Math.min(...all), max: Math.max(...all) };
-      }
-      paths.forEach((path, index) => {
-        path.setAttribute("d", sparkPath(list[index], w, h, 6, range));
-        const area = svg.querySelector<SVGPathElement>(
-          `[data-chart-area="${path.dataset.chartLine}"]`,
-        );
-        if (area) area.setAttribute("d", areaPath(list[index], w, h, 6, range));
-      });
-      const box = svg.closest(".chart-box");
-      if (box)
-        box.classList.toggle("no-data", !list.some((item) => item.length));
-    });
-  }
-
-  private _histTs(row: HistoryRow): number {
-    const raw = row.lu ?? row.last_updated ?? row.last_changed ?? row.lc;
-    if (typeof raw === "number") return Number.isFinite(raw) ? raw * 1000 : 0;
-    if (typeof raw === "string") {
-      if (/^\d+(\.\d+)?$/.test(raw)) return Number(raw) * 1000;
-      const parsed = Date.parse(raw);
-      return Number.isNaN(parsed) ? 0 : parsed;
-    }
-    return 0;
-  }
-
-  private _refreshBars(): void {
-    this._root
-      .querySelectorAll<HTMLElement>("[data-bars]")
-      .forEach((element) => {
-        if (element.dataset.bars !== "solarWeek") return;
-        const rows = this._history.raw(this._config.solar?.today ?? "");
-        if (!rows.length) {
-          element.innerHTML = `<span class="day-empty">${escapeHtml(
-            this._t("common.noDataYet"),
-          )}</span>`;
-          return;
-        }
-
-        const byDay = new Map<string, number>();
-        rows.forEach((row) => {
-          const timestamp = this._histTs(row);
-          const value = Number(row.s ?? row.state);
-          if (!Number.isFinite(timestamp) || !Number.isFinite(value)) return;
-          const date = new Date(timestamp);
-          const key = `${date.getFullYear()}-${String(
-            date.getMonth() + 1,
-          ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-          byDay.set(key, Math.max(byDay.get(key) ?? 0, value));
-        });
-
-        const days = [...byDay.entries()]
-          .sort((a, b) => a[0].localeCompare(b[0]))
-          .slice(-7);
-        if (!days.length) {
-          element.innerHTML = `<span class="day-empty">${escapeHtml(
-            this._t("common.noDataYet"),
-          )}</span>`;
-          return;
-        }
-
-        const max = Math.max(...days.map((day) => day[1]), 1);
-        const today = this._now();
-        const todayKey = `${today.getFullYear()}-${String(
-          today.getMonth() + 1,
-        ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-        const formatter = new Intl.DateTimeFormat(this._locale(), {
-          weekday: "short",
-        });
-        element.innerHTML = days
-          .map(([key, value]) => {
-            const date = new Date(`${key}T12:00:00`);
-            return `<div class="day${
-              key === todayKey ? " today" : ""
-            }"><span class="val">${formatNumber(
-              value,
-              1,
-              this._language,
-            )}</span><i class="bar" style="height:${Math.max(
-              7,
-              (value / max) * 74,
-            )}%"></i><span class="day-label">${escapeHtml(
-              formatter.format(date).replace(/\.$/, ""),
-            )}</span></div>`;
-          })
-          .join("");
-      });
-  }
-
-  private _refreshAlerts(): void {
-    const slot = this._root.querySelector<HTMLElement>("[data-alert-slot]");
-    if (!slot) return;
-    const alerts = this._model.alerts;
-    const pill = this._root.querySelector<HTMLElement>("[data-alert-pill]");
-    if (pill) pill.hidden = !alerts.length;
-
-    if (!alerts.length) {
-      if (slot.innerHTML) slot.innerHTML = "";
-      return;
-    }
-
-    const alert = alerts[0];
-    const html = `<button class="alert-band" data-nav="${escapeHtml(
-      alert.route,
-    )}">
-      <span>${icon("alert")}</span>
-      <span class="alert-text"><b>${escapeHtml(
-        alert.title,
-      )}.</b> ${escapeHtml(alert.text)}</span>
-      ${
-        alerts.length > 1
-          ? `<span class="alert-count">+${alerts.length - 1}</span>`
-          : ""
-      }
-      <span>${icon("arrow")}</span>
-    </button>`;
-    if (slot.innerHTML !== html) slot.innerHTML = html;
-  }
-
-  _chapterArt(chapter: { key: string }): string {
-    return renderChapterArt(chapter.key as ChapterKey, {
-      model: this._model,
-      config: this._config,
-      t: this._t,
-      language: this._language,
-      history: this._history,
-      now: this._now(),
-      isOn: (entityId) => this._on(entityId),
-    });
-  }
-
-  private _refreshArt(): void {
-    const keys: ChapterKey[] = [
-      "energi",
-      "sol",
-      "vand",
-      "sikkerhed",
-      "ventilation",
-      "teknik",
-      "oekonomi",
-      "lys",
-      "varme",
-      "alarmer",
-    ];
-    this._root
-      .querySelectorAll<HTMLElement>("[data-art]")
-      .forEach((element) => {
-        const key = element.dataset.art;
-        if (!key || !keys.includes(key as ChapterKey)) return;
-        const html = this._chapterArt({ key });
-        if (element.innerHTML !== html) element.innerHTML = html;
-      });
-
-    const count = this._root.querySelector<HTMLElement>(
-      '[data-chapter="alarmer"] .big-num',
-    );
-    if (count) count.textContent = String(this._model.alerts.length);
-  }
-
-  private _refreshClockState(): void {
-    const element = this._root.querySelector<HTMLElement>(
-      "[data-bind='clock']",
-    );
-    if (element) element.textContent = formatTime(this._now(), this._language);
-  }
-
   private _startClock(): void {
     if (this._clockTimer) clearInterval(this._clockTimer);
-    this._clockTimer = setInterval(() => this._refresh(), 20_000);
+    this._clockTimer = setInterval(() => {
+      this._schedule();
+      // `ensure` is a TTL check; it only refetches when the cache is stale.
+      void this._ensureHistory(this._historyIds(), 24);
+    }, 20_000);
   }
 
   private _schedule(): void {
@@ -1452,8 +797,7 @@ export class ArcusCard extends HTMLElement {
       this._renderFrame = null;
       if (!this._built || !this._hass) return;
       flushSync(() => this._renderIntoReact());
-      this._refresh();
-    };
+      };
     this._renderFrame =
       typeof requestAnimationFrame === "function"
         ? requestAnimationFrame(commit)
@@ -1521,6 +865,16 @@ export class ArcusCard extends HTMLElement {
     add(solar?.savingsTotal);
     add(solar?.savingsSolar);
     add(solar?.savingsBattery);
+    add(solar?.pv3);
+    add(solar?.pv4);
+    add(solar?.gridL1);
+    add(solar?.gridL2);
+    add(solar?.gridL3);
+    add(solar?.batteryCharge);
+    add(solar?.batteryDischarge);
+
+    for (const zone of this._model.heating) add(zone.entity.entityId);
+    for (const zone of this._model.heatingReserve) add(zone.entity.entityId);
 
     add(this._config.ventilation?.temperature);
     add(this._config.ventilation?.humidity);

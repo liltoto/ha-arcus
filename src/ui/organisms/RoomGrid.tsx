@@ -5,7 +5,10 @@ import {
   useBindings,
   useConfig,
   useHass,
+  useHistory,
+  useHistoryVersion,
   useModel,
+  useNow,
   useTranslator,
 } from "../hooks";
 import { roomView, systemCardView } from "../home-view";
@@ -23,7 +26,22 @@ export function RoomGrid() {
   const t = useTranslator();
   const bindings = useBindings();
   const actions = useActions();
+  const history = useHistory();
+  const now = useNow();
   const language = resolveLanguage(hass.language, config);
+  useHistoryVersion();
+  const nowMs = now().getTime();
+  const sparkGraph = (values: Array<number | null>) =>
+    values.length
+      ? {
+          mode: "line" as const,
+          start: nowMs - 86_400_000,
+          end: nowMs,
+          unit: "°C",
+          decimals: 1,
+          series: [{ values }],
+        }
+      : null;
 
   const displayRooms = model.rooms.filter((room) => room.id !== "skur");
   const skurRoom = model.rooms.find((room) => room.id === "skur");
@@ -43,22 +61,29 @@ export function RoomGrid() {
       </div>
       {hasRooms ? (
       <div className="room-grid">
-        {displayRooms.map((room) => (
-          <RoomCard
-            key={room.id}
-            room={roomView(room, model, language, t)}
-            language={language}
-            openLabel={t("room.openRoom")}
-            sparkKey={`roomTemp:${room.id}`}
-            onOpen={() => actions.navigate(`rum/${room.id}`)}
-          />
-        ))}
+        {displayRooms.map((room) => {
+          const spark = history.series(room.temp?.entityId ?? "");
+          return (
+            <RoomCard
+              key={room.id}
+              room={roomView(room, model, language, t)}
+              language={language}
+              openLabel={t("room.openRoom")}
+              spark={spark}
+              sparkGraph={sparkGraph(spark)}
+              onOpen={() => actions.navigate(`rum/${room.id}`)}
+            />
+          );
+        })}
         {model.systemCards.map((card) => {
           const view = systemCardView(card, language, t);
+          const spark = history.series(view.tempEntity);
           return (
             <SystemCard
               key={`system:${card.id}`}
               card={view}
+              spark={spark}
+              sparkGraph={sparkGraph(spark)}
               onOpen={() => actions.navigate(view.route)}
             />
           );
@@ -75,7 +100,10 @@ export function RoomGrid() {
             )}
             language={language}
             openLabel={t("room.openRoom")}
-            sparkKey={`roomTemp:${skurRoom.id}`}
+            spark={history.series(skurRoom.temp?.entityId ?? "")}
+            sparkGraph={sparkGraph(
+              history.series(skurRoom.temp?.entityId ?? ""),
+            )}
             onOpen={() => actions.navigate(`rum/${skurRoom.id}`)}
           />
         ) : null}

@@ -181,3 +181,23 @@ test("downsamples long series to at most 90 points", async () => {
   expect(series.every((value) => value !== null)).toBe(true);
   expect(cache.window("sensor.long", 1)).toHaveLength(90);
 });
+
+test("notifies subscribers when new rows are cached", async () => {
+  const hass = makeHass(async () => ({
+    "sensor.d": [{ s: "5", lu: 1763000000 }],
+  }));
+  const cache = new HistoryCache(hass, () => FIXED);
+  const listener = vi.fn();
+  const unsubscribe = cache.subscribe(listener);
+  const before = cache.getVersion();
+
+  await cache.ensure(["sensor.d"], 24);
+
+  expect(listener).toHaveBeenCalledTimes(1);
+  expect(cache.getVersion()).toBe(before + 1);
+  expect(cache.series("sensor.d")).toEqual([5]);
+
+  unsubscribe();
+  await cache.ensure(["sensor.d"], 48);
+  expect(listener).toHaveBeenCalledTimes(1);
+});

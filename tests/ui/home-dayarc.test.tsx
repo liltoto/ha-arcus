@@ -32,24 +32,15 @@ describe("DayArc", () => {
     const rect = query(clip, "rect[data-past-clip]");
     expect(rect).toHaveAttribute("x", "40");
     expect(rect).toHaveAttribute("y", "0");
-    expect(rect).toHaveAttribute("width", "0");
+    expect(Number(rect.getAttribute("width"))).toBeGreaterThanOrEqual(0);
     expect(rect).toHaveAttribute("height", "300");
   });
 
-  it("leaves every path empty for the card to patch", () => {
+  it("draws the arc and solar paths in React", () => {
     const { container } = renderWithArcus(<DayArc />);
 
-    for (const hook of [
-      "data-arc-line",
-      "data-arc-past",
-      "data-solar-area",
-      "data-solar-line",
-      "data-solar-actual",
-    ]) {
-      const path = query(container, `svg.arc-svg path[${hook}]`);
-      expect(path.getAttribute("d"), hook).toBe("");
-    }
-
+    const arc = query(container, "svg.arc-svg path[data-arc-line]");
+    expect(arc.getAttribute("d")).toContain("M40,210");
     expect(
       query(container, "svg.arc-svg path[data-arc-past]"),
     ).toHaveAttribute("clip-path", "url(#pastClip)");
@@ -57,16 +48,20 @@ describe("DayArc", () => {
       "fill",
       "url(#solarFill)",
     );
+    expect(
+      query(container, "svg.arc-svg path[data-solar-line]").getAttribute("d"),
+    ).not.toBe("");
   });
 
-  it("leaves the price and prayer groups for the card to fill", () => {
+  it("fills the price and prayer groups from the model", () => {
     const { container } = renderWithArcus(<DayArc />);
 
-    for (const hook of ["data-prices", "data-prayer-marks"]) {
-      const group = query(container, `svg.arc-svg g[${hook}]`);
-      expect(group.childElementCount, hook).toBe(0);
-      expect(group.textContent, hook).toBe("");
-    }
+    expect(
+      query(container, "svg.arc-svg g[data-prices]").childElementCount,
+    ).toBeGreaterThan(0);
+    expect(
+      query(container, "svg.arc-svg g[data-prayer-marks]").childElementCount,
+    ).toBeGreaterThan(0);
   });
 
   it("renders the needle, bead, labels, and hour ticks", () => {

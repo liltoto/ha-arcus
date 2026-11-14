@@ -32,8 +32,8 @@ const WIDTH = 560;
  *
  * It keeps the legacy `.chart-box` markup: the `data-graph` hover dataset is
  * attached to the frame (not the svg), the plotted lines carry
- * `data-chart-line` keys the card can redraw from history, and the first
- * series owns the area fill and gradient. `applyGraph` writes the dataset
+ * `data-chart-line` keys each series, and the first series owns the area fill
+ * and gradient. `applyGraph` writes the dataset
  * after mount because the graph helpers own attribute encoding.
  */
 export function SolarChart({

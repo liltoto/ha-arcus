@@ -1,4 +1,15 @@
-import { useActions, useBindings, useModel, useTranslator } from "../hooks";
+import type { GraphInput } from "../../render/graph";
+import { Icon } from "../atoms/Icon";
+import {
+  useActions,
+  useBindings,
+  useConfig,
+  useHistory,
+  useHistoryVersion,
+  useModel,
+  useNow,
+  useTranslator,
+} from "../hooks";
 import { VitalStat } from "../molecules/VitalStat";
 
 const RING_CIRCUMFERENCE = 100.5;
@@ -10,24 +21,49 @@ function ringStroke(soc: number): string {
   return "var(--brass)";
 }
 
+function sparkGraph(
+  values: Array<number | null>,
+  nowMs: number,
+  unit: string,
+  decimals: number,
+): GraphInput | null {
+  if (!values.length) return null;
+  return {
+    mode: "line",
+    start: nowMs - 86_400_000,
+    end: nowMs,
+    unit,
+    decimals,
+    series: [{ values }],
+  };
+}
+
 /**
- * The four hero statistics and the weather strip below them.
+ * The four hero statistics, the weather strip, and the first alert.
  *
- * The indoor stat opens the first room that is actually shown on the home
- * view; the battery and solar stats both lead to the solar sheet. Sparkline
- * paths are left empty: the card patches them from the history cache through
- * the `data-spark` hooks.
+ * Every sparkline reads the shared history cache and re-renders through the
+ * cache subscription. There is no card-side `data-spark` patcher anymore.
  */
 export function Vitals() {
   const bindings = useBindings();
   const t = useTranslator();
   const model = useModel();
+  const config = useConfig();
+  const history = useHistory();
+  const now = useNow();
   const actions = useActions();
+  useHistoryVersion();
 
+  const nowMs = now().getTime();
   const displayRoom = model.rooms.find((room) => room.id !== "skur");
   const indoorRoute = displayRoom ? `rum/${displayRoom.id}` : "alle";
   const soc = model.solar?.batterySoc ?? 0;
   const batteryOffset = RING_CIRCUMFERENCE - (soc / 100) * RING_CIRCUMFERENCE;
+
+  const indoor = history.series(config.ventilation?.temperature ?? "");
+  const price = model.price?.values ?? [];
+  const solarActual = history.series(config.solar?.power ?? "");
+  const alert = model.alerts[0];
 
   return (
     <>
@@ -37,7 +73,8 @@ export function Vitals() {
           value={bindings.indoor}
           unit="°C"
           sub={bindings.indoorSub}
-          sparkKey="indoor"
+          spark={indoor}
+          sparkGraph={sparkGraph(indoor, nowMs, "°C", 1)}
           sparkColor="var(--sky)"
           onClick={() => actions.navigate(indoorRoute)}
         />
@@ -46,7 +83,8 @@ export function Vitals() {
           value={bindings.price}
           unit="kr"
           sub={bindings.priceSub}
-          sparkKey="price"
+          spark={price}
+          sparkGraph={sparkGraph(price, nowMs, "kr", 2)}
           sparkColor="var(--brass)"
           onClick={() => actions.navigate("energi")}
         />
@@ -87,7 +125,8 @@ export function Vitals() {
           value={bindings.solarNow}
           unit="W"
           sub={bindings.solarSub}
-          sparkKey="solarActual"
+          spark={solarActual}
+          sparkGraph={sparkGraph(solarActual, nowMs, "W", 0)}
           sparkColor="var(--amber)"
           onClick={() => actions.navigate("sol")}
         />
@@ -96,7 +135,25 @@ export function Vitals() {
         className="weather-strip"
         dangerouslySetInnerHTML={{ __html: bindings.weatherStrip ?? "" }}
       />
-      <div data-alert-slot />
+      <div data-alert-slot>
+        {alert ? (
+          <button
+            type="button"
+            className="alert-band"
+            data-nav={alert.route}
+            onClick={() => actions.navigate(alert.route)}
+          >
+            <Icon name="alert" />
+            <span className="alert-text">
+              <b>{alert.title}.</b> {alert.text}
+            </span>
+            {model.alerts.length > 1 ? (
+              <span className="alert-count">+{model.alerts.length - 1}</span>
+            ) : null}
+            <Icon name="arrow" />
+          </button>
+        ) : null}
+      </div>
     </>
   );
 }

@@ -1,5 +1,7 @@
 import type { CSSProperties } from "react";
 import { formatNumber } from "../../format";
+import type { ChartValues } from "../../render/charts";
+import type { GraphInput } from "../../render/graph";
 import { Dot } from "../atoms/Dot";
 import { Icon } from "../atoms/Icon";
 import { Sparkline } from "../atoms/Sparkline";
@@ -10,8 +12,8 @@ export interface RoomCardProps {
   onOpen: () => void;
   language?: string;
   openLabel?: string;
-  /** Legacy `data-spark` key for the card's history patcher. */
-  sparkKey?: string;
+  spark?: ChartValues;
+  sparkGraph?: GraphInput | null;
 }
 
 /**
@@ -23,7 +25,8 @@ export function RoomCard({
   onOpen,
   language = "da",
   openLabel = "Open room",
-  sparkKey,
+  spark,
+  sparkGraph = null,
 }: RoomCardProps) {
   const temp = room.temp === null ? "–" : formatNumber(room.temp, 1, language);
   const airTone =
@@ -75,30 +78,13 @@ export function RoomCard({
           ) : null}
         </div>
       </div>
-      {sparkKey ? (
-        <svg
-          className="room-spark"
-          viewBox="0 0 100 40"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <path
-            data-spark={sparkKey}
-            d=""
-            fill="none"
-            stroke="var(--room)"
-            strokeWidth={1.1}
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-      ) : (
-        <Sparkline
-          className="room-spark"
-          values={room.spark}
-          height={40}
-          style={{ color: room.tint }}
-        />
-      )}
+      <Sparkline
+        className="room-spark"
+        values={spark ?? room.spark}
+        height={40}
+        graph={sparkGraph}
+        style={{ color: room.tint }}
+      />
       <span className="room-open">{openLabel}</span>
     </button>
   );

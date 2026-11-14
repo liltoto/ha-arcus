@@ -57,9 +57,7 @@ describe("RoomGrid", () => {
     expect(card).toHaveTextContent("23,2");
     expect(card).toHaveTextContent("blæsertrin 2 · 38 %");
     expect(card?.querySelector("svg.room-spark")).not.toBeNull();
-    expect(
-      card?.querySelector("[data-spark]")?.getAttribute("data-spark"),
-    ).toBe("sensor.nilan602_actual_room_temperature");
+    expect(card?.querySelector("[data-spark]")).toBeNull();
     expect(card).toHaveTextContent("åbn →");
   });
 

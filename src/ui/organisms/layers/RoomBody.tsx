@@ -15,6 +15,7 @@ import {
   useConfig,
   useHass,
   useHistory,
+  useHistoryVersion,
   useModel,
   useNow,
   useTranslator,
@@ -100,6 +101,7 @@ export function RoomBody({ route }: LayerBodyProps) {
   const config = useConfig();
   const t = useTranslator();
   const history = useHistory();
+  useHistoryVersion();
   const now = useNow();
   const actions = useActions();
 

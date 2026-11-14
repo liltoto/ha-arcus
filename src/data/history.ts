@@ -110,10 +110,31 @@ export class HistoryCache {
   private readonly now: () => Date;
   private readonly cache = new Map<string, CacheEntry>();
   private readonly inflight = new Map<string, Promise<void>>();
+  private readonly listeners = new Set<() => void>();
+  private version = 0;
 
   constructor(hass: HistoryHass, now: () => Date = () => new Date()) {
     this.hass = hass;
     this.now = now;
+  }
+
+  /**
+   * Stable subscription used by `useSyncExternalStore`. The version changes
+   * only when cached rows change, so React charts re-render when history
+   * arrives or is refreshed.
+   */
+  readonly subscribe = (listener: () => void): (() => void) => {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+
+  readonly getVersion = (): number => this.version;
+
+  private notify(): void {
+    this.version += 1;
+    this.listeners.forEach((listener) => listener());
   }
 
   /** Load up to `hours` of history for the given entities. */
@@ -243,5 +264,6 @@ export class HistoryCache {
       fetchedAt: this.now().getTime(),
       hours,
     });
+    this.notify();
   }
 }

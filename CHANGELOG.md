@@ -2,6 +2,15 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.1 - 2026-11-14
+
+### Fixed
+
+- Home and sheet charts are owned solely by React. The card's legacy 20-second chart patchers were removed, so a timer or state push can no longer overwrite live Home Assistant history with forecast, flat, or empty fallback data.
+- The history cache now notifies subscribers, so charts re-render when a history fetch completes or refreshes. The card refreshes the shared history on its 20-second clock tick through the cache TTL check.
+- The day arc, room/system sparklines, chapter art, and solar/room/tech/economy charts now read their series directly from React instead of empty DOM hooks.
+- A current electricity price without an intraday forecast no longer produces a fabricated flat 24-hour curve; the energy chart shows its empty state instead.
+
 ## 0.2.0 - 2026-11-14
 
 React and Storybook migration. The visual design and the Home Assistant contract are unchanged.

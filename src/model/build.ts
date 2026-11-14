@@ -312,7 +312,11 @@ function buildPrice(
 
   const nowHour = Math.max(0, Math.min(23, now.getHours()));
   let values: number[];
-  if (rows.length) {
+  if (!rows.length) {
+    // A current price without an intraday curve is not history. Keep the
+    // current reading, but do not fabricate a flat 24-hour price series.
+    values = [];
+  } else {
     const byHour = new Map<number, number>();
     for (const row of rows) {
       if (!byHour.has(row.hour)) byHour.set(row.hour, row.price);
@@ -325,13 +329,11 @@ function buildPrice(
       const value = byHour.get(hour) ?? first;
       return value + offset;
     });
-  } else {
-    values = Array.from({ length: 24 }, () => current as number);
   }
 
   const nowPrice = current ?? values[nowHour] ?? values[0];
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const min = values.length ? Math.min(...values) : nowPrice;
+  const max = values.length ? Math.max(...values) : nowPrice;
   const cheapest = cheapestWindow(values, nowHour);
 
   const tomorrowAttributes = attributesOf(hass, forecastId);

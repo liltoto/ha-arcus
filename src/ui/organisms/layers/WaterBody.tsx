@@ -14,6 +14,7 @@ import {
   useConfig,
   useHass,
   useHistory,
+  useHistoryVersion,
   useModel,
   useNow,
   useTranslator,
@@ -117,6 +118,7 @@ export function WaterBody(_props: LayerBodyProps) {
   const config = useConfig();
   const t = useTranslator();
   const history = useHistory();
+  useHistoryVersion();
   const now = useNow();
   const actions = useActions();
   const gradientId = `water-chart-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
