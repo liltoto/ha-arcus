@@ -11,6 +11,8 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.0`.
   (`?full=1`, `?light=1`).
 - `npm test` — Vitest + happy-dom. One file:
   `npx vitest run tests/<name>.test.tsx`.
+- `npm run test:coverage` — Vitest with Istanbul coverage; writes
+  `coverage/coverage-final.json` for `fallow:health` and `fallow:audit`.
 - `npm run typecheck` — `tsc --noEmit`, strict.
 - `npm run build` — production Panda CSS (minified and hashed) plus minified
   `dist/arcus.js` without sourcemap. `dist/` is gitignored; stop `npm run dev`
@@ -20,17 +22,22 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.0`.
   `npx panda codegen`; `npm ci` normally does this via `prepare`.
 - `npm run size` — asserts `dist/arcus.js` is within the 400 KB gzip budget.
 - `npm run fallow:dead` — Fallow dead-code gate (unused files/exports/deps).
-- `npm run fallow:dupes` — Fallow copy-paste report; advisory, not a gate.
+- `npm run fallow:arch` — Fallow architecture check of atomic-design boundaries.
+- `npm run fallow:dupes` — Fallow copy-paste report; fails above the 2% ceiling.
+- `npm run fallow:audit` — changed-file Fallow audit; PRs gate on new findings.
+- `npm run fallow:health` — Fallow health score from Istanbul coverage; fails below 80.
 - `npm run fallow` — full local Fallow report across every detector.
 - `npm run storybook` — Storybook on `:6006`.
 - `npm run build-storybook` — static Storybook build; CI runs this as a gate.
 - `npm run visual` — Playwright; starts `npm run dev` via `webServer`.
 - `npm run lint` is broken (no `eslint.config.*`); don't use it as a gate.
 - Verify before pushing:
-  `npm run typecheck && npm test && npm run fallow:dead && npm run build && npm run size && npm run build-storybook`.
-- Fallow config lives in `.fallowrc.jsonc`: `legacy/` is excluded, and
+  `npm run typecheck && npm run test:coverage && npm run fallow:dead && npm run fallow:arch && npm run fallow:dupes && npm run fallow:health && npm run build && npm run size && npm run build-storybook`.
+- Fallow config lives in `.fallowrc.jsonc`: `legacy/` is excluded,
   `getStubConfig`/`getConfig` are allowlisted because Home Assistant calls them
-  reflectively. Before deleting an export, confirm with
+  reflectively, `boundaries` document the atomic-design layer rules, and
+  `duplicates.threshold` caps duplication at 2%. `fallow:audit` gates only
+  changed files. Before deleting an export, confirm with
   `npx fallow dead-code --trace <file>:<export>`.
 
 ## Architecture
@@ -51,9 +58,12 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.0`.
   (`hass`, `model`, `config`, `t`, `bindings`, `route`, `actions`, `history`,
   `now`) through `src/ui/hooks.ts`. Organisms and pages use those hooks; atoms
   and molecules do not.
-- `src/ui/organisms/SheetFrame.tsx` owns the scrim, focus trap, Escape,
-  drag-to-dismiss, and scroll reset. `src/ui/pages/SheetPage.tsx` resolves a
-  route through `src/ui/pages/layerRegistry.ts`. Every sheet body lives in
+- `src/ui/pages/SheetFrame.tsx` owns the scrim, focus trap, Escape,
+  drag-to-dismiss, and scroll reset. It is a page-level route shell that
+  `HomePage` passes into `HomeTemplate` as the `sheet` slot, so it can use
+  `SheetPage`/`SheetTemplate` without an organism importing pages or templates.
+  `src/ui/pages/SheetPage.tsx` resolves a route through
+  `src/ui/pages/layerRegistry.ts`. Every sheet body lives in
   `src/ui/organisms/layers/`; add a route by adding a body and a registry entry.
 - `src/model/discover.ts` discovers rooms from HA's area/device/entity
   registries; `src/model/build.ts` builds `HomeModel`. `RoomModel` sensor fields
@@ -133,8 +143,10 @@ no monorepo. Published at `liltoto/ha-arcus`; current release `v0.3.0`.
   push is not a release.
 - `main` is protected. This single-maintainer repo merges with
   `gh pr merge --squash --admin`.
-- CI: typecheck -> test -> fallow:dead -> build -> size -> HACS validation, plus
-  a Storybook build job. Visual is pinned to `ubuntu-26.04`.
+- CI: typecheck -> test:coverage -> fallow:dead -> fallow:arch -> fallow:dupes
+  -> fallow:health -> build -> size -> HACS validation, plus a Storybook build
+  job. Pull requests also run `fallow:audit` (changed files only). Visual is
+  pinned to `ubuntu-26.04`.
 - The live HA dashboard `hjem-dognet` uses `custom:arcus` and the
   Marketplace-installed `/local/community/ha-arcus/arcus.js`; it does not load
   this repo's `dist/`. Changes need a release + Marketplace update. The old

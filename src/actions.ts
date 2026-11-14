@@ -37,6 +37,32 @@ function splitService(value: string | undefined): [string, string] {
   return [raw.slice(0, dot), raw.slice(dot + 1)];
 }
 
+/**
+ * Only absolute `http(s)` URLs may reach `window.open`. A dashboard action
+ * comes from user config, so `javascript:`, `data:`, `blob:`, protocol-relative
+ * and relative values are open-redirect/XSS vectors and must be ignored.
+ */
+function safeExternalUrl(value: string): string | null {
+  if (!/^https?:\/\//i.test(value)) return null;
+  try {
+    const url = new URL(value);
+    if (!url.hostname) return null;
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return value;
+  } catch {
+    return null;
+  }
+}
+
+function openExternalAction(action: ActionConfig): void {
+  const url = String(action.url_path ?? action.url ?? "").trim();
+  if (!url) return;
+  const safeUrl = safeExternalUrl(url);
+  if (!safeUrl) return;
+  const target = String(action.url_target ?? "_blank");
+  window.open(safeUrl, target, "noopener,noreferrer");
+}
+
 function navigate(path: string | undefined): void {
   const raw = String(path ?? "").trim();
   if (!raw) return;
@@ -126,10 +152,7 @@ export async function performAction(
     }
 
     case "url": {
-      const url = String(action.url_path ?? action.url ?? "").trim();
-      if (!url) return;
-      const target = String(action.url_target ?? "_blank");
-      window.open(url, target, "noopener,noreferrer");
+      openExternalAction(action);
       return;
     }
 

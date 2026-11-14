@@ -11,3 +11,4 @@ dev/fixture.js
 dev/fixture.js.map
 styled-system/
 .fallow/
+coverage/

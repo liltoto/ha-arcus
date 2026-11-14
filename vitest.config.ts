@@ -9,5 +9,17 @@ export default defineConfig({
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
     setupFiles: ["tests/setup.ts"],
     restoreMocks: true,
+    coverage: {
+      provider: "istanbul",
+      reporter: ["json"],
+      reportsDirectory: "coverage",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "src/**/*.stories.{ts,tsx}",
+        "src/ui/storybook/**",
+        "src/types/**",
+        "src/**/*.d.ts",
+      ],
+    },
   },
 });

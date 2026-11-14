@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { useSheetDrag } from "../hooks/useSheetDrag";
-import { SheetPage } from "../pages/SheetPage";
+import { SheetPage } from "./SheetPage";
 import { useActions, useRoute, useTranslator } from "../hooks";
 import { SheetTemplate } from "../templates/SheetTemplate";
 import type { ArcusRoute } from "../types";

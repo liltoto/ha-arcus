@@ -6,4 +6,198 @@
   ],
   // Home Assistant calls these custom-element lifecycle methods reflectively.
   "usedClassMembers": ["getStubConfig", "getConfig"],
+  // Copy-paste ceiling: fail once duplicated lines exceed 2% of the codebase.
+  "duplicates": { "threshold": 2 },
+  // Atomic-design import direction. Each zone may only import the zones listed
+  // in its rule; type-only imports are restricted to the `allowTypeOnly` list.
+  "boundaries": {
+    "zones": [
+      // Stories first: a co-located story belongs to `stories`, not its layer.
+      { "name": "stories", "patterns": ["src/**/*.stories.tsx"] },
+      { "name": "atoms", "patterns": ["src/ui/atoms/**"] },
+      { "name": "molecules", "patterns": ["src/ui/molecules/**"] },
+      { "name": "organisms", "patterns": ["src/ui/organisms/**"] },
+      { "name": "templates", "patterns": ["src/ui/templates/**"] },
+      { "name": "pages", "patterns": ["src/ui/pages/**"] },
+      { "name": "providers", "patterns": ["src/ui/providers/**"] },
+      {
+        "name": "app",
+        "patterns": [
+          "src/ui/ArcusApp.tsx",
+          "src/ui/hooks.ts",
+          // Provider hooks are app-level plumbing, alongside `hooks.ts`.
+          "src/ui/hooks/**",
+          "src/ui/home-view.ts",
+          "src/ui/types.ts",
+          "src/ui/view-types.ts",
+          "src/ui/storybook/**",
+        ],
+      },
+      {
+        "name": "ui-core",
+        // Fonts are a styling asset: `styles/index.ts` owns the @font-face CSS.
+        "patterns": ["src/ui/styles/**", "src/render/fonts.ts"],
+      },
+      { "name": "model", "patterns": ["src/model/**"] },
+      { "name": "render", "patterns": ["src/render/**"] },
+      { "name": "data", "patterns": ["src/data/**"] },
+      {
+        "name": "root",
+        "patterns": [
+          "src/{actions,card,config,editor-utils,editor,format,localize,main,strategy-editor,strategy,types,version}.ts",
+          "src/types/**",
+        ],
+      },
+    ],
+    "rules": [
+      {
+        "from": "stories",
+        "allow": [
+          "stories",
+          "atoms",
+          "molecules",
+          "organisms",
+          "templates",
+          "pages",
+          "providers",
+          "app",
+          "ui-core",
+          "model",
+          "render",
+          "data",
+          "root",
+        ],
+      },
+      {
+        "from": "atoms",
+        "allow": ["atoms", "ui-core", "render", "root"],
+      },
+      {
+        "from": "molecules",
+        "allow": [
+          "atoms",
+          "molecules",
+          "app",
+          "ui-core",
+          "render",
+          "root",
+        ],
+      },
+      {
+        "from": "organisms",
+        // Sheet bodies receive their prop types from the page layer.
+        "allowTypeOnly": ["pages"],
+        // Organisms consume the public hook surface in `src/ui/hooks.ts`.
+        // Fallow judges re-export chains by the declaring module, so the
+        // context hooks resolve to their implementation in `providers`.
+        "allow": [
+          "atoms",
+          "molecules",
+          "organisms",
+          "app",
+          "providers",
+          "ui-core",
+          "render",
+          "model",
+          "data",
+          "root",
+        ],
+      },
+      {
+        "from": "templates",
+        "allow": [
+          "atoms",
+          "molecules",
+          "organisms",
+          "app",
+          "ui-core",
+          "render",
+          "root",
+        ],
+      },
+      {
+        "from": "pages",
+        "allow": [
+          "atoms",
+          "molecules",
+          "organisms",
+          "templates",
+          "pages",
+          "app",
+          "providers",
+          "ui-core",
+          "render",
+          "model",
+          "data",
+          "root",
+        ],
+      },
+      {
+        "from": "providers",
+        "allow": ["app", "data", "model", "render", "ui-core", "root"],
+      },
+      {
+        "from": "app",
+        "allow": [
+          "atoms",
+          "molecules",
+          "organisms",
+          "templates",
+          "pages",
+          "providers",
+          "app",
+          "ui-core",
+          "model",
+          "render",
+          "data",
+          "root",
+        ],
+      },
+      {
+        "from": "ui-core",
+        "allow": ["ui-core", "root"],
+      },
+      {
+        "from": "model",
+        "allow": ["model", "data", "root"],
+      },
+      {
+        "from": "render",
+        "allow": ["render", "data", "model", "ui-core", "root"],
+      },
+      {
+        "from": "data",
+        "allow": ["data", "model", "root"],
+      },
+      {
+        "from": "root",
+        "allow": [
+          "atoms",
+          "molecules",
+          "organisms",
+          "templates",
+          "pages",
+          "providers",
+          "app",
+          "ui-core",
+          "model",
+          "render",
+          "data",
+          "root",
+        ],
+      },
+    ],
+    "coverage": {
+      "requireAllFiles": true,
+      "allowUnmatched": [
+        "dev/**",
+        "tests/**",
+        ".storybook/**",
+        "scripts/**",
+        "styled-system/**",
+        "*.config.ts",
+        "*.mjs",
+      ],
+    },
+  },
 }

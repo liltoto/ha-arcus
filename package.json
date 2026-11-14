@@ -9,6 +9,7 @@
     "dev": "node scripts/dev.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -19,6 +20,9 @@
     "fallow": "fallow",
     "fallow:dead": "fallow dead-code",
     "fallow:dupes": "fallow dupes",
+    "fallow:arch": "fallow architecture --boundaries",
+    "fallow:audit": "fallow audit --coverage coverage/coverage-final.json",
+    "fallow:health": "fallow health --coverage coverage/coverage-final.json --min-score 80",
     "prepare": "panda codegen"
   },
   "keywords": [
@@ -45,6 +49,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
+    "@vitest/coverage-istanbul": "^5.1.0",
     "esbuild": "^0.28.2",
     "eslint": "^10.14.0",
     "fallow": "3.43.0",
