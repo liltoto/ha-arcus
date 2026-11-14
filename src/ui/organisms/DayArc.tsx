@@ -46,9 +46,25 @@ export function DayArc() {
   const point = arcPoint(fraction);
 
   const solar = model.solar?.forecastSeries ?? [];
-  const actual = config.solar?.power
-    ? history.series(config.solar.power, { buckets: 96, fill: 0 })
+  const dayStart = new Date(
+    current.getFullYear(),
+    current.getMonth(),
+    current.getDate(),
+  ).getTime();
+  const actualRaw = config.solar?.power
+    ? history.series(config.solar.power, {
+        start: dayStart,
+        end: dayStart + 86_400_000,
+        buckets: 96,
+        fill: 0,
+      })
     : [];
+  const actualCutoff = Math.floor(
+    ((current.getTime() - dayStart) / 86_400_000) * 96,
+  );
+  const actual = actualRaw.map((value, index) =>
+    index <= actualCutoff ? value : null,
+  );
   const max = Math.max(
     3000,
     ...solar.map((item) => item.v),

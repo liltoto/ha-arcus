@@ -37,7 +37,9 @@ import {
   entityKey,
   forecast48Values,
   fmt,
+  historyDaySeries,
   historySeries,
+  dayWindow,
   installedAtValue,
   languageOf,
   normalizeSub,
@@ -165,6 +167,7 @@ function ControlRow({
 
 function SolarOverview({ ctx }: { ctx: SolarContext }) {
   const { solar, config, history, t, language, now, actions } = ctx;
+  const day = dayWindow(now);
   const grid = solar.grid;
   const gridLabel =
     grid !== null && grid < 0 ? t("solar.gridBuy") : t("solar.gridSell");
@@ -216,6 +219,8 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
           now={now}
           empty={t("empty.chart")}
           shared
+          start={day.start}
+          end={day.end}
           series={[
             {
               key: "solarForecast",
@@ -225,19 +230,23 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
             },
             {
               key: windowKey(config.solar?.load),
-              values: historySeries(history, config.solar?.load, 1),
+              values: historyDaySeries(history, config.solar?.load, now),
               color: "var(--sky)",
               label: t("solar.legendHouse"),
             },
             {
               key: windowKey(config.solar?.batteryPower),
-              values: historySeries(history, config.solar?.batteryPower, 1),
+              values: historyDaySeries(
+                history,
+                config.solar?.batteryPower,
+                now,
+              ),
               color: "var(--sage)",
               label: t("solar.legendBattery"),
             },
             {
               key: windowKey(config.solar?.grid),
-              values: historySeries(history, config.solar?.grid, 1),
+              values: historyDaySeries(history, config.solar?.grid, now),
               color: "var(--muted)",
               label: t("solar.legendGrid"),
             },
@@ -264,22 +273,24 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
           shared
           unit="A"
           decimals={1}
+          start={day.start}
+          end={day.end}
           series={[
             {
               key: windowKey(config.solar?.gridL1),
-              values: historySeries(history, config.solar?.gridL1, 1),
+              values: historyDaySeries(history, config.solar?.gridL1, now),
               color: "var(--sky)",
               label: "L1",
             },
             {
               key: windowKey(config.solar?.gridL2),
-              values: historySeries(history, config.solar?.gridL2, 1),
+              values: historyDaySeries(history, config.solar?.gridL2, now),
               color: "var(--brass)",
               label: "L2",
             },
             {
               key: windowKey(config.solar?.gridL3),
-              values: historySeries(history, config.solar?.gridL3, 1),
+              values: historyDaySeries(history, config.solar?.gridL3, now),
               color: "var(--plum)",
               label: "L3",
             },
@@ -372,6 +383,7 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
 
 function SolarProduction({ ctx }: { ctx: SolarContext }) {
   const { solar, config, history, t, language, now } = ctx;
+  const day = dayWindow(now);
   const days = dailyProductionDays(history, config.solar?.today, now, language);
 
   return (
@@ -408,6 +420,8 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
           now={now}
           empty={t("empty.chart")}
           shared
+          start={day.start}
+          end={day.end}
           series={[
             {
               key: "solarForecast",
@@ -417,7 +431,7 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
             },
             {
               key: windowKey(config.solar?.power),
-              values: historySeries(history, config.solar?.power, 1, 0),
+              values: historyDaySeries(history, config.solar?.power, now, 0),
               color: "var(--text)",
               label: t("solar.actual"),
             },
@@ -689,6 +703,7 @@ function SolarBattery({ ctx }: { ctx: SolarContext }) {
 
 function SolarForecast({ ctx }: { ctx: SolarContext }) {
   const { solar, t, language, now } = ctx;
+  const day = dayWindow(now);
   const diff =
     solar.forecastToday !== null &&
     solar.forecastToday > 0 &&
@@ -753,8 +768,8 @@ function SolarForecast({ ctx }: { ctx: SolarContext }) {
           height={150}
           now={now}
           empty={t("empty.chart")}
-          start={now.getTime()}
-          end={now.getTime() + 48 * 3_600_000}
+          start={day.start}
+          end={day.start + 48 * 3_600_000}
           series={[
             {
               key: "solar48",
