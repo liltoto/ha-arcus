@@ -25,6 +25,8 @@ export interface ArcusRenderOptions {
   model?: HomeModel;
   route?: ArcusRoute;
   now?: () => Date;
+  /** Overrides for card-provided bindings such as date, person, clock, version. */
+  bindings?: Record<string, string>;
 }
 
 export function makeActions(): ArcusActions {
@@ -56,13 +58,16 @@ export function makeArcusProps(options: ArcusRenderOptions = {}) {
     options.now ?? (() => new Date("2026-11-13T01:19:00+01:00"));
   const model = options.model ?? buildModel(hass, config, now());
   const t: Translator = createTranslator("da");
+  const bindings = options.bindings
+    ? { ...buildBindings(model, config, t), ...options.bindings }
+    : buildBindings(model, config, t);
 
   return {
     hass,
     config,
     model,
     t,
-    bindings: buildBindings(model, config, t),
+    bindings,
     route: options.route ?? { base: "hjem", sub: null },
     actions: makeActions(),
     history: historyStub(),
