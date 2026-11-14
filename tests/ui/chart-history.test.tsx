@@ -2,6 +2,7 @@ import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { HistoryCache } from "../../src/data/history";
 import { ArcusProvider } from "../../src/ui/providers/ArcusProvider";
+import { createArcusStore } from "../../src/ui/providers/store";
 import { Vitals } from "../../src/ui/organisms/Vitals";
 import { makeArcusProps } from "./home-test-utils";
 
@@ -44,7 +45,12 @@ describe("history-driven charts", () => {
     expect(entityId).not.toBe("");
 
     render(
-      <ArcusProvider {...props} history={history as unknown as HistoryCache}>
+      <ArcusProvider
+        store={createArcusStore({
+          ...props,
+          history: history as unknown as HistoryCache,
+        })}
+      >
         <Vitals />
       </ArcusProvider>,
     );

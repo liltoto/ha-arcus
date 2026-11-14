@@ -67,9 +67,12 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
   (domain-shaped, props-only), `organisms/` (sections and sheet bodies),
   `templates/` (layout shells), `pages/` (data-wired composition). Put a
   component in the smallest layer that fits.
-- `src/ui/providers/ArcusProvider.tsx` exposes `hass`, `model`, `config`, `t`,
-  `bindings`, `route`, `actions`, `history`, and `now` through
-  `src/ui/hooks.ts`. Organisms/pages use the hooks; atoms/molecules do not.
+- `src/ui/providers/store.ts` creates one Zustand store per card; `src/card.ts`
+  publishes `hass`, `model`, `config`, `bindings`, `route`, `atmo`, and `dark`
+  into it. `src/ui/providers/ArcusProvider.tsx` injects the store and the hooks
+  in `src/ui/hooks.ts` subscribe to individual slices. Organisms/pages use the
+  hooks; atoms/molecules do not. Never use a module-global store: tests and
+  stories create one with `createArcusStore`/`makeArcusStore`.
 - Chart sheets use `useHistoryFrame()` from `src/ui/hooks/useLayerFrame.ts`;
   sheets without charts use the individual hooks so they do not subscribe to
   history updates. `useLightActions` shares the room/lights service calls.
@@ -164,9 +167,9 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
   plus Lille Gang). The mock/fixture use a synthetic `skur` area and 7 rooms.
   They intentionally differ; do not sync them blindly.
 - UI tests use Testing Library. `tests/ui/home-test-utils.tsx`
-  (`renderWithArcus`) wires the provider for home organisms;
+  (`renderWithArcus`) wires a fresh store and provider for home organisms;
   `tests/ui/layer-test-utils.tsx` (`renderLayer`) does the same for sheet
-  bodies. Prefer role/text queries over asserting rendered HTML strings.
+  bodies. Prefer role/text queries over asserting rendered HTML.
 - `tests/editor.test.ts` covers echo/focus/keyboard behaviour;
   `tests/editor-entities.test.ts` covers the pure suggestion filters.
 - Class assertions must be token-based (`toHaveClass("sheet", "open")`), not

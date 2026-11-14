@@ -2,10 +2,11 @@ import type { Decorator } from "@storybook/react";
 import { createTranslator } from "../../localize";
 import { buildBindings } from "../../model/bindings";
 import { buildModel } from "../../model/build";
-import type { ArcusActions, ArcusProviderProps, ArcusRoute } from "../types";
+import type { ArcusActions, ArcusRoute, ArcusStoreState } from "../types";
 import type { HistoryCache } from "../../data/history";
 import { makeConfig, makeHass } from "../../../tests/fixtures/home";
 import { ArcusProvider } from "./ArcusProvider";
+import { createArcusStore } from "./store";
 
 const now = () => new Date("2026-11-13T01:19:00+01:00");
 const hass = makeHass();
@@ -30,7 +31,7 @@ const history = {
   raw: () => [],
 } as unknown as HistoryCache;
 
-const providerProps: Omit<ArcusProviderProps, "children"> = {
+const providerState: ArcusStoreState = {
   hass,
   config,
   model,
@@ -53,14 +54,18 @@ const providerProps: Omit<ArcusProviderProps, "children"> = {
   actions,
   history,
   now,
+  atmo: "night",
+  dark: true,
 };
+
+const store = createArcusStore(providerState);
 
 /**
  * Supplies the real home fixture to organism stories. Atoms and molecules
  * ignore the context; pages and organisms can be reviewed with real data.
  */
 export const withArcusFixture: Decorator = (Story) => (
-  <ArcusProvider {...providerProps}>
+  <ArcusProvider store={store}>
     <Story />
   </ArcusProvider>
 );

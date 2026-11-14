@@ -5,6 +5,7 @@ import type { HistoryCache } from "../../../src/data/history";
 import { HeatingBody } from "../../../src/ui/organisms/layers/HeatingBody";
 import { SecurityBody } from "../../../src/ui/organisms/layers/SecurityBody";
 import { ArcusProvider } from "../../../src/ui/providers/ArcusProvider";
+import { createArcusStore } from "../../../src/ui/providers/store";
 import type { ArcusHass } from "../../../src/types";
 import type { ArcusRoute } from "../../../src/ui/types";
 import { makeConfig } from "../../fixtures/home";
@@ -344,7 +345,7 @@ describe("heating sheet", () => {
     } as unknown as HistoryCache;
 
     const { container } = render(
-      <ArcusProvider {...props} history={history}>
+      <ArcusProvider store={createArcusStore({ ...props, history })}>
         <HeatingBody route={HEATING_ROUTE} />
       </ArcusProvider>,
     );

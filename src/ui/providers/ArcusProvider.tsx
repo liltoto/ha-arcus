@@ -1,114 +1,106 @@
-import { createContext, useContext, type Context } from "react";
+import { createContext, useContext } from "react";
+import { useStore } from "zustand";
 import type { HistoryCache } from "../../data/history";
 import type {
   ArcusConfig,
   ArcusHass,
+  AtmosphereSetting,
   HomeModel,
   Translator,
 } from "../../types";
-import type { ArcusActions, ArcusProviderProps, ArcusRoute } from "../types";
+import type {
+  ArcusActions,
+  ArcusProviderProps,
+  ArcusRoute,
+  ArcusStore,
+} from "../types";
 
 export type { ArcusActions, ArcusProviderProps } from "../types";
 
 /**
- * One small context per value. Keeping them separate means a `hass` state
- * update re-renders consumers of `useHass()` without touching components that
- * only need config, translations, or the action bridge.
+ * One context carries the store instance, not its values. Each hook below
+ * subscribes to a single slice, so a `hass` push re-renders the components
+ * that read state without touching config, translations, or routing.
  *
- * All defaults are `null`; the hooks turn a missing provider into a clear
- * error instead of a confusing `undefined` somewhere deep in a page.
+ * The store is created per card (or test/story harness), so two providers on
+ * one page never share state.
  */
-const HassContext = createContext<ArcusHass | null>(null);
-const ModelContext = createContext<HomeModel | null>(null);
-const ConfigContext = createContext<ArcusConfig | null>(null);
-const TranslatorContext = createContext<Translator | null>(null);
-const BindingsContext = createContext<Record<string, string> | null>(null);
-const RouteContext = createContext<ArcusRoute | null>(null);
-const ActionsContext = createContext<ArcusActions | null>(null);
-const HistoryContext = createContext<HistoryCache | null>(null);
-const NowContext = createContext<(() => Date) | null>(null);
+const StoreContext = createContext<ArcusStore | null>(null);
 
-function useRequired<T>(context: Context<T | null>, hook: string): T {
-  const value = useContext(context);
-  if (value === null) {
+function useRequiredStore(hook: string): ArcusStore {
+  const store = useContext(StoreContext);
+  if (store === null) {
     throw new Error(`${hook} must be used inside an <ArcusProvider>.`);
   }
-  return value;
+  return store;
+}
+
+/** The raw store, for advanced selectors in tests and stories. */
+export function useArcusStore(): ArcusStore {
+  return useRequiredStore("useArcusStore");
 }
 
 export function useHass(): ArcusHass {
-  return useRequired(HassContext, "useHass");
+  const store = useRequiredStore("useHass");
+  return useStore(store, (state) => state.hass);
 }
 
 export function useModel(): HomeModel {
-  return useRequired(ModelContext, "useModel");
+  const store = useRequiredStore("useModel");
+  return useStore(store, (state) => state.model);
 }
 
 export function useConfig(): ArcusConfig {
-  return useRequired(ConfigContext, "useConfig");
+  const store = useRequiredStore("useConfig");
+  return useStore(store, (state) => state.config);
 }
 
 export function useTranslator(): Translator {
-  return useRequired(TranslatorContext, "useTranslator");
+  const store = useRequiredStore("useTranslator");
+  return useStore(store, (state) => state.t);
 }
 
 export function useBindings(): Record<string, string> {
-  return useRequired(BindingsContext, "useBindings");
+  const store = useRequiredStore("useBindings");
+  return useStore(store, (state) => state.bindings);
 }
 
 export function useRoute(): ArcusRoute {
-  return useRequired(RouteContext, "useRoute");
+  const store = useRequiredStore("useRoute");
+  return useStore(store, (state) => state.route);
 }
 
 export function useActions(): ArcusActions {
-  return useRequired(ActionsContext, "useActions");
+  const store = useRequiredStore("useActions");
+  return useStore(store, (state) => state.actions);
 }
 
 export function useHistory(): HistoryCache {
-  return useRequired(HistoryContext, "useHistory");
+  const store = useRequiredStore("useHistory");
+  return useStore(store, (state) => state.history);
 }
 
 export function useNow(): () => Date {
-  return useRequired(NowContext, "useNow");
+  const store = useRequiredStore("useNow");
+  return useStore(store, (state) => state.now);
+}
+
+export function useAtmo(): AtmosphereSetting {
+  const store = useRequiredStore("useAtmo");
+  return useStore(store, (state) => state.atmo);
+}
+
+export function useDark(): boolean {
+  const store = useRequiredStore("useDark");
+  return useStore(store, (state) => state.dark);
 }
 
 /**
- * Exposes the card's current state and action bridge to the React tree.
- * Values are passed through by reference, so unchanged props keep their
- * identity across renders. `hass` and `model` intentionally are not
- * memoized: every Home Assistant state push replaces them.
+ * Injects the card's store. Values are not copied or memoized here; the card
+ * publishes a new snapshot into the store.
  */
-export function ArcusProvider({
-  hass,
-  model,
-  config,
-  t,
-  bindings,
-  route,
-  actions,
-  history,
-  now,
-  children,
-}: ArcusProviderProps) {
+export function ArcusProvider({ store, children }: ArcusProviderProps) {
   return (
-    <HassContext.Provider value={hass}>
-      <ModelContext.Provider value={model}>
-        <ConfigContext.Provider value={config}>
-          <TranslatorContext.Provider value={t}>
-            <BindingsContext.Provider value={bindings}>
-              <RouteContext.Provider value={route}>
-                <ActionsContext.Provider value={actions}>
-                  <HistoryContext.Provider value={history}>
-                    <NowContext.Provider value={now}>
-                      {children}
-                    </NowContext.Provider>
-                  </HistoryContext.Provider>
-                </ActionsContext.Provider>
-              </RouteContext.Provider>
-            </BindingsContext.Provider>
-          </TranslatorContext.Provider>
-        </ConfigContext.Provider>
-      </ModelContext.Provider>
-    </HassContext.Provider>
+    <StoreContext.Provider value={store}>{children}</StoreContext.Provider>
   );
 }

@@ -1,17 +1,8 @@
 import type { Decorator, Meta, StoryObj } from "@storybook/react";
-import type { ReactNode } from "react";
-import {
-  useActions,
-  useBindings,
-  useConfig,
-  useHass,
-  useHistory,
-  useModel,
-  useNow,
-  useRoute,
-  useTranslator,
-} from "../hooks";
+import { useMemo, type ReactNode } from "react";
+import { useArcusStore, useBindings } from "../hooks";
 import { ArcusProvider } from "../providers/ArcusProvider";
+import { createArcusStore } from "../providers/store";
 import { Hero } from "./Hero";
 
 /**
@@ -28,31 +19,18 @@ const HERO_COPY: Record<string, string> = {
 };
 
 function HeroFixture({ children }: { children: ReactNode }) {
-  const hass = useHass();
-  const model = useModel();
-  const config = useConfig();
-  const t = useTranslator();
+  const store = useArcusStore();
   const bindings = useBindings();
-  const route = useRoute();
-  const actions = useActions();
-  const history = useHistory();
-  const now = useNow();
-
-  return (
-    <ArcusProvider
-      hass={hass}
-      model={model}
-      config={config}
-      t={t}
-      bindings={{ ...bindings, ...HERO_COPY }}
-      route={route}
-      actions={actions}
-      history={history}
-      now={now}
-    >
-      {children}
-    </ArcusProvider>
+  const heroStore = useMemo(
+    () =>
+      createArcusStore({
+        ...store.getState(),
+        bindings: { ...bindings, ...HERO_COPY },
+      }),
+    [store, bindings],
   );
+
+  return <ArcusProvider store={heroStore}>{children}</ArcusProvider>;
 }
 
 const withHeroCopy: Decorator = (Story) => (

@@ -10,7 +10,8 @@ import { createTranslator } from "../../src/localize";
 import { buildBindings } from "../../src/model/bindings";
 import { buildModel } from "../../src/model/build";
 import { ArcusProvider } from "../../src/ui/providers/ArcusProvider";
-import type { ArcusActions, ArcusRoute } from "../../src/ui/types";
+import { createArcusStore } from "../../src/ui/providers/store";
+import type { ArcusActions, ArcusRoute, ArcusStore } from "../../src/ui/types";
 import type {
   ArcusConfig,
   ArcusHass,
@@ -75,6 +76,8 @@ export function makeArcusProps(options: ArcusRenderOptions = {}) {
     actions: makeActions(),
     history: options.history ?? historyStub(),
     now,
+    atmo: "night" as const,
+    dark: true,
   };
 }
 
@@ -86,13 +89,17 @@ export function renderWithArcus(
   ui: ReactElement,
   options: ArcusRenderOptions = {},
   renderOptions: Omit<RenderOptions, "wrapper"> = {},
-): RenderResult & { props: ReturnType<typeof makeArcusProps> } {
+): RenderResult & {
+  props: ReturnType<typeof makeArcusProps>;
+  store: ArcusStore;
+} {
   const props = makeArcusProps(options);
+  const store = createArcusStore(props);
   const result = render(ui, {
     wrapper: ({ children }: { children: ReactNode }) => (
-      <ArcusProvider {...props}>{children}</ArcusProvider>
+      <ArcusProvider store={store}>{children}</ArcusProvider>
     ),
     ...renderOptions,
   });
-  return { ...result, props };
+  return { ...result, props, store };
 }

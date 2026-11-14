@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { ArcusCard } from "../../src/card";
 import type { HistoryCache } from "../../src/data/history";
@@ -13,9 +13,11 @@ import type {
 import {
   ArcusProvider,
   useActions,
+  useArcusStore,
   useConfig,
   useHass,
 } from "../../src/ui/providers/ArcusProvider";
+import { createArcusStore } from "../../src/ui/providers/store";
 import {
   useBindings,
   useHistory,
@@ -26,8 +28,8 @@ import {
 } from "../../src/ui/hooks";
 import type {
   ArcusActions,
-  ArcusProviderProps,
   ArcusRoute,
+  ArcusStoreState,
 } from "../../src/ui/types";
 import { makeConfig, makeHass } from "../fixtures/home";
 
@@ -53,9 +55,9 @@ function actionsStub(): ArcusActions {
   };
 }
 
-function providerProps(
-  overrides: Partial<ArcusProviderProps> = {},
-): ArcusProviderProps {
+function providerState(
+  overrides: Partial<ArcusStoreState> = {},
+): ArcusStoreState {
   const hass = overrides.hass ?? makeHass();
   const config = overrides.config ?? makeConfig();
   return {
@@ -68,7 +70,8 @@ function providerProps(
     actions: actionsStub(),
     history: historyStub(),
     now: () => new Date("2026-11-13T01:19:00+01:00"),
-    children: null,
+    atmo: "night",
+    dark: true,
     ...overrides,
   };
 }
@@ -132,21 +135,25 @@ describe("ArcusProvider", () => {
   test("two providers keep their own config, state and actions", () => {
     const actionsA = actionsStub();
     const actionsB = actionsStub();
-    const propsA = providerProps({
-      config: makeConfig({ title: "Hjem A" }),
-      actions: actionsA,
-    });
-    const propsB = providerProps({
-      config: makeConfig({ title: "Hjem B" }),
-      actions: actionsB,
-    });
+    const storeA = createArcusStore(
+      providerState({
+        config: makeConfig({ title: "Hjem A" }),
+        actions: actionsA,
+      }),
+    );
+    const storeB = createArcusStore(
+      providerState({
+        config: makeConfig({ title: "Hjem B" }),
+        actions: actionsB,
+      }),
+    );
 
     render(
       <>
-        <ArcusProvider {...propsA}>
+        <ArcusProvider store={storeA}>
           <Probe label="a" />
         </ArcusProvider>
-        <ArcusProvider {...propsB}>
+        <ArcusProvider store={storeB}>
           <Probe label="b" />
         </ArcusProvider>
       </>,
@@ -168,41 +175,36 @@ describe("ArcusProvider", () => {
   });
 
   test("a state-only hass update reaches consumers and keeps stable values", () => {
-    const props = providerProps();
+    const state = providerState();
+    const store = createArcusStore(state);
     const seen: Snapshot[] = [];
     const onRender = (snapshot: Snapshot) => seen.push(snapshot);
 
-    const { rerender } = render(
-      <ArcusProvider {...props}>
+    render(
+      <ArcusProvider store={store}>
         <Probe label="one" onRender={onRender} />
       </ArcusProvider>,
     );
 
     const first = seen.at(-1)!;
     const nextHass: ArcusHass = {
-      ...props.hass,
+      ...state.hass,
       states: {
-        ...props.hass.states,
+        ...state.hass.states,
         "climate.wavin_stue": {
-          ...props.hass.states["climate.wavin_stue"],
+          ...state.hass.states["climate.wavin_stue"],
           state: "off",
         },
       },
     };
 
-    rerender(
-      <ArcusProvider {...props} hass={nextHass}>
-        <Probe label="one" onRender={onRender} />
-      </ArcusProvider>,
-    );
+    act(() => store.setState({ hass: nextHass }));
 
     const latest = seen.at(-1)!;
     expect(latest.hass).toBe(nextHass);
-    expect(latest.hass).not.toBe(first.hass);
-    expect(latest.hass.states["climate.wavin_stue"].state).toBe("off");
     expect(screen.getByTestId("one-state")).toHaveTextContent("off");
 
-    // Every other value was passed by reference and must not be recreated.
+    // Every value not in the update keeps its identity.
     expect(latest.model).toBe(first.model);
     expect(latest.config).toBe(first.config);
     expect(latest.t).toBe(first.t);
@@ -211,6 +213,67 @@ describe("ArcusProvider", () => {
     expect(latest.actions).toBe(first.actions);
     expect(latest.history).toBe(first.history);
     expect(latest.now).toBe(first.now);
+  });
+
+  test("a hass update leaves slice-only consumers alone", () => {
+    const store = createArcusStore(providerState());
+    const hassRenders = vi.fn();
+    const configRenders = vi.fn();
+
+    function HassProbe() {
+      useHass();
+      hassRenders();
+      return null;
+    }
+
+    function ConfigProbe() {
+      useConfig();
+      configRenders();
+      return null;
+    }
+
+    render(
+      <ArcusProvider store={store}>
+        <HassProbe />
+        <ConfigProbe />
+      </ArcusProvider>,
+    );
+
+    hassRenders.mockClear();
+    configRenders.mockClear();
+
+    act(() =>
+      store.setState({
+        hass: {
+          ...store.getState().hass,
+          states: {
+            ...store.getState().hass.states,
+            "sensor.stue_temperature": {
+              ...store.getState().hass.states["sensor.stue_temperature"],
+              state: "19.5",
+            },
+          },
+        },
+      }),
+    );
+
+    expect(hassRenders).toHaveBeenCalled();
+    expect(configRenders).not.toHaveBeenCalled();
+  });
+
+  test("exposes the store instance for advanced selectors", () => {
+    const store = createArcusStore(providerState());
+
+    function StoreProbe() {
+      expect(useArcusStore()).toBe(store);
+      return null;
+    }
+
+    render(
+      <ArcusProvider store={store}>
+        <StoreProbe />
+      </ArcusProvider>,
+    );
   });
 
   test("hooks throw a clear error outside the provider", () => {

@@ -33,7 +33,8 @@ import type {
   WeatherForecastDay,
 } from "./types";
 import { ArcusApp } from "./ui/ArcusApp";
-import type { ArcusActions } from "./ui/types";
+import { createArcusStore } from "./ui/providers/store";
+import type { ArcusActions, ArcusStore, ArcusStoreState } from "./ui/types";
 import { ARCUS_VERSION } from "./version";
 
 declare global {
@@ -50,6 +51,16 @@ interface Route {
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, value));
+
+/** Keep the previous bindings object when every rendered string is equal. */
+function sameBindings(
+  previous: Record<string, string>,
+  next: Record<string, string>,
+): boolean {
+  const keys = Object.keys(previous);
+  if (keys.length !== Object.keys(next).length) return false;
+  return keys.every((key) => previous[key] === next[key]);
+}
 
 const WEATHER_ICON = (condition: string | undefined): string => {
   const value = String(condition ?? "").toLowerCase();
@@ -88,6 +99,9 @@ export class ArcusCard extends HTMLElement {
   _t: Translator;
   _history: HistoryCache;
   readonly updateComplete: Promise<void>;
+  private _store: ArcusStore | null = null;
+  private _lastBindings: Record<string, string> | null = null;
+  private readonly _nowFn = (): Date => this._now();
 
   /**
    * Stable bridge for the React tree. Every method reads the current
@@ -128,7 +142,7 @@ export class ArcusCard extends HTMLElement {
   private _weather: WeatherForecastDay[] | null = null;
   private _configSignature: string;
   private _reactRoot: Root | null = null;
-  private _renderFrame: number | null = null;
+  private _publishFrame: number | null = null;
 
   constructor() {
     super();
@@ -163,8 +177,7 @@ export class ArcusCard extends HTMLElement {
     if (next.weather !== this._config.weather) this._weather = null;
     this._config = next;
     this._configSignature = signature;
-    this._language = resolveLanguage(this._hass?.language, next);
-    this._t = createTranslator(this._language);
+    this._updateLanguage(this._hass);
     if (this._hass) {
       this._model = buildModel(this._hass, next, this._now());
     }
@@ -191,8 +204,7 @@ export class ArcusCard extends HTMLElement {
         hass.entities !== previous.entities);
 
     this._hass = hass;
-    this._language = resolveLanguage(hass.language, this._config);
-    this._t = createTranslator(this._language);
+    this._updateLanguage(hass);
     this._model = buildModel(hass, this._config, this._now());
 
     if (first) {
@@ -253,6 +265,18 @@ export class ArcusCard extends HTMLElement {
     const pinned =
       typeof window !== "undefined" ? window.__HJEM_NOW : undefined;
     return pinned instanceof Date ? new Date(pinned.getTime()) : new Date();
+  }
+
+  /**
+   * Translators are immutable. Keeping the previous instance when the
+   * language has not changed lets translation-only consumers skip a hass
+   * push instead of re-rendering on every state update.
+   */
+  private _updateLanguage(hass: ArcusHass | null): void {
+    const next = resolveLanguage(hass?.language, this._config);
+    if (next === this._language) return;
+    this._language = next;
+    this._t = createTranslator(next);
   }
 
   private _locale(): string {
@@ -316,6 +340,7 @@ export class ArcusCard extends HTMLElement {
       /* ignore */
     }
     this._applyAtmo();
+    this._schedule();
   }
 
   private _applyAtmo(): void {
@@ -591,9 +616,15 @@ export class ArcusCard extends HTMLElement {
     const container = this._root.querySelector<HTMLElement>(".arcus-react");
     if (!container) return;
     container.style.display = "contents";
-    this._reactRoot = createRoot(container);
     this._route = this._parseHash();
-    flushSync(() => this._renderIntoReact());
+    this._publish();
+
+    const store = this._store;
+    if (!store) return;
+    this._reactRoot = createRoot(container);
+    flushSync(() => {
+      this._reactRoot!.render(createElement(ArcusApp, { store }));
+    });
 
     this._applyAtmo();
     this._startClock();
@@ -601,31 +632,50 @@ export class ArcusCard extends HTMLElement {
     this._markReady();
   }
 
-  /** Render the current card state into the mounted React root. */
-  private _renderIntoReact(): void {
-    if (!this._reactRoot || !this._hass) return;
-    this._reactRoot.render(
-      createElement(ArcusApp, {
-        hass: this._hass,
-        model: this._model,
-        config: this._config,
-        t: this._t,
-        bindings: this._binds(),
-        route: this._route,
-        actions: this.actions,
-        history: this._history,
-        now: () => this._now(),
-        atmo: this._atmo(),
-        dark: this._themeDark(),
-      }),
-    );
+  /** The snapshot the React tree reads for the current card state. */
+  private _snapshot(): ArcusStoreState {
+    return {
+      hass: this._hass!,
+      model: this._model,
+      config: this._config,
+      t: this._t,
+      bindings: this._bindingsSnapshot(),
+      route: this._route,
+      actions: this._actions,
+      history: this._history,
+      now: this._nowFn,
+      atmo: this._atmo(),
+      dark: this._themeDark(),
+    };
   }
 
-  /** Unmount the React root and cancel any pending batched render. */
+  /**
+   * Reuse the previous bindings map when every string is unchanged. Home
+   * Assistant pushes new state objects several times a minute; keeping this
+   * identity stable stops the hero and topbar from re-rendering for a push
+   * that only changed a room sensor.
+   */
+  private _bindingsSnapshot(): Record<string, string> {
+    const next = this._binds();
+    const previous = this._lastBindings;
+    if (previous && sameBindings(previous, next)) return previous;
+    this._lastBindings = next;
+    return next;
+  }
+
+  /** Publish the current card state into the per-card store. */
+  private _publish(): void {
+    if (!this._hass) return;
+    const snapshot = this._snapshot();
+    if (this._store) this._store.setState(snapshot);
+    else this._store = createArcusStore(snapshot);
+  }
+
+  /** Unmount the React root and cancel any pending publish. */
   private _unmountReact(): void {
-    if (this._renderFrame !== null) {
-      cancelAnimationFrame(this._renderFrame);
-      this._renderFrame = null;
+    if (this._publishFrame !== null) {
+      cancelAnimationFrame(this._publishFrame);
+      this._publishFrame = null;
     }
     const root = this._reactRoot;
     this._reactRoot = null;
@@ -680,13 +730,13 @@ export class ArcusCard extends HTMLElement {
   }
 
   private _schedule(): void {
-    if (this._renderFrame !== null || !this._built || !this._hass) return;
+    if (this._publishFrame !== null || !this._built || !this._hass) return;
     const commit = () => {
-      this._renderFrame = null;
+      this._publishFrame = null;
       if (!this._built || !this._hass) return;
-      flushSync(() => this._renderIntoReact());
+      this._publish();
     };
-    this._renderFrame =
+    this._publishFrame =
       typeof requestAnimationFrame === "function"
         ? requestAnimationFrame(commit)
         : (setTimeout(commit, 0) as unknown as number);

@@ -6,6 +6,7 @@ import { parseGraph } from "../../../src/render/graph";
 import { WaterBody } from "../../../src/ui/organisms/layers/WaterBody";
 import { VentilationBody } from "../../../src/ui/organisms/layers/VentilationBody";
 import { ArcusProvider } from "../../../src/ui/providers/ArcusProvider";
+import { createArcusStore } from "../../../src/ui/providers/store";
 import type { ArcusRoute } from "../../../src/ui/types";
 import { makeConfig, makeHass } from "../../fixtures/home";
 import { makeArcusProps } from "../home-test-utils";
@@ -146,7 +147,7 @@ describe("WaterBody", () => {
     } as unknown as HistoryCache;
 
     const { container } = render(
-      <ArcusProvider {...props} history={history}>
+      <ArcusProvider store={createArcusStore({ ...props, history })}>
         <WaterBody route={WATER_ROUTE} />
       </ArcusProvider>,
     );
