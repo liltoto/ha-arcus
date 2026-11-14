@@ -3,39 +3,51 @@
 Arcus is a Home Assistant Marketplace Dashboard plugin: one self-contained
 frontend bundle (`dist/arcus.js`), a dashboard strategy, and two visual editors.
 Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
-`v0.4.3`. CI runs on Node 22; `tsc` is strict.
+`v0.4.3`. CI runs on Node 22 with pnpm 12; `tsc` is strict.
 
 ## Commands
 
-- `npm run dev` — esbuild watch + Panda `cssgen --watch` on `:5173`, serving
+- Use pnpm (pinned in `packageManager`); the lockfile is `pnpm-lock.yaml`.
+  Do not reintroduce `package-lock.json` or npm commands.
+- `pnpm run dev` — esbuild watch + Panda `cssgen --watch` on `:5173`, serving
   `/dev/index.html` (`?full=1`, `?light=1`) and writing `dist/arcus.js` plus
   `dev/fixture.js`.
-- `npm test` — Vitest + happy-dom. One file:
-  `npx vitest run tests/<name>.test.tsx`. Watch: `npm run test:watch`.
-- `npm run test:coverage` — Istanbul; writes `coverage/coverage-final.json`,
+- `pnpm test` — Vitest + happy-dom. One file:
+  `pnpm exec vitest run tests/<name>.test.tsx`. Watch: `pnpm run test:watch`.
+- `pnpm run test:coverage` — Istanbul; writes `coverage/coverage-final.json`,
   required by `fallow:health` and `fallow:audit`.
-- `npm run typecheck` — `tsc --noEmit`, strict.
-- `npm run build` — production Panda CSS + minified `dist/arcus.js` (no
-  sourcemap). Stop `npm run dev` first: the watcher can overwrite the build.
-- `npm run size` — fails above 400 KB gzip. Current bundle is ~391 KB.
-- `npm run storybook` / `npm run build-storybook` — Storybook on `:6006`; CI
+- `pnpm run typecheck` — `tsc --noEmit`, strict.
+- `pnpm run lint` — Oxlint (`.oxlintrc.json`); fails on warnings.
+- `pnpm run format` / `pnpm run format:check` — Oxfmt (`.oxfmtrc.json`);
+  print width 80.
+- `pnpm run build` — production Panda CSS + minified `dist/arcus.js` (no
+  sourcemap). Stop `pnpm run dev` first: the watcher can overwrite the build.
+- `pnpm run size` — fails above 400 KB gzip. Current bundle is ~391 KB.
+- `pnpm run storybook` / `pnpm run build-storybook` — Storybook on `:6006`; CI
   gates the static build.
-- `npm run visual` — Playwright against `npm run dev`.
-- No linter is configured; `typecheck` and Fallow are the static gates.
-- `styled-system/` is generated and gitignored; `npm ci` runs `prepare`
-  (`panda codegen`). If missing: `npx panda codegen`.
+- `pnpm run visual` — Playwright against `pnpm run dev`.
+- `styled-system/` is generated and gitignored; `pnpm install` runs `prepare`
+  (`panda codegen`). If missing: `pnpm exec panda codegen`.
 - Pre-push gate:
-  `npm run typecheck && npm run test:coverage && npm run fallow:dead && npm run fallow:arch && npm run fallow:dupes && npm run fallow:health && npm run build && npm run size && npm run build-storybook`.
+  `pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:coverage && pnpm run fallow:dead && pnpm run fallow:arch && pnpm run fallow:dupes && pnpm run fallow:health && pnpm run build && pnpm run size && pnpm run build-storybook`.
+
+### Lint and format
+
+- `vitest/require-mock-type-parameters` is off (noisy for `vi.fn()`
+  inference); `vitest/valid-expect` is off because Oxlint rejects Vitest's
+  supported `expect(value, message)` form.
+- `tests/**` disables `react/immutability`; tests intentionally mutate fixture
+  props and action stubs.
 
 ### Fallow gate
 
 - `.fallowrc.jsonc` allowlists the reflective `getStubConfig`/`getConfig`,
   defines atomic-design boundaries, and caps
   duplication at 2%. Before deleting an export:
-  `npx fallow dead-code --trace <file>:<export>`.
-- `npm run fallow:audit` locally compares against the branch upstream and can
+  `pnpm exec fallow dead-code --trace <file>:<export>`.
+- `pnpm run fallow:audit` locally compares against the branch upstream and can
   audit **0 files**. Reproduce CI with:
-  `npx fallow audit --coverage coverage/coverage-final.json --base origin/main`.
+  `pnpm exec fallow audit --coverage coverage/coverage-final.json --base origin/main`.
 - Audit fails on findings introduced by the changeset, not only worsened ones.
   New/changed functions must stay under the complexity tiers and CRAP < 30;
   CRAP needs coverage, so add tests for new helpers. Suppression exists but is
@@ -166,7 +178,7 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
   `tests/visual/__screenshots__`, and commit the PNGs.
 - Storybook (`.storybook/main.ts`, `.storybook/preview.tsx`) uses a real
   shadow-root decorator and a global fixture provider; `typescript.check` is
-  disabled because `npm run typecheck` is the single type gate.
+  disabled because `pnpm run typecheck` is the single type gate.
 
 ## Release and live install
 
@@ -178,10 +190,10 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
   tag `vX.Y.Z`, and push the tag. A plain push is not a release.
 - `main` is protected. This single-maintainer repo merges with
   `gh pr merge --squash --admin`.
-- CI order: typecheck → test:coverage → fallow:dead → fallow:arch →
-  fallow:dupes → fallow:health → build → size → HACS validation, plus a
-  Storybook job. Pull requests also run `fallow:audit`. Visual is pinned to
-  `ubuntu-26.04`.
+- CI order: format:check → lint → typecheck → test:coverage → fallow:dead →
+  fallow:arch → fallow:dupes → fallow:health → build → size → HACS validation,
+  plus a Storybook job. Pull requests also run `fallow:audit`. Visual is pinned
+  to `ubuntu-26.04`.
 - The live HA dashboard `hjem-dognet` uses `custom:arcus` and the
   Marketplace-installed `/local/community/ha-arcus/arcus.js`; it does not load
   this repo's `dist/`. Changes need a release + Marketplace update.

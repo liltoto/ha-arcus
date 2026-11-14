@@ -433,7 +433,11 @@ function normalizeEv(value: unknown): EnergyEvConfig | undefined {
   if (!isRecord(value)) fail("energy.ev must be an object.");
   const ev: EnergyEvConfig = {};
   for (const key of ENERGY_EV_KEYS) {
-    assignIfDefined(ev, key, readOptionalString(value[key], `energy.ev.${key}`));
+    assignIfDefined(
+      ev,
+      key,
+      readOptionalString(value[key], `energy.ev.${key}`),
+    );
   }
   return Object.keys(ev).length ? ev : undefined;
 }
@@ -449,11 +453,17 @@ function normalizeAppliance(
   if (!name) fail(`${field}.name is required.`);
   if (!entity) fail(`${field}.entity is required.`);
   const appliance: EnergyApplianceConfig = { name, entity };
-  assignIfDefined(appliance, "icon", readOptionalString(item.icon, `${field}.icon`));
+  assignIfDefined(
+    appliance,
+    "icon",
+    readOptionalString(item.icon, `${field}.icon`),
+  );
   return appliance;
 }
 
-function normalizeAppliances(value: unknown): EnergyApplianceConfig[] | undefined {
+function normalizeAppliances(
+  value: unknown,
+): EnergyApplianceConfig[] | undefined {
   if (!Array.isArray(value)) fail("energy.appliances must be an array.");
   const appliances = value.map(normalizeAppliance);
   return appliances.length ? appliances : undefined;
@@ -463,7 +473,11 @@ function normalizeEnergy(value: unknown): EnergyConfig | undefined {
   if (value === undefined || value === null) return undefined;
   if (!isRecord(value)) fail("energy must be an object.");
   const out: EnergyConfig = {};
-  assignIfDefined(out, "standby", readOptionalString(value.standby, "energy.standby"));
+  assignIfDefined(
+    out,
+    "standby",
+    readOptionalString(value.standby, "energy.standby"),
+  );
   if (value.ev !== undefined && value.ev !== null) {
     out.ev = normalizeEv(value.ev);
   }
@@ -494,7 +508,13 @@ function normalizeUnits(value: unknown): UnitsConfig | undefined {
   return Object.keys(out).length ? out : undefined;
 }
 
-const VITAL_STRING_KEYS = ["label", "entity", "unit", "route", "color"] as const;
+const VITAL_STRING_KEYS = [
+  "label",
+  "entity",
+  "unit",
+  "route",
+  "color",
+] as const;
 
 function normalizeVitalDecimals(
   value: unknown,
@@ -532,7 +552,11 @@ function normalizeVital(item: unknown, index: number): VitalItemConfig {
       readOptionalString(item[key], `${field}.${key}`),
     );
   }
-  assignIfDefined(vital, "decimals", normalizeVitalDecimals(item.decimals, field));
+  assignIfDefined(
+    vital,
+    "decimals",
+    normalizeVitalDecimals(item.decimals, field),
+  );
 
   if (!vital.key && !vital.entity) {
     fail(`${field} requires either a preset key or an entity.`);
@@ -633,9 +657,21 @@ function assignRoomIdentity(
   rawRoom: Record<string, unknown>,
   field: string,
 ): void {
-  assignIfDefined(room, "name", readOptionalString(rawRoom.name, `${field}.name`));
-  assignIfDefined(room, "tint", readOptionalString(rawRoom.tint, `${field}.tint`));
-  assignIfDefined(room, "icon", readOptionalString(rawRoom.icon, `${field}.icon`));
+  assignIfDefined(
+    room,
+    "name",
+    readOptionalString(rawRoom.name, `${field}.name`),
+  );
+  assignIfDefined(
+    room,
+    "tint",
+    readOptionalString(rawRoom.tint, `${field}.tint`),
+  );
+  assignIfDefined(
+    room,
+    "icon",
+    readOptionalString(rawRoom.icon, `${field}.icon`),
+  );
   if (rawRoom.kind !== undefined && rawRoom.kind !== null) {
     room.kind = readEnum<RoomKind>(
       rawRoom.kind,

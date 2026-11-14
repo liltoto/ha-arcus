@@ -95,9 +95,7 @@ test("falls back to REST when the WebSocket request rejects", async () => {
 
 test("reuses cached history for repeated ensure calls", async () => {
   const ws = vi.fn(async (_message: HistoryWsRequest) => ({
-    "sensor.a": [
-      { s: "1", lu: Math.floor(FIXED.getTime() / 1000) - 3600 },
-    ],
+    "sensor.a": [{ s: "1", lu: Math.floor(FIXED.getTime() / 1000) - 3600 }],
   }));
   const cache = new HistoryCache(makeHass(ws), () => FIXED);
 
@@ -121,9 +119,7 @@ test("shares one in-flight request between concurrent ensure calls", async () =>
   const first = cache.ensure(["sensor.a"], 24);
   const second = cache.ensure(["sensor.a"], 24);
   resolve({
-    "sensor.a": [
-      { s: "7", lu: Math.floor(FIXED.getTime() / 1000) - 3600 },
-    ],
+    "sensor.a": [{ s: "7", lu: Math.floor(FIXED.getTime() / 1000) - 3600 }],
   });
   await Promise.all([first, second]);
 
@@ -164,9 +160,7 @@ test("keeps a longer cached range when a shorter one is fetched later", async ()
       ],
     })
     .mockResolvedValueOnce({
-      "sensor.a": [
-        { s: "9", lu: Math.floor(FIXED.getTime() / 1000) - 1800 },
-      ],
+      "sensor.a": [{ s: "9", lu: Math.floor(FIXED.getTime() / 1000) - 1800 }],
     });
   const cache = new HistoryCache(makeHass(ws));
 
@@ -218,9 +212,7 @@ test("fills a sparse solar night with zero instead of a diagonal ramp", async ()
 
 test("notifies subscribers when new rows are cached", async () => {
   const hass = makeHass(async () => ({
-    "sensor.d": [
-      { s: "5", lu: Math.floor(FIXED.getTime() / 1000) - 3600 },
-    ],
+    "sensor.d": [{ s: "5", lu: Math.floor(FIXED.getTime() / 1000) - 3600 }],
   }));
   const cache = new HistoryCache(hass, () => FIXED);
   const listener = vi.fn();
@@ -255,9 +247,7 @@ test("batches large history requests instead of sending one giant payload", asyn
   await cache.ensure(ids, 24);
 
   expect(calls).toHaveLength(5);
-  expect(calls.map((call) => call.entity_ids.length)).toEqual([
-    4, 4, 4, 4, 1,
-  ]);
+  expect(calls.map((call) => call.entity_ids.length)).toEqual([4, 4, 4, 4, 1]);
   expect(nonNull(cache.series("sensor.batch_0"))).toEqual([7]);
   expect(nonNull(cache.series("sensor.batch_8"))).toEqual([7]);
   expect(nonNull(cache.series("sensor.batch_16"))).toEqual([7]);

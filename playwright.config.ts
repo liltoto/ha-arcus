@@ -5,7 +5,7 @@ const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH;
 /**
  * Visual smoke tests for the dev harness.
  *
- * The harness is served by `npm run dev`, which also builds `dist/arcus.js`
+ * The harness is served by `pnpm run dev`, which also builds `dist/arcus.js`
  * and `dev/fixture.js`. The browser clock is frozen inside each spec, so the
  * baselines are independent of the machine's wall clock.
  */
@@ -30,7 +30,7 @@ export default defineConfig({
     timezoneId: "Europe/Copenhagen",
   },
   webServer: {
-    command: "npm run dev",
+    command: "pnpm run dev",
     url: "http://localhost:5173/dev/index.html",
     reuseExistingServer: true,
     timeout: 120_000,

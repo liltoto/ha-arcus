@@ -182,16 +182,12 @@ export class HistoryCache {
    * bucketing keeps the night in place, so `fill: 0` produces a flat zero line
    * and `fill: null` keeps an honest gap.
    */
-  series(
-    entityId: string,
-    options: SeriesOptions = {},
-  ): Array<number | null> {
+  series(entityId: string, options: SeriesOptions = {}): Array<number | null> {
     const entry = this.cache.get(entityId);
     if (!entry) return [];
     const now = this.now().getTime();
     const end = options.end ?? now;
-    const start =
-      options.start ?? end - (options.hours ?? 24) * 60 * 60 * 1000;
+    const start = options.start ?? end - (options.hours ?? 24) * 60 * 60 * 1000;
     return this.bucket(
       entry.rows,
       start,
@@ -228,9 +224,9 @@ export class HistoryCache {
   ): Array<number | null> {
     const count = Math.max(1, Math.round(buckets));
     const width = (end - start) / count;
-    const sums = new Array<number>(count).fill(0);
-    const counts = new Array<number>(count).fill(0);
-    const nulls = new Array<boolean>(count).fill(false);
+    const sums = Array.from({ length: count }, () => 0);
+    const counts = Array.from({ length: count }, () => 0);
+    const nulls = Array.from({ length: count }, () => false);
     let hasValue = false;
 
     for (const row of rows) {
@@ -282,17 +278,11 @@ export class HistoryCache {
 
   private async fetch(entityIds: string[], hours: number): Promise<void> {
     for (let index = 0; index < entityIds.length; index += FETCH_BATCH) {
-      await this.fetchBatch(
-        entityIds.slice(index, index + FETCH_BATCH),
-        hours,
-      );
+      await this.fetchBatch(entityIds.slice(index, index + FETCH_BATCH), hours);
     }
   }
 
-  private async fetchBatch(
-    entityIds: string[],
-    hours: number,
-  ): Promise<void> {
+  private async fetchBatch(entityIds: string[], hours: number): Promise<void> {
     const end = this.now();
     const start = new Date(end.getTime() - hours * 60 * 60 * 1000);
     const message: HistoryWsRequest = {

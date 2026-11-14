@@ -142,10 +142,7 @@ interface RoomContext {
   co2: number | null;
 }
 
-function roomContext(
-  model: HomeModel,
-  config: ArcusConfig,
-): RoomContext {
+function roomContext(model: HomeModel, config: ArcusConfig): RoomContext {
   const indoorRooms = model.rooms.filter((room) => !isOutdoorRoom(room));
   const outdoorRoom = model.rooms.find(isOutdoorRoom);
   const displayRoom = indoorRooms[0];
@@ -537,7 +534,12 @@ export function Vitals() {
             spark={view.spark}
             sparkGraph={
               view.spark
-                ? sparkGraph(view.spark, ctx.nowMs, view.sparkUnit, view.decimals)
+                ? sparkGraph(
+                    view.spark,
+                    ctx.nowMs,
+                    view.sparkUnit,
+                    view.decimals,
+                  )
                 : null
             }
             sparkColor={view.color}

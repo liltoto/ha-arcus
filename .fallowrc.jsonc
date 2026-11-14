@@ -70,14 +70,7 @@
       },
       {
         "from": "molecules",
-        "allow": [
-          "atoms",
-          "molecules",
-          "app",
-          "ui-core",
-          "render",
-          "root",
-        ],
+        "allow": ["atoms", "molecules", "app", "ui-core", "render", "root"],
       },
       {
         "from": "organisms",

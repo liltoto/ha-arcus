@@ -31,9 +31,7 @@ interface RankedEntity {
 }
 
 function domainOf(entityId: string): string {
-  return entityId.includes(".")
-    ? entityId.slice(0, entityId.indexOf("."))
-    : "";
+  return entityId.includes(".") ? entityId.slice(0, entityId.indexOf(".")) : "";
 }
 
 function attributeOf(hass: ArcusHass, entityId: string, key: string): unknown {
@@ -49,7 +47,11 @@ function textOf(hass: ArcusHass, entityId: string): string {
   const friendly = attributeOf(hass, entityId, "friendly_name");
   const registry = hass.entities?.[entityId]?.name;
   return `${entityId} ${
-    typeof friendly === "string" ? friendly : typeof registry === "string" ? registry : ""
+    typeof friendly === "string"
+      ? friendly
+      : typeof registry === "string"
+        ? registry
+        : ""
   }`;
 }
 
@@ -102,10 +104,7 @@ function rankOf(
   return 2;
 }
 
-function collect(
-  hass: ArcusHass,
-  spec: EntitySuggestionSpec,
-): RankedEntity[] {
+function collect(hass: ArcusHass, spec: EntitySuggestionSpec): RankedEntity[] {
   const ranked: RankedEntity[] = [];
   for (const entityId of Object.keys(hass.states ?? {})) {
     if (isHidden(hass, entityId)) continue;
@@ -132,8 +131,7 @@ function domainFallback(hass: ArcusHass, spec: EntitySuggestionSpec): string[] {
   if (!spec.domains?.length) return [];
   const ids = Object.keys(hass.states ?? {}).filter(
     (entityId) =>
-      !isHidden(hass, entityId) &&
-      spec.domains!.includes(domainOf(entityId)),
+      !isHidden(hass, entityId) && spec.domains!.includes(domainOf(entityId)),
   );
   return ids.sort((a, b) => {
     const availability =

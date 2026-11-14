@@ -132,9 +132,7 @@ export function resolveRoom(
   }
   return (
     model.rooms.find((room) => room.id === route.sub) ??
-    model.rooms.find(
-      (room) => room.id !== "skur" && room.kind !== "outdoor",
-    ) ??
+    model.rooms.find((room) => room.id !== "skur" && room.kind !== "outdoor") ??
     model.rooms.find((room) => room.id !== "skur") ??
     null
   );

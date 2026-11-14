@@ -47,23 +47,12 @@ describe("ChapterGrid", () => {
     ];
     expect(cards).toHaveLength(CHAPTER_ORDER.length);
     expect(cards.map((card) => card.dataset.chapter)).toEqual(CHAPTER_ORDER);
-    expect(
-      cards.map((card) => card.querySelector("h3")?.textContent),
-    ).toEqual(CHAPTER_TITLES);
+    expect(cards.map((card) => card.querySelector("h3")?.textContent)).toEqual(
+      CHAPTER_TITLES,
+    );
     expect(
       cards.map((card) => card.querySelector(".num")?.textContent),
-    ).toEqual([
-      "01",
-      "02",
-      "03",
-      "04",
-      "05",
-      "06",
-      "07",
-      "08",
-      "09",
-      "AL",
-    ]);
+    ).toEqual(["01", "02", "03", "04", "05", "06", "07", "08", "09", "AL"]);
 
     expect(screen.getAllByRole("button")).toHaveLength(CHAPTER_ORDER.length);
   });
@@ -109,9 +98,7 @@ describe("ChapterGrid", () => {
     const { container, props } = renderWithArcus(<ChapterGrid />);
 
     expect(
-      container.querySelector(
-        '[data-chapter="energi"] .ch-art .price-bars',
-      ),
+      container.querySelector('[data-chapter="energi"] .ch-art .price-bars'),
     ).not.toBeNull();
 
     const energy = container.querySelector<HTMLButtonElement>(

@@ -20,8 +20,6 @@ import {
   renderWithArcus,
 } from "./home-test-utils";
 
-
-
 interface HarnessControls {
   closeSheet: () => void;
   changeRoute: (route: ArcusRoute) => void;
@@ -55,7 +53,7 @@ function SheetHarness({
   const [hass, setHass] = useState<ArcusHass>(base.hass);
   const model = useMemo(
     () => buildModel(hass, base.config, base.now()),
-    [hass, base.config, base.now],
+    [hass, base],
   );
   const wiredActions = useMemo<ArcusActions>(
     () => ({
@@ -117,10 +115,9 @@ describe("SheetFrame", () => {
   });
 
   test("escape and the scrim close the sheet, inside clicks do not", () => {
-    const { container, props } = renderWithArcus(
-      <SheetFrame />,
-      { route: { base: "lys", sub: null } },
-    );
+    const { container, props } = renderWithArcus(<SheetFrame />, {
+      route: { base: "lys", sub: null },
+    });
     const closeSheet = props.actions.closeSheet;
 
     fireEvent.keyDown(document, { key: "Escape" });
@@ -139,10 +136,9 @@ describe("SheetFrame", () => {
     document.body.appendChild(opener);
     opener.focus();
 
-    const { container, unmount } = renderWithArcus(
-      <SheetFrame />,
-      { route: { base: "lys", sub: null } },
-    );
+    const { container, unmount } = renderWithArcus(<SheetFrame />, {
+      route: { base: "lys", sub: null },
+    });
     const sheet = container.querySelector<HTMLElement>("[data-sheet]")!;
     const close = screen.getByRole("button", { name: "Luk" });
 
@@ -244,10 +240,9 @@ describe("SheetFrame", () => {
   });
 
   test("a group toggle delegates to light.toggle", () => {
-    const { container, props } = renderWithArcus(
-      <SheetFrame />,
-      { route: { base: "lys", sub: null } },
-    );
+    const { container, props } = renderWithArcus(<SheetFrame />, {
+      route: { base: "lys", sub: null },
+    });
     const toggle = container.querySelector<HTMLButtonElement>(
       '[data-act="toggle-light"][data-entity="light.kokken"]',
     )!;

@@ -1,0 +1,53 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "eslint",
+    "typescript",
+    "unicorn",
+    "oxc",
+    "react",
+    "import",
+    "vitest",
+    "promise",
+    "node"
+  ],
+  "env": {
+    "browser": true,
+    "es2024": true,
+    "node": true,
+    "vitest": true
+  },
+  "settings": {
+    "react": {
+      "version": "19.3"
+    }
+  },
+  "categories": {
+    "correctness": "error"
+  },
+  "options": {
+    "denyWarnings": true,
+    "reportUnusedDisableDirectives": "warn"
+  },
+  "ignorePatterns": [
+    "coverage/**",
+    "dev/fixture.js",
+    "dist/**",
+    "playwright-report/**",
+    "storybook-static/**",
+    "styled-system/**",
+    "test-results/**"
+  ],
+  "rules": {
+    "vitest/require-mock-type-parameters": "off",
+    "vitest/valid-expect": "off"
+  },
+  "overrides": [
+    {
+      "files": ["tests/**"],
+      "rules": {
+        "react/immutability": "off"
+      }
+    }
+  ]
+}

@@ -19,13 +19,14 @@ function useRetainedRoute(route: ArcusRoute): ArcusRoute | null {
 
   useEffect(() => {
     if (route.base !== "hjem") {
+      // oxlint-disable-next-line react/set-state-in-effect -- retain the last sheet route for the exit animation.
       setRetained(route);
       return;
     }
     if (!retained) return;
     const timer = setTimeout(() => setRetained(null), EXIT_MS);
     return () => clearTimeout(timer);
-  }, [route.base, route.sub, retained]);
+  }, [route, retained]);
 
   return route.base === "hjem" ? retained : route;
 }

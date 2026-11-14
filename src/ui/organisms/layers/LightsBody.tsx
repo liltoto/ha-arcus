@@ -21,7 +21,8 @@ export function LightsBody() {
   const groups = model.lights ?? [];
   const ids = lightIdsForGroups(groups);
   const stored = model.lightStats as
-    { on?: number; total?: number } | undefined;
+    | { on?: number; total?: number }
+    | undefined;
   const total = typeof stored?.total === "number" ? stored.total : ids.length;
   const on =
     typeof stored?.on === "number"

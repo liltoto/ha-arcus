@@ -36,11 +36,7 @@ function area(
   return { area_id: areaId, name, ...extra };
 }
 
-function device(
-  id: string,
-  areaId: string,
-  name: string,
-): DeviceRegistryEntry {
+function device(id: string, areaId: string, name: string): DeviceRegistryEntry {
   return { id, area_id: areaId, name, name_by_user: name };
 }
 
@@ -94,11 +90,7 @@ function buildHass(parts: HassParts): ArcusHass {
 /* 1. Urban apartment: EUR, radiators, no solar, no softener           */
 /* ------------------------------------------------------------------ */
 
-export const APARTMENT_ROOMS = [
-  "living_room",
-  "bedroom",
-  "kitchen",
-] as const;
+export const APARTMENT_ROOMS = ["living_room", "bedroom", "kitchen"] as const;
 
 export function makeApartmentHass(): ArcusHass {
   const states: Record<string, HassEntity> = {
@@ -180,9 +172,7 @@ export function makeApartmentHass(): ArcusHass {
       area("bedroom", "Bedroom", { icon: "mdi:bed" }),
       area("kitchen", "Kitchen", { icon: "mdi:countertop" }),
     ],
-    devices: [
-      device("dev-door", "kitchen", "Kitchen door"),
-    ],
+    devices: [device("dev-door", "kitchen", "Kitchen door")],
     entities: [
       registryEntity("climate.living_room", "living_room"),
       registryEntity("climate.bedroom", "bedroom"),
@@ -329,7 +319,11 @@ export function makeSuburbanHass(): ArcusHass {
       }),
     ],
     floors: {
-      ground_floor: { floor_id: "ground_floor", name: "Ground floor", level: 0 },
+      ground_floor: {
+        floor_id: "ground_floor",
+        name: "Ground floor",
+        level: 0,
+      },
       first_floor: { floor_id: "first_floor", name: "First floor", level: 1 },
     },
     devices: [

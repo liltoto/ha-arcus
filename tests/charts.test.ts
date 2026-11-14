@@ -1,5 +1,10 @@
 import { expect, test } from "vitest";
-import { arcPoint, downsample, priceColor, sparkPath } from "../src/render/charts";
+import {
+  arcPoint,
+  downsample,
+  priceColor,
+  sparkPath,
+} from "../src/render/charts";
 
 test("the arc is a symmetric 1000x300 parabola", () => {
   expect(arcPoint(0)).toEqual({ x: 40, y: 210 });

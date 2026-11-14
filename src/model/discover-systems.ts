@@ -268,7 +268,8 @@ function isHomeBatterySensor(hass: ArcusHass, entityId: string): boolean {
   const text = `${entityId} ${friendlyNameOf(hass, entityId)}`;
   if (SENSOR_BATTERY_EXCLUDE_RE.test(text)) return false;
   return (
-    HOME_BATTERY_RE.test(entityId) || HOME_BATTERY_RE.test(friendlyNameOf(hass, entityId))
+    HOME_BATTERY_RE.test(entityId) ||
+    HOME_BATTERY_RE.test(friendlyNameOf(hass, entityId))
   );
 }
 
@@ -358,9 +359,7 @@ function discoverSolar(hass: ArcusHass): SolarConfig | undefined {
 }
 
 function discoverWater(hass: ArcusHass): WaterConfig | undefined {
-  const sensors = eligibleIds(hass, "sensor").filter(
-    (id) => !/leak/i.test(id),
-  );
+  const sensors = eligibleIds(hass, "sensor").filter((id) => !/leak/i.test(id));
 
   const total =
     sensors.find((id) => deviceClassOf(hass, id) === "water") ??
@@ -413,9 +412,7 @@ function discoverVentilation(hass: ArcusHass): VentilationConfig | undefined {
   const allSensors = eligibleIds(hass, "sensor");
 
   const sameDevice = unitDeviceId
-    ? allSensors.filter(
-        (id) => hass.entities?.[id]?.device_id === unitDeviceId,
-      )
+    ? allSensors.filter((id) => hass.entities?.[id]?.device_id === unitDeviceId)
     : [];
   const namedSensors = allSensors.filter(
     (id) =>
@@ -426,8 +423,7 @@ function discoverVentilation(hass: ArcusHass): VentilationConfig | undefined {
   );
   const candidates = [...sameDevice, ...namedSensors];
 
-  const notFanSpeed = (id: string) =>
-    !/fan|speed|hastighed|rpm|step/i.test(id);
+  const notFanSpeed = (id: string) => !/fan|speed|hastighed|rpm|step/i.test(id);
 
   const outdoor = findMatch(
     hass,
@@ -576,12 +572,15 @@ function hasAnySecurityField(security: SecurityConfig): boolean {
   if (security.windowAlert || security.windows || security.alarm) return true;
   return Boolean(
     security.leaks?.length ||
-      security.locks?.length ||
-      security.batteries?.length,
+    security.locks?.length ||
+    security.batteries?.length,
   );
 }
 
-function discoverSecurity(hass: ArcusHass, config: ArcusConfig): SecurityConfig | undefined {
+function discoverSecurity(
+  hass: ArcusHass,
+  config: ArcusConfig,
+): SecurityConfig | undefined {
   const existing = config.security;
   const binarySensors = eligibleIds(hass, "binary_sensor");
   const leaks =
@@ -616,10 +615,7 @@ function discoverSecurity(hass: ArcusHass, config: ArcusConfig): SecurityConfig 
  * `ventilation`, `prayers`, `security`) from `hass.states` when not already
  * configured. Returns a shallow clone and never mutates `config` in place.
  */
-type SystemFiller = (
-  hass: ArcusHass,
-  config: ArcusConfig,
-) => ArcusConfig;
+type SystemFiller = (hass: ArcusHass, config: ArcusConfig) => ArcusConfig;
 
 function fillWeather(hass: ArcusHass, config: ArcusConfig): ArcusConfig {
   if (config.weather) return config;

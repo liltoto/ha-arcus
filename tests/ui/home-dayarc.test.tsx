@@ -25,7 +25,10 @@ describe("DayArc", () => {
     expect(svg).toHaveAttribute("preserveAspectRatio", "none");
     expect(svg).toHaveAttribute("aria-hidden", "true");
 
-    const gradient = query(container, "svg.arc-svg defs linearGradient#solarFill");
+    const gradient = query(
+      container,
+      "svg.arc-svg defs linearGradient#solarFill",
+    );
     expect(gradient.querySelectorAll("stop")).toHaveLength(2);
 
     const clip = query(container, "svg.arc-svg defs clipPath#pastClip");
@@ -41,13 +44,13 @@ describe("DayArc", () => {
 
     const arc = query(container, "svg.arc-svg path[data-arc-line]");
     expect(arc.getAttribute("d")).toContain("M40,210");
-    expect(
-      query(container, "svg.arc-svg path[data-arc-past]"),
-    ).toHaveAttribute("clip-path", "url(#pastClip)");
-    expect(query(container, "svg.arc-svg path[data-solar-area]")).toHaveAttribute(
-      "fill",
-      "url(#solarFill)",
+    expect(query(container, "svg.arc-svg path[data-arc-past]")).toHaveAttribute(
+      "clip-path",
+      "url(#pastClip)",
     );
+    expect(
+      query(container, "svg.arc-svg path[data-solar-area]"),
+    ).toHaveAttribute("fill", "url(#solarFill)");
     expect(
       query(container, "svg.arc-svg path[data-solar-line]").getAttribute("d"),
     ).not.toBe("");

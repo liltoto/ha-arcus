@@ -1,11 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { normalizeConfig } from "../src/config";
 import { discoverSystems } from "../src/model/discover-systems";
-import type {
-  ArcusConfig,
-  ArcusHass,
-  HassEntity,
-} from "../src/types";
+import type { ArcusConfig, ArcusHass, HassEntity } from "../src/types";
 
 function state(
   value: string,
@@ -106,9 +102,7 @@ describe("discoverSystems", () => {
     const discovered = discoverSystems(hass, config());
     expect(discovered.price?.current).toBe("sensor.electricity_total_price");
     expect(discovered.price?.forecast).toBe("sensor.energi_data_service");
-    expect(discovered.price?.lowest).toBe(
-      "sensor.nord_pool_dk2_lowest_price",
-    );
+    expect(discovered.price?.lowest).toBe("sensor.nord_pool_dk2_lowest_price");
     expect(discovered.price?.tomorrow).toBe(
       "binary_sensor.nord_pool_dk2_tomorrow_price_available",
     );
@@ -250,9 +244,7 @@ describe("discoverSystems", () => {
     );
     const ventilation = discoverSystems(hass, config()).ventilation;
     expect(ventilation?.climate).toBe("climate.vallox");
-    expect(ventilation?.temperature).toBe(
-      "sensor.vallox_room_temperature",
-    );
+    expect(ventilation?.temperature).toBe("sensor.vallox_room_temperature");
     expect(ventilation?.humidity).toBe("sensor.vallox_humidity");
     expect(ventilation?.step).toBe("sensor.vallox_fan_step");
   });

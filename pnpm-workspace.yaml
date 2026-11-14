@@ -1,0 +1,10 @@
+# pnpm 12 refuses unreviewed dependency build scripts by default.
+allowBuilds:
+  # Native fallback for parcel's file watcher (Storybook/Vite).
+  "@parcel/watcher": true
+  # Downloads the platform binary used by the build and dev server.
+  esbuild: true
+
+# Never link dependency-provided agent skills into this repository.
+skills:
+  dirs: []

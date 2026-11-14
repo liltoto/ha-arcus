@@ -139,7 +139,9 @@ const ENTITY_GROUPS: EntityGroup[] = [
         label: "EV plugged in",
         suggest: {
           domains: ["binary_sensor", "sensor", "input_boolean"],
-          name: evName(/plug|tilsluttet|connected|charging|status|koretoj|vehicle/),
+          name: evName(
+            /plug|tilsluttet|connected|charging|status|koretoj|vehicle/,
+          ),
           strict: true,
         },
       },
@@ -343,7 +345,9 @@ const ENTITY_GROUPS: EntityGroup[] = [
         label: "Salt level",
         suggest: {
           domains: ["sensor"],
-          name: waterName(/salt.*(level|procent|percent|niveau)|regener.*level/),
+          name: waterName(
+            /salt.*(level|procent|percent|niveau)|regener.*level/,
+          ),
           strict: true,
         },
       },
@@ -842,7 +846,10 @@ function restoreViewState(root: ShadowRoot, state: EditorViewState): void {
     state.focus.start !== null
   ) {
     try {
-      target.setSelectionRange(state.focus.start, state.focus.end ?? state.focus.start);
+      target.setSelectionRange(
+        state.focus.start,
+        state.focus.end ?? state.focus.start,
+      );
     } catch {
       /* Some input types reject selection ranges. */
     }
