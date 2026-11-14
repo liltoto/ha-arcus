@@ -27,7 +27,9 @@ export function ChapterCard({ chapter, onOpen }: ChapterCardProps) {
       </div>
       <h3>{chapter.title}</h3>
       <div className="sum">{chapter.sum}</div>
-      <div className="ch-art">{chapter.art}</div>
+      <div className="ch-art" data-art={chapter.key}>
+        {chapter.art}
+      </div>
       <div className="ch-foot">
         {chapter.meta ? <span>{chapter.meta}</span> : null}
       </div>

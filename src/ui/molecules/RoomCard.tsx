@@ -10,6 +10,8 @@ export interface RoomCardProps {
   onOpen: () => void;
   language?: string;
   openLabel?: string;
+  /** Legacy `data-spark` key for the card's history patcher. */
+  sparkKey?: string;
 }
 
 /**
@@ -21,6 +23,7 @@ export function RoomCard({
   onOpen,
   language = "da",
   openLabel = "Open room",
+  sparkKey,
 }: RoomCardProps) {
   const temp = room.temp === null ? "–" : formatNumber(room.temp, 1, language);
   const airTone =
@@ -72,12 +75,30 @@ export function RoomCard({
           ) : null}
         </div>
       </div>
-      <Sparkline
-        className="room-spark"
-        values={room.spark}
-        height={40}
-        style={{ color: room.tint }}
-      />
+      {sparkKey ? (
+        <svg
+          className="room-spark"
+          viewBox="0 0 100 40"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            data-spark={sparkKey}
+            d=""
+            fill="none"
+            stroke="var(--room)"
+            strokeWidth={1.1}
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      ) : (
+        <Sparkline
+          className="room-spark"
+          values={room.spark}
+          height={40}
+          style={{ color: room.tint }}
+        />
+      )}
       <span className="room-open">{openLabel}</span>
     </button>
   );

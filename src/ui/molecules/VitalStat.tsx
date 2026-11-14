@@ -7,6 +7,8 @@ export interface VitalStatProps {
   unit?: string;
   sub?: ReactNode;
   spark?: number[];
+  /** Legacy `data-spark` key for the card's history patcher. */
+  sparkKey?: string;
   sparkRange?: { min: number; max: number } | null;
   ring?: ReactNode;
   onClick?: () => void;
@@ -23,6 +25,7 @@ export function VitalStat({
   unit,
   sub,
   spark,
+  sparkKey,
   sparkRange = null,
   ring,
   onClick,
@@ -36,7 +39,23 @@ export function VitalStat({
         {unit ? <small>{unit}</small> : null}
       </div>
       {sub ? <div className="vital-sub">{sub}</div> : null}
-      {spark?.length ? (
+      {sparkKey ? (
+        <svg
+          className="vital-spark"
+          viewBox="0 0 100 28"
+          preserveAspectRatio="none"
+          style={{ color: sparkColor } as CSSProperties}
+        >
+          <path
+            data-spark={sparkKey}
+            d=""
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1}
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      ) : spark?.length ? (
         <Sparkline
           className="vital-spark"
           values={spark}
