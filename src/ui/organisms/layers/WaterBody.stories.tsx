@@ -1,5 +1,6 @@
 import type { Decorator, Meta, StoryObj } from "@storybook/react";
 import { WaterBody } from "./WaterBody";
+import { c } from "../../styles/classes";
 
 /** Give the body the same sheet frame it gets inside the card. */
 const withSheet: Decorator = (Story) => (
@@ -12,7 +13,7 @@ const withSheet: Decorator = (Story) => (
     }}
   >
     <div
-      className="sheet open"
+      className={c("sheet open")}
       style={{
         position: "relative",
         inset: "auto",

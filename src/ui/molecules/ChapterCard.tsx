@@ -1,5 +1,6 @@
 import { Icon } from "../atoms/Icon";
 import type { ChapterView } from "../view-types";
+import { c } from "../styles/classes";
 
 export interface ChapterCardProps {
   chapter: ChapterView;
@@ -14,23 +15,23 @@ export function ChapterCard({ chapter, onOpen }: ChapterCardProps) {
   return (
     <button
       type="button"
-      className={`chapter${chapter.large ? " large" : ""}`}
+      className={c("chapter", chapter.large && "large")}
       data-nav={chapter.key}
       data-chapter={chapter.key}
       onClick={onOpen}
     >
-      <div className="ch-top">
-        <span className="num">{chapter.num ?? ""}</span>
-        <span className="ch-icon">
+      <div className={c("ch-top")}>
+        <span className={c("num")}>{chapter.num ?? ""}</span>
+        <span className={c("ch-icon")}>
           <Icon name={chapter.icon} />
         </span>
       </div>
       <h3>{chapter.title}</h3>
-      <div className="sum">{chapter.sum}</div>
-      <div className="ch-art" data-art={chapter.key}>
+      <div className={c("sum")}>{chapter.sum}</div>
+      <div className={c("ch-art")} data-art={chapter.key}>
         {chapter.art}
       </div>
-      <div className="ch-foot">
+      <div className={c("ch-foot")}>
         {chapter.meta ? <span>{chapter.meta}</span> : null}
       </div>
     </button>

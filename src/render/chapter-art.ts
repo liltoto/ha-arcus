@@ -7,6 +7,7 @@ import type {
   LightGroupModel,
   Translator,
 } from "../types";
+import { c } from "../ui/styles/classes";
 import { arcPoint, priceColor, sparkPath } from "./charts";
 import { graphAttrs } from "./graph";
 
@@ -54,7 +55,7 @@ export function renderChapterArt(
       decimals: 2,
       series: [{ values: price.values }],
     });
-    return `<div class="price-bars" ${graph}>${price.values
+    return `<div class="${c("price-bars")}" ${graph}>${price.values
       .map(
         (value) =>
           `<i style="--bar:${priceColor(
@@ -106,7 +107,7 @@ export function renderChapterArt(
   if (key === "sikkerhed") {
     const openings =
       model.security?.openings ?? model.rooms.flatMap((room) => room.openings);
-    return `<div class="sec-dots">${openings
+    return `<div class="${c("sec-dots")}">${openings
       .map(
         (opening) =>
           `<i class="${isOn(opening.id) ? "open" : ""}" title="${escapeHtml(
@@ -119,7 +120,7 @@ export function renderChapterArt(
   if (key === "ventilation") {
     const system = model.systemCards.find((card) => card.id === "ventilation");
     const step = model.ventilation?.step ?? refNumber(system?.step?.state) ?? 0;
-    return `<div class="zone-strip">${[0, 1, 2, 3, 4]
+    return `<div class="${c("zone-strip")}">${[0, 1, 2, 3, 4]
       .map(
         (index) =>
           `<i style="height:${20 + index * 16}%;opacity:${
@@ -131,19 +132,21 @@ export function renderChapterArt(
 
   if (key === "teknik") {
     const id = context.config.network?.router;
-    const history = id && context.history ? context.history.series(id, { fill: "hold" }) : [];
+    const history =
+      id && context.history ? context.history.series(id, { fill: "hold" }) : [];
     const values = history.length ? history : [model.tech?.router ?? null];
     const now = context.now ?? new Date();
     const end = now.getTime();
-    const graph = values.length > 1
-      ? graphAttrs({
-          start: end - 86_400_000,
-          end,
-          unit: "ms",
-          decimals: 0,
-          series: [{ values }],
-        })
-      : "";
+    const graph =
+      values.length > 1
+        ? graphAttrs({
+            start: end - 86_400_000,
+            end,
+            unit: "ms",
+            decimals: 0,
+            series: [{ values }],
+          })
+        : "";
     return `<svg viewBox="0 0 220 52" preserveAspectRatio="none" ${graph}><path d="${sparkPath(
       values,
       220,
@@ -154,19 +157,21 @@ export function renderChapterArt(
 
   if (key === "oekonomi") {
     const id = context.config.economy?.bond;
-    const history = id && context.history ? context.history.series(id, { fill: "hold" }) : [];
+    const history =
+      id && context.history ? context.history.series(id, { fill: "hold" }) : [];
     const values = history.length ? history : [model.economy?.value ?? null];
     const now = context.now ?? new Date();
     const end = now.getTime();
-    const graph = values.length > 1
-      ? graphAttrs({
-          start: end - 86_400_000,
-          end,
-          unit: "",
-          decimals: 2,
-          series: [{ values }],
-        })
-      : "";
+    const graph =
+      values.length > 1
+        ? graphAttrs({
+            start: end - 86_400_000,
+            end,
+            unit: "",
+            decimals: 2,
+            series: [{ values }],
+          })
+        : "";
     return `<svg viewBox="0 0 220 52" preserveAspectRatio="none" ${graph}><path d="${sparkPath(
       values,
       220,
@@ -177,14 +182,14 @@ export function renderChapterArt(
 
   if (key === "lys") {
     const ids = allLightIds(model.lights);
-    return `<div class="light-dots">${ids
+    return `<div class="${c("light-dots")}">${ids
       .map((id) => `<i class="${isOn(id) ? "on" : ""}"></i>`)
       .join("")}</div>`;
   }
 
   if (key === "varme") {
     const zones = [...model.heating, ...model.heatingReserve];
-    return `<div class="zone-strip">${zones
+    return `<div class="${c("zone-strip")}">${zones
       .map((zone) => {
         const current = refNumber(zone.entity.attributes?.current_temperature);
         const target = refNumber(zone.entity.attributes?.temperature);

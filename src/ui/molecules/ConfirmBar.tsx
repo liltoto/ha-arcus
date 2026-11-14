@@ -1,3 +1,4 @@
+import { c } from "../styles/classes";
 export interface ConfirmBarProps {
   text: string;
   onConfirm: () => void;
@@ -21,11 +22,11 @@ export function ConfirmBar({
   confirmAct = "confirm-yes",
 }: ConfirmBarProps) {
   return (
-    <div className="confirm" data-confirm>
-      <span className="txt">{text}</span>
+    <div className={c("confirm")} data-confirm>
+      <span className={c("txt")}>{text}</span>
       <button
         type="button"
-        className="btn small"
+        className={c("btn small")}
         data-act="cancel-confirm"
         onClick={onCancel}
       >
@@ -33,7 +34,7 @@ export function ConfirmBar({
       </button>
       <button
         type="button"
-        className="btn small danger"
+        className={c("btn small danger")}
         data-act={confirmAct}
         onClick={onConfirm}
       >

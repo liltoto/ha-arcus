@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { HistoryCache } from "../../../../data/history";
 import { areaPath, sparkPath } from "../../../../render/charts";
 import { applyGraph, type GraphInput } from "../../../../render/graph";
+import { c } from "../../../styles/classes";
 
 export interface RoomChartProps {
   history: HistoryCache;
@@ -59,7 +60,7 @@ export function RoomChart({
   });
 
   return (
-    <div ref={boxRef} className={`chart-box${hasData ? "" : " no-data"}`}>
+    <div ref={boxRef} className={c("chart-box", !hasData && "no-data")}>
       <svg
         viewBox={`0 0 560 ${height}`}
         preserveAspectRatio="none"
@@ -92,7 +93,7 @@ export function RoomChart({
           d={line}
         />
       </svg>
-      <span className="chart-empty">{emptyLabel}</span>
+      <span className={c("chart-empty")}>{emptyLabel}</span>
     </div>
   );
 }

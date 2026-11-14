@@ -1,6 +1,6 @@
 {
   "name": "ha-arcus",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "description": "Arcus — a calm, day-arc dashboard for Home Assistant.",
   "type": "module",
   "private": true,
@@ -15,7 +15,8 @@
     "visual": "playwright test",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "size": "node scripts/check-size.mjs"
+    "size": "node scripts/check-size.mjs",
+    "prepare": "panda codegen"
   },
   "keywords": [
     "home-assistant",
@@ -26,6 +27,10 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "@pandacss/dev": "^2.5.0",
+    "@pandacss/preset-base": "^2.5.0",
+    "@pandacss/preset-panda": "^2.5.0",
+    "@pandacss/vite": "^2.5.0",
     "@playwright/test": "^1.65.0",
     "@storybook/addon-a11y": "^10.6.7",
     "@storybook/addon-docs": "^10.6.7",
@@ -40,6 +45,7 @@
     "esbuild": "^0.28.2",
     "eslint": "^10.14.0",
     "happy-dom": "^21.0.4",
+    "postcss": "^8.5.33",
     "prettier": "^3.10.1",
     "storybook": "^10.6.7",
     "typescript": "^7.0.2",

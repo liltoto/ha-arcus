@@ -50,6 +50,7 @@ import {
   todayForecastValues,
   windowKey,
 } from "./solar/helpers";
+import { c } from "../../styles/classes";
 
 interface SolarContext {
   solar: SolarModel;
@@ -74,20 +75,20 @@ function MiniStat({
   sub: string;
 }) {
   return (
-    <div className="mini-stat">
-      <div className="k">{label}</div>
-      <div className="v">
+    <div className={c("mini-stat")}>
+      <div className={c("k")}>{label}</div>
+      <div className={c("v")}>
         {value}
         {unit ? <small>{unit}</small> : null}
       </div>
-      {sub ? <div className="row-sub">{sub}</div> : null}
+      {sub ? <div className={c("row-sub")}>{sub}</div> : null}
     </div>
   );
 }
 
 function Legend({ items }: { items: Array<{ color: string; label: string }> }) {
   return (
-    <div className="legend">
+    <div className={c("legend")}>
       {items.map((item) => (
         <span key={`${item.color}:${item.label}`}>
           <i style={{ "--c": item.color } as CSSProperties} />
@@ -138,19 +139,19 @@ function ControlRow({
 }: ControlRowProps) {
   if (!entityId || value === null) {
     return (
-      <div className="row">
-        <span className="row-main">
-          <div className="row-name">{label}</div>
+      <div className={c("row")}>
+        <span className={c("row-main")}>
+          <div className={c("row-name")}>{label}</div>
         </span>
-        <span className="row-val">{fmt(value, digits, language)}</span>
+        <span className={c("row-val")}>{fmt(value, digits, language)}</span>
       </div>
     );
   }
 
   return (
-    <div className="row">
-      <span className="row-main">
-        <div className="row-name">{label}</div>
+    <div className={c("row")}>
+      <span className={c("row-main")}>
+        <div className={c("row-name")}>{label}</div>
       </span>
       <Stepper
         value={value}
@@ -175,7 +176,7 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
 
   return (
     <>
-      <div className="readings">
+      <div className={c("readings")}>
         <Readout
           label={t("solar.battery")}
           value={fmt(solar.batterySoc, 0, language)}
@@ -197,13 +198,13 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
           unit={t("energy.w")}
         />
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.flow")}</div>
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.flow")}</div>
         <EnergyFlow solar={solar} language={language} t={t} />
       </div>
-      <div className="block">
-        <div className="block-head">
-          <div className="block-label">{t("solar.power24")}</div>
+      <div className={c("block")}>
+        <div className={c("block-head")}>
+          <div className={c("block-label")}>{t("solar.power24")}</div>
           <Legend
             items={[
               { color: "var(--amber)", label: t("solar.legendSolar") },
@@ -253,9 +254,9 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
           ]}
         />
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.gridPhases")}</div>
-        <div className="readings">
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.gridPhases")}</div>
+        <div className={c("readings")}>
           <Readout label="L1" value={fmt(solar.gridL1, 1, language)} unit="A" />
           <Readout label="L2" value={fmt(solar.gridL2, 1, language)} unit="A" />
           <Readout label="L3" value={fmt(solar.gridL3, 1, language)} unit="A" />
@@ -297,9 +298,9 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
           ]}
         />
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.mppt")}</div>
-        <div className="readings">
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.mppt")}</div>
+        <div className={c("readings")}>
           <Readout
             label={t("solar.mppt3")}
             value={fmt(solar.pv3, 0, language)}
@@ -321,18 +322,18 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
             unit="V"
           />
         </div>
-        <div className="block-note">
+        <div className={c("block-note")}>
           {t("solar.mpptNote", {
             i3: fmt(solar.pv3Current, 1, language),
             i4: fmt(solar.pv4Current, 1, language),
           })}
         </div>
       </div>
-      <div className="btn-row">
+      <div className={c("btn-row")}>
         {heliosPath ? (
           <button
             type="button"
-            className="btn"
+            className={c("btn")}
             data-act="helios"
             onClick={() =>
               actions.performAction({
@@ -346,7 +347,7 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
         ) : null}
         <button
           type="button"
-          className="btn small"
+          className={c("btn small")}
           data-nav="sol/produktion"
           onClick={() => actions.navigate("sol/produktion")}
         >
@@ -354,7 +355,7 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
         </button>
         <button
           type="button"
-          className="btn small"
+          className={c("btn small")}
           data-nav="sol/batteri"
           onClick={() => actions.navigate("sol/batteri")}
         >
@@ -362,7 +363,7 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
         </button>
         <button
           type="button"
-          className="btn small"
+          className={c("btn small")}
           data-nav="sol/prognose"
           onClick={() => actions.navigate("sol/prognose")}
         >
@@ -370,7 +371,7 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
         </button>
         <button
           type="button"
-          className="btn small"
+          className={c("btn small")}
           data-nav="sol/afkast"
           onClick={() => actions.navigate("sol/afkast")}
         >
@@ -388,7 +389,7 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
 
   return (
     <>
-      <div className="readings">
+      <div className={c("readings")}>
         <Readout
           label={t("solar.forecastToday")}
           value={fmt(solar.forecastToday, 1, language)}
@@ -410,9 +411,11 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
           unit={t("energy.kwh")}
         />
       </div>
-      <div className="block">
-        <div className="block-head">
-          <div className="block-label">{t("solar.productionVsForecast")}</div>
+      <div className={c("block")}>
+        <div className={c("block-head")}>
+          <div className={c("block-label")}>
+            {t("solar.productionVsForecast")}
+          </div>
         </div>
         <SolarChart
           chart="solar-production-forecast"
@@ -444,9 +447,9 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
           ]}
         />
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.strings")}</div>
-        <div className="readings">
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.strings")}</div>
+        <div className={c("readings")}>
           <Readout
             label={t("solar.mppt3")}
             value={fmt(solar.pv3, 0, language)}
@@ -468,15 +471,15 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
             unit="V"
           />
         </div>
-        <div className="block-note">
+        <div className={c("block-note")}>
           {t("solar.mpptNote", {
             i3: fmt(solar.pv3Current, 1, language),
             i4: fmt(solar.pv4Current, 1, language),
           })}
         </div>
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.strings24")}</div>
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.strings24")}</div>
         <SolarChart
           chart="solar-strings-24h"
           height={110}
@@ -505,9 +508,9 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
           ]}
         />
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.total")}</div>
-        <div className="readings">
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.total")}</div>
+        <div className={c("readings")}>
           <Readout
             label={t("solar.totalProduced")}
             value={fmt(solar.totalProduction, 0, language)}
@@ -530,8 +533,8 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
           />
         </div>
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.dailyEnergy7")}</div>
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.dailyEnergy7")}</div>
         <DayBars days={days} empty={t("empty.dataYet")} language={language} />
       </div>
     </>
@@ -575,7 +578,7 @@ function SolarBattery({ ctx }: { ctx: SolarContext }) {
         note={t("solar.batteryNote")}
         language={language}
       />
-      <div className="readings">
+      <div className={c("readings")}>
         <Readout
           label={t("solar.temperature")}
           value={fmt(solar.batteryTemperature, 1, language)}
@@ -597,7 +600,7 @@ function SolarBattery({ ctx }: { ctx: SolarContext }) {
           unit="°C"
         />
       </div>
-      <div className="readings" style={{ marginTop: 10 }}>
+      <div className={c("readings")} style={{ marginTop: 10 }}>
         <Readout
           label={t("solar.charge")}
           value={fmt(solar.batteryCharge, 1, language)}
@@ -619,8 +622,8 @@ function SolarBattery({ ctx }: { ctx: SolarContext }) {
           unit="%"
         />
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.charge7")}</div>
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.charge7")}</div>
         <SolarChart
           chart="solar-soc-7d"
           height={120}
@@ -639,8 +642,8 @@ function SolarBattery({ ctx }: { ctx: SolarContext }) {
           ]}
         />
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.chargeDischarge7")}</div>
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.chargeDischarge7")}</div>
         <SolarChart
           chart="solar-charge-7d"
           height={110}
@@ -671,8 +674,8 @@ function SolarBattery({ ctx }: { ctx: SolarContext }) {
           ]}
         />
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.limits")}</div>
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.limits")}</div>
         <ControlRow
           label={t("solar.minSoc")}
           entityId={minEntity}
@@ -696,7 +699,7 @@ function SolarBattery({ ctx }: { ctx: SolarContext }) {
           onChange={(value) => setNumber(maxEntity, value)}
         />
       </div>
-      <div className="note">{t("solar.batteryFooter")}</div>
+      <div className={c("note")}>{t("solar.batteryFooter")}</div>
     </>
   );
 }
@@ -713,7 +716,7 @@ function SolarForecast({ ctx }: { ctx: SolarContext }) {
 
   return (
     <>
-      <div className="readings">
+      <div className={c("readings")}>
         <Readout
           label={t("solar.today")}
           value={fmt(solar.forecastToday, 1, language)}
@@ -735,7 +738,7 @@ function SolarForecast({ ctx }: { ctx: SolarContext }) {
           unit={t("energy.kwh")}
         />
       </div>
-      <div className="mini-grid" style={{ marginTop: 10 }}>
+      <div className={c("mini-grid")} style={{ marginTop: 10 }}>
         <MiniStat
           label={t("solar.actualToday")}
           value={fmt(solar.today, 1, language)}
@@ -753,16 +756,16 @@ function SolarForecast({ ctx }: { ctx: SolarContext }) {
           sub={t("solar.forecastOfToday")}
         />
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.forecastToday")}</div>
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.forecastToday")}</div>
         <SolarArc
           points={pointsOnDate(solar.forecastSeries, now)}
           now={now}
           empty={t("empty.chart")}
         />
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.forecast48")}</div>
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.forecast48")}</div>
         <SolarChart
           chart="solar-48h"
           height={150}
@@ -778,16 +781,16 @@ function SolarForecast({ ctx }: { ctx: SolarContext }) {
             },
           ]}
         />
-        <div className="block-note">
+        <div className={c("block-note")}>
           {t("solar.forecastTodayNote", {
             hour: fmt(solar.forecastCurrentHour, 1, language),
             next: fmt(solar.forecastNext24h, 0, language),
           })}
         </div>
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.comingDays")}</div>
-        <div className="readings">
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.comingDays")}</div>
+        <div className={c("readings")}>
           <Readout
             label={t("common.tomorrow")}
             value={fmt(solar.forecastTomorrow, 1, language)}
@@ -869,19 +872,19 @@ function SolarPayback({ ctx }: { ctx: SolarContext }) {
 
   return (
     <>
-      <div className="block">
-        <div className="big-read">
+      <div className={c("block")}>
+        <div className={c("big-read")}>
           {fmt(solar.paybackPercent, 1, language)}
           <small>{t("solar.paybackPercent", { value: "" }).trim()}</small>
         </div>
-        <div className="block-note">
+        <div className={c("block-note")}>
           {t("solar.paybackTotalNote", {
             total: fmt(total, 0, language),
             rate: fmt(rate, 2, language),
           })}
         </div>
       </div>
-      <div className="readings">
+      <div className={c("readings")}>
         <Readout
           label={t("common.today")}
           value={fmt(today, 0, language)}
@@ -903,7 +906,7 @@ function SolarPayback({ ctx }: { ctx: SolarContext }) {
           unit={t("energy.kr")}
         />
       </div>
-      <div className="mini-grid" style={{ marginTop: 10 }}>
+      <div className={c("mini-grid")} style={{ marginTop: 10 }}>
         <MiniStat
           label={t("sheet.titleSolar")}
           value={fmt(solar.savingsSolar, 0, language)}
@@ -917,20 +920,20 @@ function SolarPayback({ ctx }: { ctx: SolarContext }) {
           sub={t("solar.paybackSavedTotal")}
         />
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.paybackWhen")}</div>
-        <div className="big-read" style={{ fontSize: 40 }}>
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.paybackWhen")}</div>
+        <div className={c("big-read")} style={{ fontSize: 40 }}>
           {dateLabel}
         </div>
-        <div className="block-note">
+        <div className={c("block-note")}>
           {t("solar.paybackNote", {
             rate: fmt(rate, 2, language),
             investment: fmt(investment, 0, language),
           })}
         </div>
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.savings30")}</div>
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.savings30")}</div>
         <SolarChart
           chart="solar-savings-30d"
           height={110}
@@ -949,8 +952,8 @@ function SolarPayback({ ctx }: { ctx: SolarContext }) {
           ]}
         />
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.savingsYear")}</div>
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.savingsYear")}</div>
         <SolarChart
           chart="solar-savings-365d"
           height={110}
@@ -969,8 +972,8 @@ function SolarPayback({ ctx }: { ctx: SolarContext }) {
           ]}
         />
       </div>
-      <div className="block">
-        <div className="block-label">{t("solar.settings")}</div>
+      <div className={c("block")}>
+        <div className={c("block-label")}>{t("solar.settings")}</div>
         <ControlRow
           label={t("solar.investmentSolar")}
           entityId={solarEntity}
@@ -993,16 +996,16 @@ function SolarPayback({ ctx }: { ctx: SolarContext }) {
           language={language}
           onChange={(value) => setInvestment(batteryEntity, value)}
         />
-        <div className="row">
-          <span className="row-main">
-            <div className="row-name">{t("solar.installed")}</div>
+        <div className={c("row")}>
+          <span className={c("row-main")}>
+            <div className={c("row-name")}>{t("solar.installed")}</div>
           </span>
-          <span className="row-val" style={{ fontSize: 13 }}>
+          <span className={c("row-val")} style={{ fontSize: 13 }}>
             {installedAtValue(solar, hass, config, language)}
           </span>
         </div>
       </div>
-      <div className="note">{t("solar.paybackFooter")}</div>
+      <div className={c("note")}>{t("solar.paybackFooter")}</div>
     </>
   );
 }
@@ -1088,7 +1091,7 @@ export function SolarBody({ route }: LayerBodyProps) {
       {hasData ? (
         <SegmentedTabs tabs={tabs} active={active} onChange={changeTab} />
       ) : null}
-      <div className="sheet-scroll">
+      <div className={c("sheet-scroll")}>
         {hasData && solar ? (
           <SolarTabBody
             active={active}

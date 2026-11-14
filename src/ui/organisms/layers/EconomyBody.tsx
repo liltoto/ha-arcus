@@ -25,6 +25,7 @@ import { ListRow } from "../../molecules/ListRow";
 import { Readout } from "../../molecules/Readout";
 import { SheetHeader } from "../../molecules/SheetHeader";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
+import { c } from "../../styles/classes";
 
 interface ChartSeries {
   values: Array<number | null>;
@@ -208,7 +209,7 @@ export function EconomyBody(_props: LayerBodyProps) {
           closeLabel={t("sheet.close")}
           onClose={actions.closeSheet}
         />
-        <div className="sheet-scroll">
+        <div className={c("sheet-scroll")}>
           <EmptyState icon="chart" title={t("empty.data")} />
         </div>
       </div>
@@ -235,17 +236,17 @@ export function EconomyBody(_props: LayerBodyProps) {
         closeLabel={t("sheet.close")}
         onClose={actions.closeSheet}
       />
-      <div className="sheet-scroll">
-        <div className="block">
-          <div className="big-read">
+      <div className={c("sheet-scroll")}>
+        <div className={c("block")}>
+          <div className={c("big-read")}>
             {fmt(value, 2)}
             <small>{t("economy.price")}</small>
           </div>
-          <div className="block-note">
+          <div className={c("block-note")}>
             {signed(change)} % {t("common.today").toLocaleLowerCase()}
           </div>
         </div>
-        <div className="readings">
+        <div className={c("readings")}>
           <Readout
             label={t("economy.change")}
             value={signed(change)}
@@ -263,8 +264,8 @@ export function EconomyBody(_props: LayerBodyProps) {
           />
           <Readout label={t("economy.price")} value={fmt(value, 2)} />
         </div>
-        <div className="block">
-          <div className="block-label">{t("economy.chart30")}</div>
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("economy.chart30")}</div>
           <BondChart
             t={t}
             nowMs={nowMs}
@@ -277,9 +278,9 @@ export function EconomyBody(_props: LayerBodyProps) {
             ]}
           />
         </div>
-        <div className="block">
-          <div className="block-label">{t("economy.metrics")}</div>
-          <div className="list">
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("economy.metrics")}</div>
+          <div className={c("list")}>
             <ListRow
               name={t("economy.price")}
               sub={t("economy.latest")}
@@ -306,7 +307,7 @@ export function EconomyBody(_props: LayerBodyProps) {
             />
           </div>
         </div>
-        <div className="note">{t("economy.footer")}</div>
+        <div className={c("note")}>{t("economy.footer")}</div>
       </div>
     </div>
   );

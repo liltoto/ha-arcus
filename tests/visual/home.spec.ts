@@ -220,6 +220,6 @@ test("the room sheet holds focus and Escape closes it", async ({ page }) => {
   await expect.poll(focusInsideSheet).toBe(true);
 
   await page.keyboard.press("Escape");
-  await expect(page.locator(".sheet")).not.toHaveClass(/\bopen\b/);
+  await expect(page.locator(".sheet")).not.toHaveClass(/(^|\s)open(\s|$)/);
   await expect(page).toHaveURL(/#\/$/);
 });

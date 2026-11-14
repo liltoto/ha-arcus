@@ -25,6 +25,7 @@ import { SheetHeader } from "../../molecules/SheetHeader";
 import { Stepper } from "../../molecules/Stepper";
 import { ZoneStrip } from "../../molecules/ZoneStrip";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
+import { c } from "../../styles/classes";
 
 interface HeatingLimits {
   standard?: EntityRef;
@@ -144,7 +145,7 @@ function Setpoint({
   dataAct,
   onChange,
 }: SetpointProps) {
-  if (value === null) return <span className="row-val">–</span>;
+  if (value === null) return <span className={c("row-val")}>–</span>;
   return (
     <span
       data-act={dataAct}
@@ -243,20 +244,20 @@ export function HeatingBody(_props: LayerBodyProps) {
     const opening = isOpeningOn(hass, zone.opening ?? null);
 
     return (
-      <div className="row" key={entityId}>
-        <div className="row-main">
-          <div className="row-name">
+      <div className={c("row")} key={entityId}>
+        <div className={c("row-main")}>
+          <div className={c("row-name")}>
             {zone.name}
             {opening ? (
               <span
-                className="status-line"
+                className={c("status-line")}
                 style={{ display: "inline-flex", marginLeft: 6 }}
               >
-                <i className="dot warn" />
+                <i className={c("dot warn")} />
               </span>
             ) : null}
           </div>
-          <div className="row-sub">
+          <div className={c("row-sub")}>
             {t("room.heatingNow", {
               temp: temperature(current, language),
             })}{" "}
@@ -279,7 +280,7 @@ export function HeatingBody(_props: LayerBodyProps) {
         />
         <button
           type="button"
-          className={`toggle${on ? " on" : ""}`}
+          className={c("toggle", on && "on")}
           data-act="hvac-toggle"
           data-entity={entityId}
           data-on={entityId}
@@ -300,10 +301,10 @@ export function HeatingBody(_props: LayerBodyProps) {
     const max = numberFrom(attributes.max_temp) ?? 35;
 
     return (
-      <div className="row" key={entityId}>
-        <div className="row-main">
-          <div className="row-name">{zone.name}</div>
-          <div className="row-sub">
+      <div className={c("row")} key={entityId}>
+        <div className={c("row-main")}>
+          <div className={c("row-name")}>{zone.name}</div>
+          <div className={c("row-sub")}>
             {t("room.heatingNow", {
               temp: temperature(current, language),
             })}
@@ -331,10 +332,10 @@ export function HeatingBody(_props: LayerBodyProps) {
     const min = numberFrom(attributes.min) ?? 5;
     const max = numberFrom(attributes.max) ?? 35;
     return (
-      <div className="row" key={entity.entityId}>
-        <div className="row-main">
-          <div className="row-name">{label}</div>
-          <div className="row-sub">{sub}</div>
+      <div className={c("row")} key={entity.entityId}>
+        <div className={c("row-main")}>
+          <div className={c("row-name")}>{label}</div>
+          <div className={c("row-sub")}>{sub}</div>
         </div>
         <Setpoint
           entityId={entity.entityId}
@@ -382,15 +383,15 @@ export function HeatingBody(_props: LayerBodyProps) {
         closeLabel={t("sheet.close")}
         onClose={actions.closeSheet}
       />
-      <div className="sheet-scroll">
-        <div className="block">
-          <div className="block-head">
-            <div className="block-label">{t("heating.zones")}</div>
+      <div className={c("sheet-scroll")}>
+        <div className={c("block")}>
+          <div className={c("block-head")}>
+            <div className={c("block-label")}>{t("heating.zones")}</div>
             <div style={{ width: 120, height: 26 }}>
               <ZoneStrip values={stripValues} warns={stripWarns} />
             </div>
           </div>
-          <div className="list">
+          <div className={c("list")}>
             {zones.length ? (
               zones.map(zoneRow)
             ) : (
@@ -400,16 +401,16 @@ export function HeatingBody(_props: LayerBodyProps) {
         </div>
 
         {reserve.length ? (
-          <div className="block">
-            <div className="block-label">{t("heating.reserve")}</div>
-            <div className="list">{reserve.map(reserveRow)}</div>
+          <div className={c("block")}>
+            <div className={c("block-label")}>{t("heating.reserve")}</div>
+            <div className={c("list")}>{reserve.map(reserveRow)}</div>
           </div>
         ) : null}
 
         {limits && (limits.standard || limits.reduced) ? (
-          <div className="block">
-            <div className="block-label">{t("heating.limits")}</div>
-            <div className="list">
+          <div className={c("block")}>
+            <div className={c("block-label")}>{t("heating.limits")}</div>
+            <div className={c("list")}>
               {limits.standard
                 ? limitRow(
                     limits.standard,
@@ -428,8 +429,8 @@ export function HeatingBody(_props: LayerBodyProps) {
           </div>
         ) : null}
 
-        <div className="block">
-          <div className="block-label">
+        <div className={c("block")}>
+          <div className={c("block-label")}>
             {t("room.chart24", { label: t("room.temperature") })}
           </div>
           <ChartBox
@@ -478,7 +479,7 @@ export function HeatingBody(_props: LayerBodyProps) {
           </ChartBox>
         </div>
 
-        <div className="note">
+        <div className={c("note")}>
           {t("heating.footer", {
             zones: zones.length,
             reserve: reserve.length,

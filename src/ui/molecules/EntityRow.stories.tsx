@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { EntityRow } from "./EntityRow";
+import { c } from "../styles/classes";
 
 const meta = {
   title: "Molecules/EntityRow",
@@ -26,7 +27,7 @@ export const WithTrailing: Story = {
     sub: "Stue · online",
     icon: "network",
     value: undefined,
-    trailing: <span className="row-val">12 ms</span>,
+    trailing: <span className={c("row-val")}>12 ms</span>,
   },
 };
 

@@ -32,7 +32,6 @@ function actionsStub(): ArcusActions {
   };
 }
 
-
 /** Props matching the card bridge, so a render here proves the shell alone. */
 function bridgeProps() {
   const hass = makeHass();
@@ -98,7 +97,7 @@ describe("ArcusApp home shell", () => {
 
     const sheet = screen.getByRole("dialog", { name: "Detaljer" });
     expect(sheet).toHaveAttribute("data-sheet");
-    expect(sheet.className).toBe("sheet");
+    expect(sheet).toHaveClass("sheet");
     expect(sheet.querySelector("[data-sheet-grab]")).not.toBeNull();
     expect(sheet.querySelector("arcus-sheets")).toBeNull();
 

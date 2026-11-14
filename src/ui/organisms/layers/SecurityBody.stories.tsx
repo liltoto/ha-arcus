@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import type { ArcusRoute } from "../../types";
 import { SecurityBody } from "./SecurityBody";
+import { c } from "../../styles/classes";
 
 const route: ArcusRoute = { base: "sikkerhed", sub: null };
 
@@ -21,7 +22,7 @@ const meta = {
       }}
     >
       <div
-        className="sheet open"
+        className={c("sheet open")}
         style={{
           position: "relative",
           inset: "auto",

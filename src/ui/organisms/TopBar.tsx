@@ -9,6 +9,7 @@ import {
   useModel,
   useTranslator,
 } from "../hooks";
+import { c } from "../styles/classes";
 
 /** The atmosphere cycle mirrors the card's `_cycleAtmo` order. */
 const ATMO_ORDER: AtmosphereSetting[] = ["auto", "night", "day"];
@@ -52,33 +53,33 @@ export function TopBar({ className }: TopBarProps = {}) {
   };
 
   return (
-    <div className={className ? `topbar-inner ${className}` : "topbar-inner"}>
+    <div className={c("topbar-inner", className)}>
       <button
         type="button"
-        className="brand"
+        className={c("brand")}
         data-nav="hjem"
         aria-label={t("brand.homeAria")}
         onClick={() => actions.navigate("hjem")}
       >
-        <span className="brand-mark">
+        <span className={c("brand-mark")}>
           <Icon name="sun" />
         </span>
         <span>
-          <span className="brand-word">
+          <span className={c("brand-word")}>
             {(config.title || "HJEM").toLocaleUpperCase()}
           </span>
-          <span className="brand-sub">
+          <span className={c("brand-sub")}>
             {(config.subtitle || "ARCUS").toLocaleUpperCase()}
           </span>
         </span>
       </button>
 
-      <div className="topbar-date">{bindings.date}</div>
+      <div className={c("topbar-date")}>{bindings.date}</div>
 
-      <div className="topbar-right">
-        <span className="pill name">
+      <div className={c("topbar-right")}>
+        <span className={c("pill name")}>
           <span
-            className="dot"
+            className={c("dot")}
             style={{ background: personHome ? "var(--sage)" : "var(--muted)" }}
           />
           <span>{bindings.person ?? "–"}</span>
@@ -86,18 +87,18 @@ export function TopBar({ className }: TopBarProps = {}) {
 
         <button
           type="button"
-          className="pill warn"
+          className={c("pill warn")}
           data-nav="alarmer"
           hidden={model.alerts.length === 0}
           onClick={() => actions.navigate("alarmer")}
         >
-          <span className="dot" />
+          <span className={c("dot")} />
           <span>{bindings.alertPill}</span>
         </button>
 
         <button
           type="button"
-          className="icon-btn"
+          className={c("icon-btn")}
           data-act="atmo"
           title={t("brand.atmosphere")}
           aria-label={t("brand.atmosphere")}
@@ -108,7 +109,7 @@ export function TopBar({ className }: TopBarProps = {}) {
 
         <button
           type="button"
-          className="icon-btn"
+          className={c("icon-btn")}
           data-nav="alle"
           aria-label={t("brand.allLayers")}
           onClick={() => actions.navigate("alle")}

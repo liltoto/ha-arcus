@@ -13,6 +13,7 @@ import { Readout } from "../../molecules/Readout";
 import { SheetHeader } from "../../molecules/SheetHeader";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { LayerShell } from "./misc/LayerShell";
+import { c } from "../../styles/classes";
 
 function languageOf(model: HomeModel, config: ArcusConfig): "da" | "en" {
   return model.language === "en" || config.language === "en" ? "en" : "da";
@@ -48,7 +49,7 @@ export function PrayersBody(_props: LayerBodyProps) {
   const empty = (summary: string) => (
     <LayerShell>
       {header(summary)}
-      <div className="sheet-scroll">
+      <div className={c("sheet-scroll")}>
         <EmptyState icon="moon" title={t("prayers.none")} />
       </div>
     </LayerShell>
@@ -90,14 +91,14 @@ export function PrayersBody(_props: LayerBodyProps) {
   return (
     <LayerShell>
       {header(summary)}
-      <div className="sheet-scroll">
-        <div className="block">
-          <div className="eyebrow">{t("prayers.next")}</div>
-          <div className="big-read">
+      <div className={c("sheet-scroll")}>
+        <div className={c("block")}>
+          <div className={c("eyebrow")}>{t("prayers.next")}</div>
+          <div className={c("big-read")}>
             {next ? formatTime(next.time, language) : "–"}
             <small>{next ? next.name : ""}</small>
           </div>
-          <div className="block-note">
+          <div className={c("block-note")}>
             {next
               ? t("prayers.inCountdown", {
                   name: next.name,
@@ -106,19 +107,19 @@ export function PrayersBody(_props: LayerBodyProps) {
               : t("prayers.none")}
           </div>
         </div>
-        <div className="block">
-          <div className="block-label">{t("prayers.five")}</div>
-          <div className="list prayer-list">
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("prayers.five")}</div>
+          <div className={c("list prayer-list")}>
             {rows.length ? (
               rows
             ) : (
-              <div className="block-note">{t("prayers.none")}</div>
+              <div className={c("block-note")}>{t("prayers.none")}</div>
             )}
           </div>
         </div>
-        <div className="block">
-          <div className="block-label">{t("prayers.sun")}</div>
-          <div className="readings">
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("prayers.sun")}</div>
+          <div className={c("readings")}>
             <Readout
               label={t("prayers.sunrise")}
               value={
@@ -131,7 +132,7 @@ export function PrayersBody(_props: LayerBodyProps) {
             />
           </div>
         </div>
-        <div className="note">{t("prayers.footer")}</div>
+        <div className={c("note")}>{t("prayers.footer")}</div>
       </div>
     </LayerShell>
   );

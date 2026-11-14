@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { TopBar } from "./TopBar";
+import { c } from "../styles/classes";
 
 const meta = {
   title: "Home/TopBar",
@@ -13,7 +14,7 @@ const meta = {
     },
   },
   render: () => (
-    <header className="topbar">
+    <header className={c("topbar")}>
       <TopBar />
     </header>
   ),

@@ -7,6 +7,7 @@ import { RoomGrid } from "../organisms/RoomGrid";
 import { SheetFrame } from "../organisms/SheetFrame";
 import { TopBar } from "../organisms/TopBar";
 import { Vitals } from "../organisms/Vitals";
+import { c } from "../styles/classes";
 
 export interface HomeTemplateProps {
   atmo: AtmosphereSetting;
@@ -36,16 +37,16 @@ const STARS = STAR_X.map((x, index) => ({
 export function HomeTemplate({ atmo, dark, density }: HomeTemplateProps) {
   return (
     <div
-      className={`app${dark ? "" : " light"}`}
+      className={c("app", !dark && "light")}
       data-atmo={atmo}
       data-density={density}
     >
-      <div className="sky" />
-      <div className="stars">
+      <div className={c("sky")} />
+      <div className={c("stars")}>
         {STARS.map((star) => (
           <i
             key={`${star.x}-${star.y}`}
-            className="star"
+            className={c("star")}
             style={{
               left: `${star.x}%`,
               top: `${star.y}%`,
@@ -55,31 +56,31 @@ export function HomeTemplate({ atmo, dark, density }: HomeTemplateProps) {
           />
         ))}
       </div>
-      <div className="scroll">
-        <header className="topbar">
+      <div className={c("scroll")}>
+        <header className={c("topbar")}>
           <TopBar />
         </header>
-        <main className="wrap">
-          <section className="hero">
+        <main className={c("wrap")}>
+          <section className={c("hero")}>
             <Hero />
             <Vitals />
           </section>
-          <section className="section">
+          <section className={c("section")}>
             <RoomGrid />
           </section>
-          <section className="section">
+          <section className={c("section")}>
             <ChapterGrid />
           </section>
           <QuickActions />
-          <footer className="footer">
+          <footer className={c("footer")}>
             <Footer />
           </footer>
         </main>
       </div>
       <SheetFrame />
-      <div className="toast" data-toast />
-      <div className="graph-tip" data-graph-tip aria-hidden="true" />
-      <div className="graph-cursor" data-graph-cursor aria-hidden="true" />
+      <div className={c("toast")} data-toast />
+      <div className={c("graph-tip")} data-graph-tip aria-hidden="true" />
+      <div className={c("graph-cursor")} data-graph-cursor aria-hidden="true" />
     </div>
   );
 }

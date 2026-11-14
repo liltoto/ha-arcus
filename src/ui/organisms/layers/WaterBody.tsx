@@ -20,6 +20,7 @@ import {
   useTranslator,
 } from "../../hooks";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
+import { c } from "../../styles/classes";
 
 const CHART_HEIGHT = 110;
 const CHART_WIDTH = 560;
@@ -91,16 +92,16 @@ interface LeakRowProps {
 
 function LeakRow({ name, on, t }: LeakRowProps) {
   return (
-    <div className="row">
+    <div className={c("row")}>
       <Icon name="drop" />
-      <div className="row-main">
-        <div className="row-name">{name}</div>
-        <div className="row-sub">
+      <div className={c("row-main")}>
+        <div className={c("row-name")}>{name}</div>
+        <div className={c("row-sub")}>
           {on ? t("water.waterDetected") : t("water.noWater")}
         </div>
       </div>
-      <span className="status-line">
-        <i className={`dot${on ? " warn" : ""}`} />
+      <span className={c("status-line")}>
+        <i className={c("dot", on && "warn")} />
         {on ? t("water.alarm") : t("common.ok")}
       </span>
     </div>
@@ -143,7 +144,7 @@ export function WaterBody(_props: LayerBodyProps) {
           closeLabel={t("sheet.close")}
           onClose={actions.closeSheet}
         />
-        <div className="sheet-scroll">
+        <div className={c("sheet-scroll")}>
           <EmptyState icon="drop" title={t("empty.data")} />
         </div>
       </div>
@@ -175,9 +176,7 @@ export function WaterBody(_props: LayerBodyProps) {
   );
 
   const flowId = config.water?.flow;
-  const flowSeries = flowId
-    ? history.series(flowId, { fill: "hold" })
-    : [];
+  const flowSeries = flowId ? history.series(flowId, { fill: "hold" }) : [];
   const hasData = flowSeries.some(
     (value) => typeof value === "number" && Number.isFinite(value),
   );
@@ -225,13 +224,13 @@ export function WaterBody(_props: LayerBodyProps) {
         closeLabel={t("sheet.close")}
         onClose={actions.closeSheet}
       />
-      <div className="sheet-scroll">
-        <div className="block">
-          <div className="big-read">
+      <div className={c("sheet-scroll")}>
+        <div className={c("block")}>
+          <div className={c("big-read")}>
             {fmt(day, 1)}
             <small>L {t("common.today").toLocaleLowerCase()}</small>
           </div>
-          <div className="block-note">
+          <div className={c("block-note")}>
             {month !== null || total !== null
               ? t("water.note", {
                   month: fmt(month, 0),
@@ -241,7 +240,7 @@ export function WaterBody(_props: LayerBodyProps) {
           </div>
         </div>
 
-        <div className="readings">
+        <div className={c("readings")}>
           <Readout
             label={t("water.thisMonth")}
             value={fmt(month, 0)}
@@ -260,14 +259,14 @@ export function WaterBody(_props: LayerBodyProps) {
           />
         </div>
 
-        <div className="block">
-          <div className="block-head">
-            <div className="block-label">{t("water.bwt")}</div>
-            <div className="block-label">
+        <div className={c("block")}>
+          <div className={c("block-head")}>
+            <div className={c("block-label")}>{t("water.bwt")}</div>
+            <div className={c("block-label")}>
               <b>{state}</b>
             </div>
           </div>
-          <div className="readings">
+          <div className={c("readings")}>
             <Readout label={t("water.salt")} value={fmt(salt, 0)} unit="%" />
             <Readout
               label={t("water.daysLeft")}
@@ -293,10 +292,10 @@ export function WaterBody(_props: LayerBodyProps) {
           ) : null}
         </div>
 
-        <div className="block">
-          <div className="block-head">
-            <div className="block-label">{t("water.leak")}</div>
-            <div className="block-label">
+        <div className={c("block")}>
+          <div className={c("block-head")}>
+            <div className={c("block-label")}>{t("water.leak")}</div>
+            <div className={c("block-label")}>
               <b>
                 {model.security?.leak ? t("water.alarm") : t("water.allDry")}
               </b>
@@ -312,16 +311,16 @@ export function WaterBody(_props: LayerBodyProps) {
               />
             ))
           ) : (
-            <div className="block-note">{t("empty.data")}</div>
+            <div className={c("block-note")}>{t("empty.data")}</div>
           )}
           {leakBattery ? (
-            <div className="row">
+            <div className={c("row")}>
               <Icon name="battery" />
-              <div className="row-main">
-                <div className="row-name">{t("water.battery")}</div>
-                <div className="row-sub">{t("water.leakBattery")}</div>
+              <div className={c("row-main")}>
+                <div className={c("row-name")}>{t("water.battery")}</div>
+                <div className={c("row-sub")}>{t("water.leakBattery")}</div>
               </div>
-              <span className="row-val">
+              <span className={c("row-val")}>
                 {leakBattery.level === null ? "–" : fmt(leakBattery.level, 0)}
                 <small>%</small>
               </span>
@@ -329,8 +328,8 @@ export function WaterBody(_props: LayerBodyProps) {
           ) : null}
         </div>
 
-        <div className="block">
-          <div className="block-label">{t("water.flow24")}</div>
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("water.flow24")}</div>
           <ChartBox noData={!hasData} emptyLabel={t("empty.chart")}>
             <svg
               viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
@@ -368,7 +367,7 @@ export function WaterBody(_props: LayerBodyProps) {
           </ChartBox>
         </div>
 
-        <div className="note">{t("water.footer")}</div>
+        <div className={c("note")}>{t("water.footer")}</div>
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ import {
   useNow,
   useTranslator,
 } from "../hooks";
+import { c } from "../styles/classes";
 
 const WIDTH = 1000;
 const FULL_ARC = "M40,210 Q500,-90 960,210";
@@ -134,12 +135,20 @@ export function DayArc() {
   ];
 
   return (
-    <div className="arc-wrap" data-arc>
-      <div className="arc-glow" data-arc-glow style={positionStyle(point.x, point.y)} />
-      <div className="orb" data-orb style={positionStyle(point.x, point.y)} />
-      <div className="arc-readout" data-arc-readout />
+    <div className={c("arc-wrap")} data-arc>
+      <div
+        className={c("arc-glow")}
+        data-arc-glow
+        style={positionStyle(point.x, point.y)}
+      />
+      <div
+        className={c("orb")}
+        data-orb
+        style={positionStyle(point.x, point.y)}
+      />
+      <div className={c("arc-readout")} data-arc-readout />
       <svg
-        className="arc-svg"
+        className={c("arc-svg")}
         viewBox={`0 0 ${WIDTH} 300`}
         preserveAspectRatio="none"
         aria-hidden="true"
@@ -176,12 +185,14 @@ export function DayArc() {
           clipPath="url(#pastClip)"
         />
         <path
+          className={c("solar-area")}
           data-solar-area
           d={solarArea}
           fill="url(#solarFill)"
           stroke="none"
         />
         <path
+          className={c("solar-line")}
           data-solar-line
           d={solarLine}
           fill="none"
@@ -239,9 +250,7 @@ export function DayArc() {
                   cy={position.y}
                   r="2.2"
                   fill={
-                    next?.id === prayer.id
-                      ? "var(--accent)"
-                      : "var(--text-2)"
+                    next?.id === prayer.id ? "var(--accent)" : "var(--text-2)"
                   }
                 />
               </g>
@@ -249,13 +258,21 @@ export function DayArc() {
           })}
         </g>
       </svg>
-      <div className="now-needle" data-now-needle style={{ left: `${point.x / 10}%` }} />
-      <div className="now-bead" data-now-bead style={positionStyle(point.x, point.y)} />
-      <div className="arc-labels" data-arc-labels>
+      <div
+        className={c("now-needle")}
+        data-now-needle
+        style={{ left: `${point.x / 10}%` }}
+      />
+      <div
+        className={c("now-bead")}
+        data-now-bead
+        style={positionStyle(point.x, point.y)}
+      />
+      <div className={c("arc-labels")} data-arc-labels>
         {labels.map((label) => (
           <span
             key={label.id}
-            className={`arc-label${label.next ? " next" : ""}${
+            className={`${c("arc-label", label.next && "next")}${
               label.sun ? " sun" : ""
             }`}
             style={{
@@ -264,11 +281,11 @@ export function DayArc() {
             }}
           >
             {label.name}
-            <span className="t">{label.time}</span>
+            <span className={c("t")}>{label.time}</span>
           </span>
         ))}
       </div>
-      <div className="arc-hours">
+      <div className={c("arc-hours")}>
         <span>00</span>
         <span>06</span>
         <span>12</span>

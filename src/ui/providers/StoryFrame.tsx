@@ -8,6 +8,7 @@ import {
 import { createPortal } from "react-dom";
 import type { Decorator } from "@storybook/react";
 import { STYLES } from "../../ui/styles";
+import { c } from "../styles/classes";
 
 /**
  * Storybook renders outside the card's shadow root, but Arcus CSS is written
@@ -57,7 +58,7 @@ function ShadowHost({ theme, density, children }: ShadowHostProps) {
           <>
             <style>{STYLES}</style>
             <div
-              className={`app${theme === "light" ? " light" : ""}`}
+              className={c("app", theme === "light" && "light")}
               data-atmo="night"
               data-density={density}
               style={{ minHeight: "100%" }}

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import type { ChapterView } from "../view-types";
 import { ChapterCard } from "./ChapterCard";
+import { c } from "../styles/classes";
 
 const chapter: ChapterView = {
   key: "vand",
@@ -37,7 +38,7 @@ export const LargeWithArt: Story = {
       large: true,
       meta: "Pris nu",
       art: (
-        <div className="price-bars">
+        <div className={c("price-bars")}>
           <i style={{ height: "22%" }} />
           <i style={{ height: "38%" }} />
           <i style={{ height: "64%" }} />
@@ -60,7 +61,7 @@ export const ZoneArt: Story = {
       sum: "Trin 2 · 41 % RH",
       num: "05",
       art: (
-        <div className="zone-strip">
+        <div className={c("zone-strip")}>
           <i style={{ height: "20%", opacity: 0.85 }} />
           <i style={{ height: "36%", opacity: 0.85 }} />
           <i style={{ height: "52%", opacity: 0.85 }} />

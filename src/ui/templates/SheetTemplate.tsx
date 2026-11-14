@@ -1,5 +1,6 @@
 import type { ReactNode, RefObject } from "react";
 import { SheetGrab } from "../atoms/SheetGrab";
+import { c } from "../styles/classes";
 
 export interface SheetTemplateProps {
   open: boolean;
@@ -23,7 +24,7 @@ export function SheetTemplate({
   return (
     <>
       <div
-        className={`scrim${open ? " open" : ""}`}
+        className={c("scrim", open && "open")}
         data-scrim
         onClick={(event) => {
           // Keep the click inside React; the card no longer delegates it.
@@ -33,7 +34,7 @@ export function SheetTemplate({
       />
       <section
         ref={sheetRef}
-        className={`sheet${open ? " open" : ""}`}
+        className={c("sheet", open && "open")}
         data-sheet
         role="dialog"
         aria-modal="true"

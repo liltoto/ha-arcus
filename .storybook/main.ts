@@ -1,3 +1,4 @@
+import pandacss from "@pandacss/vite";
 import type { StorybookConfig } from "@storybook/react-vite";
 
 const config: StorybookConfig = {
@@ -10,6 +11,10 @@ const config: StorybookConfig = {
   // The repo has its own strict typecheck gate. Storybook's checker would run a
   // second, slower pass over every story.
   typescript: { check: false },
+  async viteFinal(viteConfig) {
+    viteConfig.plugins = [pandacss(), ...(viteConfig.plugins ?? [])];
+    return viteConfig;
+  },
 };
 
 export default config;

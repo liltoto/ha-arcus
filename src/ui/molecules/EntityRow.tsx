@@ -1,5 +1,6 @@
 import type { KeyboardEvent, ReactNode } from "react";
 import { Icon } from "../atoms/Icon";
+import { c } from "../styles/classes";
 
 export interface EntityRowProps {
   name: string;
@@ -40,7 +41,7 @@ export function EntityRow({
   const right =
     trailing ??
     (value !== undefined && value !== null ? (
-      <span className="row-val">
+      <span className={c("row-val")}>
         <span>{value}</span>
         {unit ? <small>{unit}</small> : null}
       </span>
@@ -48,16 +49,16 @@ export function EntityRow({
 
   return (
     <div
-      className={`row${on ? " on" : ""}`}
+      className={c("row", on && "on")}
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
       onClick={onClick}
       onKeyDown={interactive ? activate : undefined}
     >
       {icon ? <Icon name={icon} /> : null}
-      <div className="row-main">
-        <div className="row-name">{name}</div>
-        {sub ? <div className="row-sub">{sub}</div> : null}
+      <div className={c("row-main")}>
+        <div className={c("row-name")}>{name}</div>
+        {sub ? <div className={c("row-sub")}>{sub}</div> : null}
       </div>
       {right}
     </div>

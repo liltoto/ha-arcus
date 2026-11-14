@@ -18,6 +18,7 @@ import {
   useTranslator,
 } from "../../hooks";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
+import { c } from "../../styles/classes";
 
 type SheetLanguage = "da" | "en";
 
@@ -84,16 +85,16 @@ interface UserSelectProps {
 }
 
 function UserSelect({ hass, entityId, value, onSelect }: UserSelectProps) {
-  if (!entityId) return <span className="row-val">{value || "–"}</span>;
+  if (!entityId) return <span className={c("row-val")}>{value || "–"}</span>;
   const options = optionsFor(hass, entityId);
   const selected = value ?? hass.states[entityId]?.state ?? "";
   if (!options.length) {
-    return <span className="row-val">{selected || "–"}</span>;
+    return <span className={c("row-val")}>{selected || "–"}</span>;
   }
   if (selected && !options.includes(selected)) options.push(selected);
   return (
     <select
-      className="select"
+      className={c("select")}
       data-select-entity={entityId}
       value={selected || options[0]}
       onChange={(event) => onSelect(event.currentTarget.value)}
@@ -117,9 +118,9 @@ interface AirflowProps {
 /** The five-node Nilan airflow, kept as the same SVG as the legacy sheet. */
 function Airflow({ ventilation, temperature, language, t }: AirflowProps) {
   return (
-    <div className="block">
-      <div className="block-label">{t("ventilation.airPath")}</div>
-      <div className="flow-wrap air-flow">
+    <div className={c("block")}>
+      <div className={c("block-label")}>{t("ventilation.airPath")}</div>
+      <div className={c("flow-wrap air-flow")}>
         <svg viewBox="0 0 560 118" aria-hidden="true">
           <defs>
             <marker
@@ -205,37 +206,37 @@ function Airflow({ ventilation, temperature, language, t }: AirflowProps) {
             stroke="var(--coral)"
             strokeWidth="1"
           />
-          <text x="56" y="18" className="flow-label" textAnchor="middle">
+          <text x="56" y="18" className={c("flow-label")} textAnchor="middle">
             {t("ventilation.outside")}
           </text>
-          <text x="56" y="57" className="flow-val" textAnchor="middle">
+          <text x="56" y="57" className={c("flow-val")} textAnchor="middle">
             {temperatureText(ventilation.outdoor, language)}
           </text>
-          <text x="166" y="18" className="flow-label" textAnchor="middle">
+          <text x="166" y="18" className={c("flow-label")} textAnchor="middle">
             {t("ventilation.inlet")}
           </text>
-          <text x="166" y="57" className="flow-val" textAnchor="middle">
+          <text x="166" y="57" className={c("flow-val")} textAnchor="middle">
             {temperatureText(ventilation.inlet, language)}
           </text>
-          <text x="280" y="18" className="flow-label" textAnchor="middle">
+          <text x="280" y="18" className={c("flow-label")} textAnchor="middle">
             {t("ventilation.room")}
           </text>
-          <text x="280" y="58" className="flow-val" textAnchor="middle">
+          <text x="280" y="58" className={c("flow-val")} textAnchor="middle">
             {temperatureText(temperature, language)}
           </text>
-          <text x="394" y="18" className="flow-label" textAnchor="middle">
+          <text x="394" y="18" className={c("flow-label")} textAnchor="middle">
             {t("ventilation.exhaust")}
           </text>
-          <text x="394" y="57" className="flow-val" textAnchor="middle">
+          <text x="394" y="57" className={c("flow-val")} textAnchor="middle">
             {temperatureText(ventilation.exhaust, language)}
           </text>
-          <text x="504" y="18" className="flow-label" textAnchor="middle">
+          <text x="504" y="18" className={c("flow-label")} textAnchor="middle">
             {t("ventilation.outlet")}
           </text>
-          <text x="504" y="57" className="flow-val" textAnchor="middle">
+          <text x="504" y="57" className={c("flow-val")} textAnchor="middle">
             {temperatureText(ventilation.outlet, language)}
           </text>
-          <text x="280" y="102" className="flow-label" textAnchor="middle">
+          <text x="280" y="102" className={c("flow-label")} textAnchor="middle">
             {t("ventilation.nilanPath")}
           </text>
         </svg>
@@ -252,12 +253,12 @@ interface SystemRowProps {
 
 function SystemRow({ icon, label, value }: SystemRowProps) {
   return (
-    <div className="row">
+    <div className={c("row")}>
       <Icon name={icon} />
-      <div className="row-main">
-        <div className="row-name">{label}</div>
+      <div className={c("row-main")}>
+        <div className={c("row-name")}>{label}</div>
       </div>
-      <span className="row-val" style={{ fontSize: 12 }}>
+      <span className={c("row-val")} style={{ fontSize: 12 }}>
         {value || "–"}
       </span>
     </div>
@@ -292,7 +293,7 @@ export function VentilationBody(_props: LayerBodyProps) {
           closeLabel={t("sheet.close")}
           onClose={actions.closeSheet}
         />
-        <div className="sheet-scroll">
+        <div className={c("sheet-scroll")}>
           <EmptyState icon="fan" title={t("empty.dataYet")} />
         </div>
       </div>
@@ -394,8 +395,8 @@ export function VentilationBody(_props: LayerBodyProps) {
         closeLabel={t("sheet.close")}
         onClose={actions.closeSheet}
       />
-      <div className="sheet-scroll">
-        <div className="readings">
+      <div className={c("sheet-scroll")}>
+        <div className={c("readings")}>
           <Readout
             label={t("ventilation.roomTemp")}
             value={formatNumber(temperatureValue, 1, language)}
@@ -426,17 +427,21 @@ export function VentilationBody(_props: LayerBodyProps) {
         />
 
         {climateId ? (
-          <div className="block">
-            <div className="block-head">
-              <div className="block-label">{t("ventilation.control")}</div>
-              <div className="block-label">
+          <div className={c("block")}>
+            <div className={c("block-head")}>
+              <div className={c("block-label")}>{t("ventilation.control")}</div>
+              <div className={c("block-label")}>
                 <b>{modeLabel}</b>
               </div>
             </div>
-            <div className="row" data-act="temp-step" data-entity={climateId}>
-              <span className="row-main">
-                <div className="row-name">{t("ventilation.setpoint")}</div>
-                <div className="row-sub">{t("ventilation.autoSub")}</div>
+            <div
+              className={c("row")}
+              data-act="temp-step"
+              data-entity={climateId}
+            >
+              <span className={c("row-main")}>
+                <div className={c("row-name")}>{t("ventilation.setpoint")}</div>
+                <div className={c("row-sub")}>{t("ventilation.autoSub")}</div>
               </span>
               <Stepper
                 value={target ?? 0}
@@ -450,11 +455,11 @@ export function VentilationBody(_props: LayerBodyProps) {
                 onChange={setTemperature}
               />
             </div>
-            <div className="row">
-              <span className="row-main">
-                <div className="row-name">{t("ventilation.mode")}</div>
+            <div className={c("row")}>
+              <span className={c("row-main")}>
+                <div className={c("row-name")}>{t("ventilation.mode")}</div>
               </span>
-              <div className="seg">
+              <div className={c("seg")}>
                 {(
                   [
                     ["heat_cool", t("ventilation.auto")],
@@ -465,7 +470,7 @@ export function VentilationBody(_props: LayerBodyProps) {
                   <button
                     key={value}
                     type="button"
-                    className={mode === value ? "active" : ""}
+                    className={c(mode === value && "active")}
                     data-act="hvac"
                     data-entity={climateId}
                     data-mode={value}
@@ -476,17 +481,19 @@ export function VentilationBody(_props: LayerBodyProps) {
                 ))}
               </div>
             </div>
-            <div className="row">
-              <span className="row-main">
-                <div className="row-name">{t("ventilation.fanStep")}</div>
-                <div className="row-sub">{t("ventilation.manualSpeed")}</div>
+            <div className={c("row")}>
+              <span className={c("row-main")}>
+                <div className={c("row-name")}>{t("ventilation.fanStep")}</div>
+                <div className={c("row-sub")}>
+                  {t("ventilation.manualSpeed")}
+                </div>
               </span>
-              <div className="seg">
+              <div className={c("seg")}>
                 {[0, 1, 2, 3, 4].map((step) => (
                   <button
                     key={step}
                     type="button"
-                    className={String(fan) === String(step) ? "active" : ""}
+                    className={c(String(fan) === String(step) && "active")}
                     data-act="fan"
                     data-entity={climateId}
                     data-mode={step}
@@ -500,14 +507,14 @@ export function VentilationBody(_props: LayerBodyProps) {
           </div>
         ) : null}
 
-        <div className="block">
-          <div className="block-head">
-            <div className="block-label">{t("ventilation.filter")}</div>
-            <div className="block-label">
+        <div className={c("block")}>
+          <div className={c("block-head")}>
+            <div className={c("block-label")}>{t("ventilation.filter")}</div>
+            <div className={c("block-label")}>
               <b>{status}</b>
             </div>
           </div>
-          <div className="readings">
+          <div className={c("readings")}>
             <Readout
               label={t("ventilation.daysSinceChange")}
               value={countText(ventilation.daysSinceFilter, "0")}
@@ -527,11 +534,11 @@ export function VentilationBody(_props: LayerBodyProps) {
               unit="%"
             />
           </div>
-          <div className="btn-row">
+          <div className={c("btn-row")}>
             {resetId ? (
               <button
                 type="button"
-                className="btn small"
+                className={c("btn small")}
                 data-act="press-button"
                 data-entity={resetId}
                 onClick={pressReset}
@@ -539,18 +546,18 @@ export function VentilationBody(_props: LayerBodyProps) {
                 {t("ventilation.resetAlarm")}
               </button>
             ) : null}
-            <span className="status-line" style={{ marginLeft: "auto" }}>
-              <i className={`dot${filterOk(filterValue) ? "" : " warn"}`} />
+            <span className={c("status-line")} style={{ marginLeft: "auto" }}>
+              <i className={c("dot", !filterOk(filterValue) && "warn")} />
               {filterOk(filterValue) ? t("ventilation.filterOk") : status}
             </span>
           </div>
         </div>
 
-        <div className="block">
-          <div className="block-label">{t("ventilation.userChoice")}</div>
-          <div className="row">
-            <span className="row-main">
-              <div className="row-name">{t("ventilation.function1")}</div>
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("ventilation.userChoice")}</div>
+          <div className={c("row")}>
+            <span className={c("row-main")}>
+              <div className={c("row-name")}>{t("ventilation.function1")}</div>
             </span>
             <UserSelect
               hass={hass}
@@ -561,27 +568,27 @@ export function VentilationBody(_props: LayerBodyProps) {
               }
             />
           </div>
-          <div className="row">
-            <span className="row-main">
-              <div className="row-name">{t("ventilation.time")}</div>
+          <div className={c("row")}>
+            <span className={c("row-main")}>
+              <div className={c("row-name")}>{t("ventilation.time")}</div>
             </span>
-            <span className="row-val">
+            <span className={c("row-val")}>
               {countText(ventilation.userTime, "0")}
               <small>{t("ventilation.min")}</small>
             </span>
           </div>
-          <div className="row">
-            <span className="row-main">
-              <div className="row-name">{t("ventilation.speed")}</div>
+          <div className={c("row")}>
+            <span className={c("row-main")}>
+              <div className={c("row-name")}>{t("ventilation.speed")}</div>
             </span>
-            <span className="row-val">
+            <span className={c("row-val")}>
               {countText(ventilation.userSpeed, "0")}
               <small>/4</small>
             </span>
           </div>
-          <div className="row">
-            <span className="row-main">
-              <div className="row-name">{t("ventilation.function2")}</div>
+          <div className={c("row")}>
+            <span className={c("row-main")}>
+              <div className={c("row-name")}>{t("ventilation.function2")}</div>
             </span>
             <UserSelect
               hass={hass}
@@ -594,8 +601,8 @@ export function VentilationBody(_props: LayerBodyProps) {
           </div>
         </div>
 
-        <div className="block">
-          <div className="block-label">{t("ventilation.system")}</div>
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("ventilation.system")}</div>
           <SystemRow
             icon="info"
             label={t("ventilation.type")}

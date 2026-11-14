@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Footer } from "./Footer";
+import { c } from "../styles/classes";
 
 const meta = {
   title: "Home/Footer",
@@ -13,7 +14,7 @@ const meta = {
     },
   },
   render: () => (
-    <footer className="footer">
+    <footer className={c("footer")}>
       <Footer />
     </footer>
   ),

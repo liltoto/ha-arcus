@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Tab } from "./Tab";
+import { c } from "../styles/classes";
 
 const meta = {
   title: "Atoms/Tab",
@@ -23,7 +24,7 @@ export const Active: Story = {
 
 export const Group: Story = {
   render: (args) => (
-    <div className="sheet-tabs">
+    <div className={c("sheet-tabs")}>
       <Tab {...args}>All</Tab>
       <Tab {...args} active>
         Lights

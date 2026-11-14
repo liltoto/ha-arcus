@@ -1,4 +1,5 @@
 import { Icon } from "./Icon";
+import { c } from "../styles/classes";
 
 export interface IconButtonProps {
   icon: string;
@@ -17,12 +18,10 @@ export function IconButton({
   className,
   dataAct,
 }: IconButtonProps) {
-  const classes = ["icon-btn", className ?? ""].filter(Boolean).join(" ");
-
   return (
     <button
       type="button"
-      className={classes}
+      className={c("icon-btn", className)}
       aria-label={label}
       title={label}
       data-act={dataAct}

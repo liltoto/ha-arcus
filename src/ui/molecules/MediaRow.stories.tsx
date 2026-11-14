@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { MediaRow } from "./MediaRow";
+import { c } from "../styles/classes";
 
 const meta = {
   title: "Molecules/MediaRow",
@@ -11,7 +12,7 @@ const meta = {
     onToggle: () => undefined,
   },
   render: (args) => (
-    <div className="list" style={{ maxWidth: 620 }}>
+    <div className={c("list")} style={{ maxWidth: 620 }}>
       <MediaRow {...args} />
     </div>
   ),

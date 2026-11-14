@@ -25,13 +25,13 @@ test("tapping a vital spark shows the readout without navigating", async ({
   await spark.tap();
 
   const tip = page.locator("[data-graph-tip]");
-  await expect(tip).toHaveClass(/show/);
+  await expect(tip).toHaveClass(/(^|\s)show(\s|$)/);
   await expect(tip).toContainText("°C");
   await expect(tip).toContainText(/\d{2}:\d{2}/);
   await expect(page).toHaveURL(/\/dev\/index\.html$/);
 
   await page.locator(".greeting").tap();
-  await expect(tip).not.toHaveClass(/show/);
+  await expect(tip).not.toHaveClass(/(^|\s)show(\s|$)/);
 });
 
 test("tapping a sheet chart shows the price readout", async ({ page }) => {
@@ -41,7 +41,7 @@ test("tapping a sheet chart shows the price readout", async ({ page }) => {
   await page.locator(".bar-chart").tap();
 
   const tip = page.locator("[data-graph-tip]");
-  await expect(tip).toHaveClass(/show/);
+  await expect(tip).toHaveClass(/(^|\s)show(\s|$)/);
   await expect(tip).toContainText("kr");
   await expect(tip).toContainText(/\d{2}:\d{2}/);
 });

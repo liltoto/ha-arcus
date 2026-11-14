@@ -25,6 +25,7 @@ import { ListRow } from "../../molecules/ListRow";
 import { Readout } from "../../molecules/Readout";
 import { SheetHeader } from "../../molecules/SheetHeader";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
+import { c } from "../../styles/classes";
 
 interface ChartSeries {
   values: Array<number | null>;
@@ -218,7 +219,7 @@ export function TechBody(_props: LayerBodyProps) {
           closeLabel={t("sheet.close")}
           onClose={actions.closeSheet}
         />
-        <div className="sheet-scroll">
+        <div className={c("sheet-scroll")}>
           <EmptyState icon="network" title={t("empty.data")} />
         </div>
       </div>
@@ -251,8 +252,8 @@ export function TechBody(_props: LayerBodyProps) {
         closeLabel={t("sheet.close")}
         onClose={actions.closeSheet}
       />
-      <div className="sheet-scroll">
-        <div className="readings">
+      <div className={c("sheet-scroll")}>
+        <div className={c("readings")}>
           <Readout label={t("tech.router")} value={fmt(router, 1)} unit="ms" />
           <Readout label={t("tech.google")} value={fmt(google, 1)} unit="ms" />
           <Readout
@@ -262,10 +263,10 @@ export function TechBody(_props: LayerBodyProps) {
           />
           <Readout label={t("tech.packetLoss")} value={fmt(loss, 1)} unit="%" />
         </div>
-        <div className="block">
-          <div className="block-head">
-            <div className="block-label">{t("tech.pulse")}</div>
-            <div className="legend">
+        <div className={c("block")}>
+          <div className={c("block-head")}>
+            <div className={c("block-label")}>{t("tech.pulse")}</div>
+            <div className={c("legend")}>
               <span>
                 <i style={{ "--c": "var(--sky)" } as CSSProperties} />
                 {t("tech.router")}
@@ -302,16 +303,16 @@ export function TechBody(_props: LayerBodyProps) {
             ]}
           />
         </div>
-        <div className="block">
-          <div className="block-label">{t("tech.quality")}</div>
-          <div className="list">
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("tech.quality")}</div>
+          <div className={c("list")}>
             <ListRow
               name={t("tech.router")}
               sub={status}
               icon="network"
               trailing={
-                <span className="status-line">
-                  <i className={`dot${online === false ? " warn" : ""}`} />
+                <span className={c("status-line")}>
+                  <i className={c("dot", online === false && "warn")} />
                   {statusLabel}
                 </span>
               }
@@ -345,9 +346,9 @@ export function TechBody(_props: LayerBodyProps) {
             />
           </div>
         </div>
-        <div className="block">
-          <div className="block-label">{t("tech.inverter")}</div>
-          <div className="list">
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("tech.inverter")}</div>
+          <div className={c("list")}>
             <ListRow
               name={t("tech.wifi")}
               icon="network"
@@ -358,7 +359,7 @@ export function TechBody(_props: LayerBodyProps) {
               name={t("tech.uptime")}
               icon="clock"
               trailing={
-                <span className="row-val" style={{ fontSize: 13 }}>
+                <span className={c("row-val")} style={{ fontSize: 13 }}>
                   {uptime}
                   <small>{hoursUnit}</small>
                 </span>
@@ -380,7 +381,7 @@ export function TechBody(_props: LayerBodyProps) {
               name={t("tech.model")}
               icon="info"
               trailing={
-                <span className="row-val" style={{ fontSize: 11 }}>
+                <span className={c("row-val")} style={{ fontSize: 11 }}>
                   {tech.inverterModel || "–"}
                 </span>
               }
@@ -389,14 +390,14 @@ export function TechBody(_props: LayerBodyProps) {
               name={t("tech.datalogger")}
               icon="info"
               trailing={
-                <span className="row-val" style={{ fontSize: 11 }}>
+                <span className={c("row-val")} style={{ fontSize: 11 }}>
                   {tech.dataloggerVersion || "–"}
                 </span>
               }
             />
           </div>
         </div>
-        <div className="note">{t("tech.footer")}</div>
+        <div className={c("note")}>{t("tech.footer")}</div>
       </div>
     </div>
   );

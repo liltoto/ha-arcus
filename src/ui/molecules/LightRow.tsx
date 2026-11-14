@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { Icon } from "../atoms/Icon";
+import { c } from "../styles/classes";
 
 export interface LightRowProps {
   name: string;
@@ -35,11 +36,11 @@ export function LightRow({
   const sliderStyle = { "--p": `${pct}%` } as CSSProperties;
 
   return (
-    <div className="light-row">
-      <div className="row">
+    <div className={c("light-row")}>
+      <div className={c("row")}>
         <button
           type="button"
-          className={`toggle${isOn ? " on" : ""}`}
+          className={c("toggle", isOn && "on")}
           aria-pressed={isOn}
           aria-label={`Toggle ${name}`}
           data-act="toggle-light"
@@ -47,17 +48,17 @@ export function LightRow({
           onClick={onToggle}
         />
         {icon ? <Icon name={icon} /> : null}
-        <div className="row-main">
-          <div className="row-name">{name}</div>
-          <div className="row-sub">{sub}</div>
+        <div className={c("row-main")}>
+          <div className={c("row-name")}>{name}</div>
+          <div className={c("row-sub")}>{sub}</div>
         </div>
-        <span className="row-val">{isOn ? `${pct} %` : "–"}</span>
+        <span className={c("row-val")}>{isOn ? `${pct} %` : "–"}</span>
       </div>
-      <div className="slider-wrap">
-        <div className="slider-line">
+      <div className={c("slider-wrap")}>
+        <div className={c("slider-line")}>
           <Icon name="sun" />
           <input
-            className="range"
+            className={c("range")}
             type="range"
             min="0"
             max="100"
@@ -70,7 +71,7 @@ export function LightRow({
             }
           />
         </div>
-        <div className="pct">{isOn ? `${pct} %` : "Off"}</div>
+        <div className={c("pct")}>{isOn ? `${pct} %` : "Off"}</div>
       </div>
     </div>
   );

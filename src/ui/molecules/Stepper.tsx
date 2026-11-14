@@ -1,4 +1,5 @@
 import { Icon } from "../atoms/Icon";
+import { c } from "../styles/classes";
 
 export interface StepperProps {
   value: number;
@@ -51,7 +52,7 @@ export function Stepper({
   };
 
   return (
-    <div className="stepper">
+    <div className={c("stepper")}>
       <button
         type="button"
         aria-label={label ? `Decrease ${label}` : "Decrease"}
@@ -60,7 +61,7 @@ export function Stepper({
       >
         <Icon name="minus" />
       </button>
-      <span className="val">
+      <span className={c("val")}>
         {display}
         {unit ? <small>{unit}</small> : null}
       </span>

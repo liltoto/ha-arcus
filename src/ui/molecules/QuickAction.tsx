@@ -1,4 +1,5 @@
 import { Icon } from "../atoms/Icon";
+import { c } from "../styles/classes";
 
 export interface QuickActionProps {
   icon: string;
@@ -17,7 +18,7 @@ export function QuickAction({
   return (
     <button
       type="button"
-      className={`quick${on ? " on" : ""}`}
+      className={c("quick", on && "on")}
       aria-pressed={on || undefined}
       onClick={onClick}
     >

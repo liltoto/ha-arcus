@@ -1,4 +1,5 @@
 import { Icon } from "../atoms/Icon";
+import { c } from "../styles/classes";
 
 export interface ForecastDayProps {
   name: string;
@@ -10,12 +11,12 @@ export interface ForecastDayProps {
 /** One day in the compact weather strip. */
 export function ForecastDay({ name, icon, high, low }: ForecastDayProps) {
   return (
-    <span className="wday">
-      <span className="wname">{name}</span>
-      <span className="wico">
+    <span className={c("wday")}>
+      <span className={c("wname")}>{name}</span>
+      <span className={c("wico")}>
         <Icon name={icon} />
       </span>
-      <span className="wtemps">
+      <span className={c("wtemps")}>
         <b>{high}</b>
         {low}
       </span>

@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from "react";
 import type { AlertModel } from "../../../../types";
 import { Icon } from "../../../atoms/Icon";
+import { c } from "../../../styles/classes";
 
 export type AlertSeverity = "crit" | "warn" | "info";
 
@@ -33,20 +34,20 @@ export function AlertRow({ alert, label, see, onOpen }: AlertRowProps) {
 
   return (
     <div
-      className="row alert-row"
+      className={c("row alert-row")}
       data-nav={alert.route}
       role="button"
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={activate}
     >
-      <span className={`alert-dot ${cls}`} />
-      <span className="row-main">
-        <div className="row-name">{alert.title}</div>
-        <div className="row-sub">{alert.text}</div>
+      <span className={c("alert-dot", cls)} />
+      <span className={c("row-main")}>
+        <div className={c("row-name")}>{alert.title}</div>
+        <div className={c("row-sub")}>{alert.text}</div>
       </span>
-      <span className={`chip ${cls}`}>{label}</span>
-      <span className="row-link">
+      <span className={c("chip", cls)}>{label}</span>
+      <span className={c("row-link")}>
         {see} <Icon name="arrow" />
       </span>
     </div>

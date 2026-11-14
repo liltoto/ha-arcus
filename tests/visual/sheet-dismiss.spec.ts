@@ -18,7 +18,7 @@ test("clicking outside the sheet closes it on desktop", async ({ page }) => {
   await page.mouse.click(200, 200);
 
   await expect(page).toHaveURL(/#\/$/);
-  await expect(page.locator(".sheet")).not.toHaveClass(/open/);
+  await expect(page.locator(".sheet")).not.toHaveClass(/(^|\s)open(\s|$)/);
 });
 
 test("tapping outside the sheet closes it on a phone", async ({ page }) => {
@@ -28,7 +28,7 @@ test("tapping outside the sheet closes it on a phone", async ({ page }) => {
   await page.mouse.click(20, 20);
 
   await expect(page).toHaveURL(/#\/$/);
-  await expect(page.locator(".sheet")).not.toHaveClass(/open/);
+  await expect(page.locator(".sheet")).not.toHaveClass(/(^|\s)open(\s|$)/);
 });
 
 test("clicking inside the sheet keeps it open", async ({ page }) => {
@@ -37,5 +37,5 @@ test("clicking inside the sheet keeps it open", async ({ page }) => {
   await page.locator(".sheet-title").click();
 
   await expect(page).toHaveURL(/#\/sol/);
-  await expect(page.locator(".sheet")).toHaveClass(/open/);
+  await expect(page.locator(".sheet")).toHaveClass(/(^|\s)open(\s|$)/);
 });

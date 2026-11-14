@@ -1,5 +1,6 @@
 import type { Language } from "../../../../types";
 import { Icon } from "../../../atoms/Icon";
+import { c } from "../../../styles/classes";
 
 export interface RoomStepperProps {
   entityId: string;
@@ -19,7 +20,7 @@ export function RoomStepper({
   const up = language === "da" ? "Op" : "Up";
 
   return (
-    <div className="stepper">
+    <div className={c("stepper")}>
       <button
         type="button"
         data-act="temp-step"
@@ -31,7 +32,7 @@ export function RoomStepper({
       >
         <Icon name="minus" />
       </button>
-      <span className="val">{value}</span>
+      <span className={c("val")}>{value}</span>
       <button
         type="button"
         data-act="temp-step"

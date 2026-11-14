@@ -19,12 +19,12 @@ test("vital spark shows its value and time on hover", async ({ page }) => {
   await spark.hover();
 
   const tip = page.locator("[data-graph-tip]");
-  await expect(tip).toHaveClass(/show/);
+  await expect(tip).toHaveClass(/(^|\s)show(\s|$)/);
   await expect(tip).toContainText("°C");
   await expect(tip).toContainText(/\d{2}:\d{2}/);
 
   await page.locator(".greeting").hover();
-  await expect(tip).not.toHaveClass(/show/);
+  await expect(tip).not.toHaveClass(/(^|\s)show(\s|$)/);
 
   // The readout must not swallow the card's own click.
   await spark.click();
@@ -38,7 +38,7 @@ test("energy price bars show the hour and price", async ({ page }) => {
   await page.locator(".bar-chart").hover();
 
   const tip = page.locator("[data-graph-tip]");
-  await expect(tip).toHaveClass(/show/);
+  await expect(tip).toHaveClass(/(^|\s)show(\s|$)/);
   await expect(tip).toContainText("kr");
   await expect(tip).toContainText(/\d{2}:\d{2}/);
 });
@@ -52,7 +52,7 @@ test("shared solar chart lists every series in the tooltip", async ({
   await page.locator(".chart-box[data-gs]").first().hover();
 
   const tip = page.locator("[data-graph-tip]");
-  await expect(tip).toHaveClass(/show/);
+  await expect(tip).toHaveClass(/(^|\s)show(\s|$)/);
   expect(await tip.locator(".gt-row").count()).toBeGreaterThan(1);
   await expect(tip).toContainText(/\d{2}:\d{2}/);
 });

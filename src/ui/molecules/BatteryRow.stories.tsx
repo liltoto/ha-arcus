@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { BatteryRow } from "./BatteryRow";
+import { c } from "../styles/classes";
 
 const meta = {
   title: "Molecules/BatteryRow",
@@ -10,7 +11,7 @@ const meta = {
     sub: "Sidst skiftet i maj",
   },
   render: (args) => (
-    <div className="battery-list" style={{ maxWidth: 620 }}>
+    <div className={c("battery-list")} style={{ maxWidth: 620 }}>
       <BatteryRow {...args} />
     </div>
   ),

@@ -6,6 +6,7 @@ import { Dot } from "../atoms/Dot";
 import { Icon } from "../atoms/Icon";
 import { Sparkline } from "../atoms/Sparkline";
 import type { RoomView } from "../view-types";
+import { c } from "../styles/classes";
 
 export interface RoomCardProps {
   room: RoomView;
@@ -36,27 +37,27 @@ export function RoomCard({
   return (
     <button
       type="button"
-      className={`room-card${room.wide ? " wide" : ""}`}
+      className={c("room-card", room.wide && "wide")}
       style={style}
       data-nav={`rum/${room.id}`}
       data-room={room.id}
       onClick={onOpen}
     >
-      <div className="room-top">
+      <div className={c("room-top")}>
         <div>
-          <div className="room-name">{room.name}</div>
-          <div className="room-kind">{room.kind}</div>
+          <div className={c("room-name")}>{room.name}</div>
+          <div className={c("room-kind")}>{room.kind}</div>
         </div>
-        <span className="room-icon">
+        <span className={c("room-icon")}>
           <Icon name={room.icon} />
         </span>
       </div>
-      <div className="room-main">
-        <div className={`room-temp${room.temp === null ? " off" : ""}`}>
+      <div className={c("room-main")}>
+        <div className={c("room-temp", room.temp === null && "off")}>
           {temp}
           <sup>°</sup>
         </div>
-        <div className="room-status">
+        <div className={c("room-status")}>
           <span>
             <Dot tone={airTone} />
             <span>{room.airLabel}</span>
@@ -79,14 +80,14 @@ export function RoomCard({
         </div>
       </div>
       <Sparkline
-        className="room-spark"
+        className={c("room-spark")}
         values={spark ?? room.spark}
         height={40}
         pad={1}
         graph={sparkGraph}
         style={{ color: room.tint }}
       />
-      <span className="room-open">{openLabel}</span>
+      <span className={c("room-open")}>{openLabel}</span>
     </button>
   );
 }

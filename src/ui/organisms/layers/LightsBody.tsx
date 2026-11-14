@@ -3,6 +3,7 @@ import type { ArcusHass, LightGroupModel, Translator } from "../../../types";
 import { useActions, useHass, useModel, useTranslator } from "../../hooks";
 import { Icon } from "../../atoms/Icon";
 import { SheetHeader } from "../../molecules/SheetHeader";
+import { c } from "../../styles/classes";
 
 interface LightState {
   isOn: boolean;
@@ -93,11 +94,11 @@ function LightControl({
   const sliderStyle = { "--p": `${displayPct}%` } as CSSProperties;
 
   return (
-    <div className="light-row">
-      <div className="row">
+    <div className={c("light-row")}>
+      <div className={c("row")}>
         <button
           type="button"
-          className={`toggle${state.isOn ? " on" : ""}`}
+          className={c("toggle", state.isOn && "on")}
           data-act="toggle-light"
           data-entity={entityId}
           data-on={entityId}
@@ -105,19 +106,21 @@ function LightControl({
           aria-pressed={state.isOn}
           onClick={onToggle}
         />
-        <div className="row-main">
-          <div className="row-name">{name}</div>
-          <div className="row-sub">{sub}</div>
+        <div className={c("row-main")}>
+          <div className={c("row-name")}>{name}</div>
+          <div className={c("row-sub")}>{sub}</div>
         </div>
-        <span className="row-val">{state.isOn ? `${displayPct} %` : "–"}</span>
+        <span className={c("row-val")}>
+          {state.isOn ? `${displayPct} %` : "–"}
+        </span>
       </div>
       {showSlider ? (
-        <div className="slider-wrap">
-          <div className="slider-line">
+        <div className={c("slider-wrap")}>
+          <div className={c("slider-line")}>
             <Icon name="sun" />
             <input
               ref={sliderRef}
-              className="range"
+              className={c("range")}
               type="range"
               min="0"
               max="100"
@@ -134,7 +137,7 @@ function LightControl({
               }}
             />
           </div>
-          <div className="pct">
+          <div className={c("pct")}>
             {displayPct > 0 ? `${displayPct} %` : t("lights.sliderOff")}
           </div>
         </div>
@@ -225,10 +228,10 @@ export function LightsBody() {
     ));
 
     return (
-      <div className="block" key={group.entityId}>
-        <div className="block-head">
-          <div className="block-label">{group.name}</div>
-          <div className="block-label">
+      <div className={c("block")} key={group.entityId}>
+        <div className={c("block-head")}>
+          <div className={c("block-label")}>{group.name}</div>
+          <div className={c("block-label")}>
             <b>{t("lights.groupCount", { count })}</b>
           </div>
         </div>
@@ -242,7 +245,7 @@ export function LightsBody() {
           onBrightness={(percent) => setBrightness(group.entityId, percent)}
         />
         {group.members.length ? (
-          <details className="light-details">
+          <details className={c("light-details")}>
             <summary>
               {t("lights.singleSpots", {
                 count: group.members.length,
@@ -273,19 +276,19 @@ export function LightsBody() {
         closeLabel={t("sheet.close")}
         onClose={actions.closeSheet}
       />
-      <div className="sheet-scroll">
-        <div className="block">
-          <div className="btn-row">
+      <div className={c("sheet-scroll")}>
+        <div className={c("block")}>
+          <div className={c("btn-row")}>
             <button
               type="button"
-              className="btn danger"
+              className={c("btn danger")}
               data-act="sluk-alt"
               onClick={turnAllOff}
             >
               <Icon name="light" /> {t("lights.turnAllOff")}
             </button>
-            <span className="status-line" style={{ marginLeft: "auto" }}>
-              <i className={`dot${on ? " warn" : ""}`} />
+            <span className={c("status-line")} style={{ marginLeft: "auto" }}>
+              <i className={c("dot", !!on && "warn")} />
               {on ? t("lights.onCount", { count: on }) : t("lights.allOff")}
             </span>
           </div>
@@ -294,12 +297,12 @@ export function LightsBody() {
         {groups.length ? (
           groups.map(groupBlock)
         ) : (
-          <div className="empty">
+          <div className={c("empty")}>
             <Icon name="light" />
             <span>{t("empty.dataYet")}</span>
           </div>
         )}
-        <div className="note">{t("lights.footer")}</div>
+        <div className={c("note")}>{t("lights.footer")}</div>
       </div>
     </div>
   );

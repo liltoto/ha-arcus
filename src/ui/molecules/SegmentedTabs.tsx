@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Tab } from "../atoms/Tab";
 import type { TabItem } from "../view-types";
+import { c } from "../styles/classes";
 
 export interface SegmentedTabsProps {
   tabs: TabItem[];
@@ -26,10 +27,7 @@ export function SegmentedTabs({ tabs, active, onChange }: SegmentedTabsProps) {
     const sync = (): void => {
       const scrollable = strip.scrollWidth > strip.clientWidth + 1;
       strip.classList.toggle("scrollable", scrollable);
-      strip.classList.toggle(
-        "can-left",
-        scrollable && strip.scrollLeft > 1,
-      );
+      strip.classList.toggle("can-left", scrollable && strip.scrollLeft > 1);
       strip.classList.toggle(
         "can-right",
         scrollable &&
@@ -49,8 +47,7 @@ export function SegmentedTabs({ tabs, active, onChange }: SegmentedTabsProps) {
         activeTab.offsetLeft + activeTab.offsetWidth >
         next + strip.clientWidth
       ) {
-        next =
-          activeTab.offsetLeft + activeTab.offsetWidth - strip.clientWidth;
+        next = activeTab.offsetLeft + activeTab.offsetWidth - strip.clientWidth;
       }
       strip.scrollLeft = Math.max(0, Math.min(max, next));
     }
@@ -71,7 +68,7 @@ export function SegmentedTabs({ tabs, active, onChange }: SegmentedTabsProps) {
   }, [active, tabs]);
 
   return (
-    <div className="sheet-tabs" ref={stripRef} role="tablist">
+    <div className={c("sheet-tabs")} ref={stripRef} role="tablist">
       {tabs.map((tab) => (
         <Tab
           key={tab.key}

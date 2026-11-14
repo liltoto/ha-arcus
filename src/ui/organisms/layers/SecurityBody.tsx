@@ -22,6 +22,7 @@ import { OpeningRow } from "../../molecules/OpeningRow";
 import { SheetHeader } from "../../molecules/SheetHeader";
 import { ToggleRow } from "../../molecules/ToggleRow";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
+import { c } from "../../styles/classes";
 
 interface SecurityOpening extends OpeningModel {
   isLeak: boolean;
@@ -78,16 +79,16 @@ function roomForOpening(
 
 function UnknownBatteryRow({ battery }: { battery: SecurityBatteryModel }) {
   return (
-    <div className="row">
+    <div className={c("row")}>
       <Icon name="battery" />
-      <span className="row-main">
-        <div className="row-name">{battery.name}</div>
-        <div className="row-sub">–</div>
+      <span className={c("row-main")}>
+        <div className={c("row-name")}>{battery.name}</div>
+        <div className={c("row-sub")}>–</div>
       </span>
-      <div className="bar" data-batt={battery.entityId}>
+      <div className={c("bar")} data-batt={battery.entityId}>
         <i style={{ width: "0%" }} />
       </div>
-      <span className="row-val">–</span>
+      <span className={c("row-val")}>–</span>
     </div>
   );
 }
@@ -130,7 +131,7 @@ export function SecurityBody(_props: LayerBodyProps) {
           closeLabel={t("sheet.close")}
           onClose={close}
         />
-        <div className="sheet-scroll">
+        <div className={c("sheet-scroll")}>
           <EmptyState icon="shield" title={t("empty.data")} />
         </div>
       </div>
@@ -223,7 +224,7 @@ export function SecurityBody(_props: LayerBodyProps) {
         cx={x}
         cy={y}
         r="4"
-        className={`house-dot${openStates.get(opening.id) ? " open" : ""}`}
+        className={c("house-dot", openStates.get(opening.id) && "open")}
         data-open={opening.id}
       />
     );
@@ -314,11 +315,15 @@ export function SecurityBody(_props: LayerBodyProps) {
         closeLabel={t("sheet.close")}
         onClose={close}
       />
-      <div className="sheet-scroll">
-        <div className="block">
-          <div className="block-label">{t("security.houseNow")}</div>
-          <div className="house-wrap">
-            <svg viewBox="0 0 560 220" className="house-svg" aria-hidden="true">
+      <div className={c("sheet-scroll")}>
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("security.houseNow")}</div>
+          <div className={c("house-wrap")}>
+            <svg
+              viewBox="0 0 560 220"
+              className={c("house-svg")}
+              aria-hidden="true"
+            >
               {HOUSE_CELLS.map((cell, index) => {
                 const room = houseRooms[index];
                 const label = room
@@ -335,14 +340,14 @@ export function SecurityBody(_props: LayerBodyProps) {
                       width={cell.w}
                       height={cell.h}
                       rx="8"
-                      className="house-room"
+                      className={c("house-room")}
                     />
                     {room ? (
                       <text
                         x={cell.cx}
                         y={cell.labelY}
                         textAnchor="middle"
-                        className="house-name"
+                        className={c("house-name")}
                       >
                         {label}
                       </text>
@@ -352,7 +357,7 @@ export function SecurityBody(_props: LayerBodyProps) {
               })}
               {houseDots}
             </svg>
-            <div className="legend">
+            <div className={c("legend")}>
               <span>
                 <i style={{ "--c": "var(--sage)" } as CSSProperties} />
                 {t("security.closed")}
@@ -362,16 +367,16 @@ export function SecurityBody(_props: LayerBodyProps) {
                 {t("security.open")}
               </span>
             </div>
-            <div className="chip-row" data-security-chips>
+            <div className={c("chip-row")} data-security-chips>
               <span
-                className={`chip${leak ? " crit" : " on"}`}
+                className={c("chip", leak ? "crit" : "on")}
                 data-chip="leak"
                 data-sev={leak ? "crit" : "ok"}
               >
                 {leak ? t("security.leakDetected") : t("security.noLeak")}
               </span>
               <span
-                className={`chip${openCount ? " warn" : " on"}`}
+                className={c("chip", openCount ? "warn" : "on")}
                 data-chip="open"
                 data-sev={openCount ? "warn" : "ok"}
               >
@@ -380,7 +385,11 @@ export function SecurityBody(_props: LayerBodyProps) {
                   : t("security.summaryClosed")}
               </span>
               {lowBattery ? (
-                <span className="chip warn" data-chip="battery" data-sev="warn">
+                <span
+                  className={c("chip warn")}
+                  data-chip="battery"
+                  data-sev="warn"
+                >
                   {t("security.batteries")}
                 </span>
               ) : null}
@@ -388,10 +397,10 @@ export function SecurityBody(_props: LayerBodyProps) {
           </div>
         </div>
 
-        <div className="block">
-          <div className="block-head">
-            <div className="block-label">{t("security.doorsWindows")}</div>
-            <div className="block-label">
+        <div className={c("block")}>
+          <div className={c("block-head")}>
+            <div className={c("block-label")}>{t("security.doorsWindows")}</div>
+            <div className={c("block-label")}>
               <b>
                 {openCount
                   ? t("security.summaryOpen", { count: openCount })
@@ -399,24 +408,24 @@ export function SecurityBody(_props: LayerBodyProps) {
               </b>
             </div>
           </div>
-          <div className="list">
+          <div className={c("list")}>
             {openingRows.length ? (
               openingRows
             ) : (
-              <div className="block-note">{t("empty.data")}</div>
+              <div className={c("block-note")}>{t("empty.data")}</div>
             )}
           </div>
         </div>
 
         {batteries.length ? (
-          <div className="block">
-            <div className="block-head">
-              <div className="block-label">{t("security.batteries")}</div>
-              <div className="block-label">
+          <div className={c("block")}>
+            <div className={c("block-head")}>
+              <div className={c("block-label")}>{t("security.batteries")}</div>
+              <div className={c("block-label")}>
                 <b>{t("security.lowestFirst")}</b>
               </div>
             </div>
-            <div className="battery-list">
+            <div className={c("battery-list")}>
               {batteries.map((battery) =>
                 battery.level === null ? (
                   <UnknownBatteryRow key={battery.entityId} battery={battery} />
@@ -438,8 +447,8 @@ export function SecurityBody(_props: LayerBodyProps) {
           </div>
         ) : null}
 
-        <div className="block">
-          <div className="block-label">{t("security.automation")}</div>
+        <div className={c("block")}>
+          <div className={c("block-label")}>{t("security.automation")}</div>
           {alertId ? (
             <ToggleRow
               label={t("security.windowAlert")}
@@ -450,28 +459,30 @@ export function SecurityBody(_props: LayerBodyProps) {
               onChange={toggleWindowAlert}
             />
           ) : (
-            <div className="row">
-              <span className="row-main">
-                <div className="row-name">{t("security.windowAlert")}</div>
-                <div className="row-sub">{t("security.windowAlertSub")}</div>
+            <div className={c("row")}>
+              <span className={c("row-main")}>
+                <div className={c("row-name")}>{t("security.windowAlert")}</div>
+                <div className={c("row-sub")}>
+                  {t("security.windowAlertSub")}
+                </div>
               </span>
-              <span className="row-val">
+              <span className={c("row-val")}>
                 {alertOn ? t("common.on") : t("common.off")}
               </span>
             </div>
           )}
-          <div className="row">
-            <span className="row-main">
-              <div className="row-name">{t("security.openWindows")}</div>
-              <div className="row-sub">{t("security.liveCount")}</div>
+          <div className={c("row")}>
+            <span className={c("row-main")}>
+              <div className={c("row-name")}>{t("security.openWindows")}</div>
+              <div className={c("row-sub")}>{t("security.liveCount")}</div>
             </span>
-            <span className="row-val">{fmt(openWindows, 0)}</span>
+            <span className={c("row-val")}>{fmt(openWindows, 0)}</span>
           </div>
-          <div className="row">
+          <div className={c("row")}>
             <Icon name="bell" />
-            <div className="row-main">
-              <div className="row-name">{t("sheet.titleAlerts")}</div>
-              <div className="row-sub">
+            <div className={c("row-main")}>
+              <div className={c("row-name")}>{t("sheet.titleAlerts")}</div>
+              <div className={c("row-sub")}>
                 {alertCount
                   ? t("alerts.summaryCount", { count: alertCount })
                   : t("alerts.summaryCalm")}
@@ -479,7 +490,7 @@ export function SecurityBody(_props: LayerBodyProps) {
             </div>
             <button
               type="button"
-              className="btn small"
+              className={c("btn small")}
               data-act="alarm-action"
               onClick={() => actions.navigate("alarmer")}
             >

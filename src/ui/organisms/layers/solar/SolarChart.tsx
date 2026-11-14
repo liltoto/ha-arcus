@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { areaPath, sparkPath } from "../../../../render/charts";
 import { applyGraph, type GraphInput } from "../../../../render/graph";
 import { DAY_MS, escapeHtml, isFiniteNumber } from "./helpers";
+import { c } from "../../../styles/classes";
 
 export interface SolarSeries {
   key: string;
@@ -87,7 +88,7 @@ export function SolarChart({
   return (
     <div
       ref={hostRef}
-      className={`chart-box${noData ? " no-data" : ""}`}
+      className={c("chart-box", noData && "no-data")}
       data-chart={chart}
       data-points={points}
     >
@@ -142,7 +143,7 @@ export function SolarChart({
           />
         ))}
       </svg>
-      <span className="chart-empty">{empty}</span>
+      <span className={c("chart-empty")}>{empty}</span>
     </div>
   );
 }

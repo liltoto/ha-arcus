@@ -1,6 +1,7 @@
 import { firstEntity } from "../../actions";
 import { Icon } from "../atoms/Icon";
 import { useActions, useConfig, useHass, useTranslator } from "../hooks";
+import { c } from "../styles/classes";
 
 const BEDTIME = "input_button.bedtime";
 const VACATION = "input_boolean.vacation_mode";
@@ -36,7 +37,7 @@ function QuickButton({
   return (
     <button
       type="button"
-      className={`quick${on ? " on" : ""}`}
+      className={c("quick", on && "on")}
       data-act={act}
       data-entity={entity}
       data-on={dataOn}
@@ -81,19 +82,19 @@ export function QuickActions() {
   };
 
   return (
-    <section className="section">
-      <div className="section-head">
+    <section className={c("section")}>
+      <div className={c("section-head")}>
         <div>
-          <div className="kicker">{t("section.quickKicker")}</div>
+          <div className={c("kicker")}>{t("section.quickKicker")}</div>
           <h2>{t("section.quickTitle")}</h2>
         </div>
-        <div className="meta">
+        <div className={c("meta")}>
           {t("section.quickMeta")}
           <br />
           <b>{t("section.quickMetaSub")}</b>
         </div>
       </div>
-      <div className="quick-row">
+      <div className={c("quick-row")}>
         {configured
           ? config.quick_actions.map((quick, index) => {
               const entity = quick.entity ?? firstEntity(quick.action);

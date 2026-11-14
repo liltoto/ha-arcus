@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { c } from "../styles/classes";
 
 export interface ChartBoxProps {
   title?: string;
@@ -20,11 +21,11 @@ export function ChartBox({
   children,
 }: ChartBoxProps) {
   return (
-    <div className={`chart-box${noData ? " no-data" : ""}`}>
+    <div className={c("chart-box", noData && "no-data")}>
       {children}
-      <span className="chart-empty">{emptyLabel}</span>
+      <span className={c("chart-empty")}>{emptyLabel}</span>
       {title || caption ? (
-        <div className="chart-cap">
+        <div className={c("chart-cap")}>
           {title ? <span>{title}</span> : null}
           {caption}
         </div>
