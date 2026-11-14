@@ -2,6 +2,35 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.5 - 2026-11-15
+
+Web Interface Guidelines pass: keyboard, screen-reader, and mobile-interaction fixes across the React tree.
+
+### Fixed
+
+- Keyboard focus is visible on `<select>`, `<summary>`, and focusable rows. The global ring previously covered only buttons, links, and inputs.
+- A closed sheet is `inert` and hidden from assistive tech; `aria-modal` applies only while it is open. Background content is reachable again after closing.
+- Toasts announce through `role="status"` and `aria-live="polite"`.
+- Toggle rows are one button, so the label text is part of the hit target instead of a dead zone.
+- The ventilation function select has an accessible name, and the mode/fan segments expose `aria-pressed`.
+- The route chip strip no longer claims `role="tablist"` without tab semantics; the active chip uses `aria-current`.
+- Stepper values announce on change, and the +/− labels are localized.
+- The atmosphere button reads the persisted mode. Previously a reload kept `auto` in local state, so the first press could be a no-op.
+- Quick actions no longer hardcode bedtime, vacation, and window-alert entities. Homes without `quick_actions` get the generic Lights and Map shortcuts.
+- Outdoor rooms are derived from the discovered `kind` instead of the `skur` area id.
+
+### Changed
+
+- Sheet bodies contain overscroll and respect the bottom safe area; the inline confirm bar compensates for the extra padding.
+- Native controls follow the card theme through `color-scheme`.
+- Disabled buttons, toggles, and steppers have a visible disabled state.
+- Replaced the remaining `transition: all` declarations with explicit properties.
+- Headings balance their lines; long room names and sheet titles wrap instead of overflowing.
+
+### Verified
+
+- 446 tests, typecheck, lint, Fallow audit, build, size budget (393.8 KB gzip), Storybook, and the visual suite.
+
 ## 0.4.4 - 2026-11-14
 
 Maintenance release: the Fallow-driven cleanup, new regression tests, and four user-visible fixes.
