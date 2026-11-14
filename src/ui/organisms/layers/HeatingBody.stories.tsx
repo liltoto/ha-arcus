@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import type { ArcusRoute } from "../../types";
-import { storyApp } from "../../providers/StoryProviders";
 import { HeatingBody } from "./HeatingBody";
 
 const route: ArcusRoute = { base: "varme", sub: null };
@@ -9,7 +8,6 @@ const meta = {
   title: "Sheets/Heating",
   component: HeatingBody,
   args: {
-    app: storyApp,
     route,
   },
   parameters: { layout: "fullscreen" },

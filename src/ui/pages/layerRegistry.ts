@@ -1,38 +1,26 @@
-import { createElement, type ComponentType } from "react";
-import type { SheetRoute } from "../../types";
-import type { SheetApp } from "../../views/layers/types";
+import type { ComponentType } from "react";
 import type { ArcusRoute } from "../types";
-import { LegacySheet } from "../providers/LegacySheet";
-import { LightsBody } from "../organisms/layers/LightsBody";
-import { RoomBody } from "../organisms/layers/RoomBody";
-import { HeatingBody } from "../organisms/layers/HeatingBody";
-import { EnergyBody } from "../organisms/layers/EnergyBody";
-import { SolarBody } from "../organisms/layers/SolarBody";
-import { WaterBody } from "../organisms/layers/WaterBody";
-import { SecurityBody } from "../organisms/layers/SecurityBody";
-import { VentilationBody } from "../organisms/layers/VentilationBody";
-import { TechBody } from "../organisms/layers/TechBody";
-import { EconomyBody } from "../organisms/layers/EconomyBody";
-import { PrayersBody } from "../organisms/layers/PrayersBody";
-import { AlertsBody } from "../organisms/layers/AlertsBody";
 import { AllBody } from "../organisms/layers/AllBody";
+import { AlertsBody } from "../organisms/layers/AlertsBody";
+import { EconomyBody } from "../organisms/layers/EconomyBody";
+import { EnergyBody } from "../organisms/layers/EnergyBody";
+import { HeatingBody } from "../organisms/layers/HeatingBody";
+import { LightsBody } from "../organisms/layers/LightsBody";
+import { PrayersBody } from "../organisms/layers/PrayersBody";
+import { RoomBody } from "../organisms/layers/RoomBody";
+import { SecurityBody } from "../organisms/layers/SecurityBody";
+import { SolarBody } from "../organisms/layers/SolarBody";
+import { TechBody } from "../organisms/layers/TechBody";
+import { VentilationBody } from "../organisms/layers/VentilationBody";
+import { WaterBody } from "../organisms/layers/WaterBody";
 
 export interface LayerBodyProps {
-  app: SheetApp;
   route: ArcusRoute;
 }
 
-/** Fallback for a route that has no registered body. */
-export function LegacyBody({ app, route }: LayerBodyProps) {
-  return createElement(LegacySheet, {
-    app,
-    route: route as SheetRoute,
-  });
-}
-
 /**
- * Layer key to body. Every key has a stub from the start so a layer agent can
- * replace its own file without editing this shared registry.
+ * Layer key to body. Every sheet is a React body now; the registry is the
+ * single place the route switch lives.
  */
 export const layerRegistry: Record<string, ComponentType<LayerBodyProps>> = {
   lys: LightsBody,

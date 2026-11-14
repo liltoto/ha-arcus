@@ -1,5 +1,4 @@
 import type { Decorator, Meta, StoryObj } from "@storybook/react";
-import { storyApp } from "../../providers/StoryProviders";
 import { VentilationBody } from "./VentilationBody";
 
 /** Give the body the same sheet frame it gets inside the card. */
@@ -34,7 +33,6 @@ const meta = {
   decorators: [withSheet],
   parameters: { layout: "fullscreen" },
   args: {
-    app: storyApp,
     route: { base: "ventilation", sub: null },
   },
 } satisfies Meta<typeof VentilationBody>;

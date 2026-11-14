@@ -1,12 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { storyApp } from "../../providers/StoryProviders";
 import { AllBody } from "./AllBody";
 
 const meta = {
   title: "Sheets/All",
   component: AllBody,
   args: {
-    app: storyApp,
     route: { base: "alle", sub: null },
   },
   render: (args) => (

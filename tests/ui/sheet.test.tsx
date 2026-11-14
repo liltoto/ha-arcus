@@ -9,11 +9,10 @@ import { useMemo, useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { ArcusCard } from "../../src/card";
 import { buildModel } from "../../src/model/build";
-import type { ArcusHass, SheetRoute } from "../../src/types";
+import type { ArcusHass } from "../../src/types";
 import type { ArcusActions, ArcusRoute } from "../../src/ui/types";
 import { ArcusProvider } from "../../src/ui/providers/ArcusProvider";
 import { SheetFrame } from "../../src/ui/organisms/SheetFrame";
-import type { SheetApp } from "../../src/views/layers/types";
 import { makeConfig, makeHass } from "../fixtures/home";
 import {
   makeActions,
@@ -21,34 +20,7 @@ import {
   renderWithArcus,
 } from "./home-test-utils";
 
-function appStub(): SheetApp {
-  return {
-    _call: vi.fn(),
-    _closeRoute: vi.fn(),
-    _sheetHeader: vi.fn(() => ""),
-    _sheetTabs: vi.fn(() => ""),
-    _confirm: null,
-    _refreshConfirm: vi.fn(),
-  } as unknown as SheetApp;
-}
 
-class ArcusSheetsStub extends HTMLElement {
-  app: SheetApp | null = null;
-  route: SheetRoute | null = null;
-
-  update(): void {
-    if (!this.app || !this.route) return;
-    this.innerHTML = `${this.app._sheetHeader(
-      "RUM",
-      "Stue",
-      "legacy",
-    )}<div class="sheet-scroll"><button data-act="close">Luk</button></div>`;
-  }
-}
-
-if (!customElements.get("arcus-sheets")) {
-  customElements.define("arcus-sheets", ArcusSheetsStub);
-}
 
 interface HarnessControls {
   closeSheet: () => void;
@@ -57,7 +29,6 @@ interface HarnessControls {
 }
 
 interface SheetHarnessProps {
-  app: SheetApp;
   actions: ArcusActions;
   controls: HarnessControls;
   hass?: ArcusHass;
@@ -65,7 +36,6 @@ interface SheetHarnessProps {
 
 /** Route/state harness for interactions that need a live provider. */
 function SheetHarness({
-  app,
   actions,
   controls,
   hass: initialHass,
@@ -107,7 +77,7 @@ function SheetHarness({
       route={route}
       actions={wiredActions}
     >
-      <SheetFrame app={app} />
+      <SheetFrame />
     </ArcusProvider>
   );
 }
@@ -123,7 +93,7 @@ afterEach(() => {
 
 describe("SheetFrame", () => {
   test("renders the scrim, sheet header, and the react lights body", () => {
-    const { container } = renderWithArcus(<SheetFrame app={appStub()} />, {
+    const { container } = renderWithArcus(<SheetFrame />, {
       route: { base: "lys", sub: null },
     });
 
@@ -148,7 +118,7 @@ describe("SheetFrame", () => {
 
   test("escape and the scrim close the sheet, inside clicks do not", () => {
     const { container, props } = renderWithArcus(
-      <SheetFrame app={appStub()} />,
+      <SheetFrame />,
       { route: { base: "lys", sub: null } },
     );
     const closeSheet = props.actions.closeSheet;
@@ -170,7 +140,7 @@ describe("SheetFrame", () => {
     opener.focus();
 
     const { container, unmount } = renderWithArcus(
-      <SheetFrame app={appStub()} />,
+      <SheetFrame />,
       { route: { base: "lys", sub: null } },
     );
     const sheet = container.querySelector<HTMLElement>("[data-sheet]")!;
@@ -203,7 +173,6 @@ describe("SheetFrame", () => {
     document.body.appendChild(opener);
     opener.focus();
 
-    const app = appStub();
     const actions = makeActions();
     const controls: HarnessControls = {
       closeSheet: () => undefined,
@@ -211,7 +180,7 @@ describe("SheetFrame", () => {
       bumpHass: () => undefined,
     };
     const { container } = render(
-      <SheetHarness app={app} actions={actions} controls={controls} />,
+      <SheetHarness actions={actions} controls={controls} />,
     );
 
     await waitFor(() =>
@@ -228,7 +197,6 @@ describe("SheetFrame", () => {
   });
 
   test("a route change scrolls the body back to the top", () => {
-    const app = appStub();
     const actions = makeActions();
     const controls: HarnessControls = {
       closeSheet: () => undefined,
@@ -236,7 +204,7 @@ describe("SheetFrame", () => {
       bumpHass: () => undefined,
     };
     const { container } = render(
-      <SheetHarness app={app} actions={actions} controls={controls} />,
+      <SheetHarness actions={actions} controls={controls} />,
     );
     const scroll = container.querySelector<HTMLElement>(".sheet-scroll")!;
     const scrollTo = vi.fn();
@@ -248,7 +216,6 @@ describe("SheetFrame", () => {
   });
 
   test("a hass update does not interrupt a focused brightness slider", () => {
-    const app = appStub();
     const actions = makeActions();
     const controls: HarnessControls = {
       closeSheet: () => undefined,
@@ -256,7 +223,7 @@ describe("SheetFrame", () => {
       bumpHass: () => undefined,
     };
     const { container } = render(
-      <SheetHarness app={app} actions={actions} controls={controls} />,
+      <SheetHarness actions={actions} controls={controls} />,
     );
     const slider = container.querySelector<HTMLInputElement>(
       '[data-light-range="light.kokken"]',
@@ -278,7 +245,7 @@ describe("SheetFrame", () => {
 
   test("a group toggle delegates to light.toggle", () => {
     const { container, props } = renderWithArcus(
-      <SheetFrame app={appStub()} />,
+      <SheetFrame />,
       { route: { base: "lys", sub: null } },
     );
     const toggle = container.querySelector<HTMLButtonElement>(

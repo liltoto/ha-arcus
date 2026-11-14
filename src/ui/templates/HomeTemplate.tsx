@@ -1,5 +1,4 @@
 import type { AtmosphereSetting, DensitySetting } from "../../types";
-import type { SheetApp } from "../../views/layers/types";
 import { ChapterGrid } from "../organisms/ChapterGrid";
 import { Footer } from "../organisms/Footer";
 import { Hero } from "../organisms/Hero";
@@ -10,17 +9,12 @@ import { TopBar } from "../organisms/TopBar";
 import { Vitals } from "../organisms/Vitals";
 
 export interface HomeTemplateProps {
-  app: SheetApp;
   atmo: AtmosphereSetting;
   dark: boolean;
   density: DensitySetting;
 }
 
-/**
- * Static subset of the legacy generated star field. The visual design only
- * needs a handful of animated points; the next home pass can restore the full
- * eighteen if the baselines ask for them.
- */
+/** The eighteen-point star field from the original home view. */
 const STAR_X = [
   8, 18, 27, 36, 45, 54, 63, 71, 79, 86, 92, 14, 31, 58, 68, 76, 88, 4,
 ];
@@ -39,7 +33,7 @@ const STARS = STAR_X.map((x, index) => ({
  * legacy `renderHome` markup so the card's sheet, toast, graph, and theme
  * helpers keep working while the organisms are ported.
  */
-export function HomeTemplate({ app, atmo, dark, density }: HomeTemplateProps) {
+export function HomeTemplate({ atmo, dark, density }: HomeTemplateProps) {
   return (
     <div
       className={`app${dark ? "" : " light"}`}
@@ -82,7 +76,7 @@ export function HomeTemplate({ app, atmo, dark, density }: HomeTemplateProps) {
           </footer>
         </main>
       </div>
-      <SheetFrame app={app} />
+      <SheetFrame />
       <div className="toast" data-toast />
       <div className="graph-tip" data-graph-tip aria-hidden="true" />
       <div className="graph-cursor" data-graph-cursor aria-hidden="true" />

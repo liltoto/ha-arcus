@@ -1,12 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { storyApp } from "../../providers/StoryProviders";
 import { PrayersBody } from "./PrayersBody";
 
 const meta = {
   title: "Sheets/Prayers",
   component: PrayersBody,
   args: {
-    app: storyApp,
     route: { base: "bon", sub: null },
   },
   render: (args) => (

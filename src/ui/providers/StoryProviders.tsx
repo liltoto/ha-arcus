@@ -5,7 +5,6 @@ import { buildModel } from "../../model/build";
 import type { ArcusActions, ArcusProviderProps, ArcusRoute } from "../types";
 import type { HistoryCache } from "../../data/history";
 import { makeConfig, makeHass } from "../../../tests/fixtures/home";
-import type { SheetApp } from "../../views/layers/types";
 import { ArcusProvider } from "./ArcusProvider";
 
 const now = () => new Date("2026-11-13T01:19:00+01:00");
@@ -20,7 +19,6 @@ const actions: ArcusActions = {
   openSheet: () => undefined,
   closeSheet: () => undefined,
   performAction: () => undefined,
-  confirm: () => undefined,
   toast: () => undefined,
   setAtmo: () => undefined,
 };
@@ -56,20 +54,6 @@ const providerProps: Omit<ArcusProviderProps, "children"> = {
   history,
   now,
 };
-
-/** A no-op card surface for stories that render a sheet layer body. */
-export const storyApp = {
-  _model: model,
-  _config: config,
-  _t: t,
-  _history: history,
-  _call: () => undefined,
-  _closeRoute: () => undefined,
-  _sheetHeader: () => "",
-  _sheetTabs: () => "",
-  _confirm: null,
-  _refreshConfirm: () => undefined,
-} as unknown as SheetApp;
 
 /**
  * Supplies the real home fixture to organism stories. Atoms and molecules

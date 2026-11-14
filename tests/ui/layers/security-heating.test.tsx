@@ -8,7 +8,7 @@ import { ArcusProvider } from "../../../src/ui/providers/ArcusProvider";
 import type { ArcusHass } from "../../../src/types";
 import type { ArcusRoute } from "../../../src/ui/types";
 import { makeArcusProps } from "../home-test-utils";
-import { appStub, renderLayer } from "../layer-test-utils";
+import { renderLayer } from "../layer-test-utils";
 
 const SECURITY_ROUTE: ArcusRoute = { base: "sikkerhed", sub: null };
 const HEATING_ROUTE: ArcusRoute = { base: "varme", sub: null };
@@ -209,7 +209,7 @@ describe("heating sheet", () => {
 
     const { container } = render(
       <ArcusProvider {...props} history={history}>
-        <HeatingBody app={appStub()} route={HEATING_ROUTE} />
+        <HeatingBody route={HEATING_ROUTE} />
       </ArcusProvider>,
     );
 

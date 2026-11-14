@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { storyApp } from "../../providers/StoryProviders";
 import type { ArcusRoute } from "../../types";
 import { TechBody } from "./TechBody";
 
@@ -9,7 +8,6 @@ const meta = {
   title: "Organisms/Layers/TechBody",
   component: TechBody,
   args: {
-    app: storyApp,
     route,
   },
   render: (args) => (

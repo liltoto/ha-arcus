@@ -9,7 +9,7 @@ import { ArcusProvider } from "../../../src/ui/providers/ArcusProvider";
 import type { ArcusRoute } from "../../../src/ui/types";
 import { makeConfig, makeHass } from "../../fixtures/home";
 import { makeArcusProps } from "../home-test-utils";
-import { appStub, renderLayer } from "../layer-test-utils";
+import { renderLayer } from "../layer-test-utils";
 
 const WATER_ROUTE: ArcusRoute = { base: "vand", sub: null };
 const VENT_ROUTE: ArcusRoute = { base: "ventilation", sub: null };
@@ -147,7 +147,7 @@ describe("WaterBody", () => {
 
     const { container } = render(
       <ArcusProvider {...props} history={history}>
-        <WaterBody app={appStub()} route={WATER_ROUTE} />
+        <WaterBody route={WATER_ROUTE} />
       </ArcusProvider>,
     );
 

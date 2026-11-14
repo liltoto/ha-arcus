@@ -13,7 +13,7 @@ import type {
  * The imperative surface the card exposes to the React tree.
  *
  * Components never talk to `hass` directly; the card owns service calls,
- * routing, confirmations, toasts, and atmosphere persistence.
+ * routing, toasts, and atmosphere persistence.
  */
 export interface ArcusActions {
   callService(
@@ -26,7 +26,6 @@ export interface ArcusActions {
   openSheet(route: string): void;
   closeSheet(): void;
   performAction(action: ActionConfig): void;
-  confirm(text: string, act: string): void;
   toast(text: string): void;
   setAtmo(mode: AtmosphereSetting): void;
 }
@@ -36,8 +35,8 @@ export interface ArcusActions {
  * straight through; the provider never copies or memoizes them.
  */
 /**
- * The card's route. It includes the home route (`hjem`), which is not a
- * `SheetRoute`; sheet pages narrow this once they are rendered.
+ * The card's route. It includes the home route (`hjem`); sheet pages receive
+ * the same shape and read `base`/`sub`.
  */
 export interface ArcusRoute {
   base: string;

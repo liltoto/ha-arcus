@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 /**
  * The flex column every ported sheet body returns. `data-react-layer` tells
- * the card's legacy click delegation that React owns the events inside it.
+ * the sheet shell that this layer is a React body.
  */
 export function LayerShell({ children }: { children: ReactNode }) {
   return (

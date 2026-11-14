@@ -4,7 +4,7 @@ import type { HistoryCache } from "../../../src/data/history";
 import { RoomBody } from "../../../src/ui/organisms/layers/RoomBody";
 import { ArcusProvider } from "../../../src/ui/providers/ArcusProvider";
 import { makeArcusProps } from "../home-test-utils";
-import { appStub, renderLayer } from "../layer-test-utils";
+import { renderLayer } from "../layer-test-utils";
 
 describe("RoomBody", () => {
   test("renders the room header and temperature readings", () => {
@@ -158,7 +158,7 @@ describe("RoomBody", () => {
 
     const { container } = render(
       <ArcusProvider {...props} history={history}>
-        <RoomBody app={appStub()} route={{ base: "rum", sub: "stue" }} />
+        <RoomBody route={{ base: "rum", sub: "stue" }} />
       </ArcusProvider>,
     );
 

@@ -1,12 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { storyApp } from "../../providers/StoryProviders";
 import { AlertsBody } from "./AlertsBody";
 
 const meta = {
   title: "Sheets/Alerts",
   component: AlertsBody,
   args: {
-    app: storyApp,
     route: { base: "alarmer", sub: null },
   },
   render: (args) => (

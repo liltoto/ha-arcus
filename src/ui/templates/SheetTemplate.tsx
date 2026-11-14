@@ -26,8 +26,7 @@ export function SheetTemplate({
         className={`scrim${open ? " open" : ""}`}
         data-scrim
         onClick={(event) => {
-          // React owns the scrim; stop the card's legacy click delegation
-          // from closing the route a second time.
+          // Keep the click inside React; the card no longer delegates it.
           event.stopPropagation();
           onScrimClick();
         }}

@@ -1,15 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SheetApp } from "../../views/layers/types";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { useSheetDrag } from "../hooks/useSheetDrag";
 import { SheetPage } from "../pages/SheetPage";
 import { useActions, useRoute, useTranslator } from "../hooks";
 import { SheetTemplate } from "../templates/SheetTemplate";
 import type { ArcusRoute } from "../types";
-
-export interface SheetFrameProps {
-  app: SheetApp;
-}
 
 const EXIT_MS = 450;
 
@@ -39,7 +34,7 @@ function useRetainedRoute(route: ArcusRoute): ArcusRoute | null {
  * Owns the sheet frame behavior: open state, focus trap, Escape, scrim,
  * drag-to-dismiss, and scroll reset. The body comes from `SheetPage`.
  */
-export function SheetFrame({ app }: SheetFrameProps) {
+export function SheetFrame() {
   const route = useRoute();
   const actions = useActions();
   const t = useTranslator();
@@ -87,7 +82,7 @@ export function SheetFrame({ app }: SheetFrameProps) {
       sheetRef={sheetRef}
       onScrimClick={close}
     >
-      {bodyRoute ? <SheetPage app={app} route={bodyRoute} /> : null}
+      {bodyRoute ? <SheetPage route={bodyRoute} /> : null}
     </SheetTemplate>
   );
 }

@@ -48,7 +48,6 @@ function actionsStub(): ArcusActions {
     openSheet: vi.fn(),
     closeSheet: vi.fn(),
     performAction: vi.fn(),
-    confirm: vi.fn(),
     toast: vi.fn(),
     setAtmo: vi.fn(),
   };

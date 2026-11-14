@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import type { ArcusRoute } from "../../types";
-import { storyApp } from "../../providers/StoryProviders";
 import { SecurityBody } from "./SecurityBody";
 
 const route: ArcusRoute = { base: "sikkerhed", sub: null };
@@ -9,7 +8,6 @@ const meta = {
   title: "Sheets/Security",
   component: SecurityBody,
   args: {
-    app: storyApp,
     route,
   },
   parameters: { layout: "fullscreen" },

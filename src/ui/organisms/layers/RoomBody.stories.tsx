@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { storyApp } from "../../providers/StoryProviders";
 import { RoomBody } from "./RoomBody";
 
 /**
@@ -10,7 +9,6 @@ const meta = {
   title: "Sheets/Room",
   component: RoomBody,
   args: {
-    app: storyApp,
     route: { base: "rum", sub: "stue" },
   },
 } satisfies Meta<typeof RoomBody>;

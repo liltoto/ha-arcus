@@ -19,9 +19,8 @@ import { buildBindings } from "./model/bindings";
 import { arcPoint, areaPath, priceColor, sparkPath } from "./render/charts";
 import { applyGraph, mountGraphTips } from "./render/graph";
 import { icon } from "./render/icons";
-import { STYLES } from "./render/styles";
+import { STYLES } from "./ui/styles";
 import type {
-  ActionConfig,
   ArcusConfig,
   ArcusHass,
   AtmosphereSetting,
@@ -37,8 +36,8 @@ import type {
 import { ArcusApp } from "./ui/ArcusApp";
 import type { ArcusActions } from "./ui/types";
 import { ARCUS_VERSION } from "./version";
-import type { ArcusSheetsElement, SheetApp } from "./views/layers/types";
-import { escapeHtml, renderChapterArt } from "./views/home";
+import { escapeHtml } from "./format";
+import { renderChapterArt } from "./render/chapter-art";
 
 declare global {
   interface Window {
@@ -97,16 +96,6 @@ function refNumber(value: unknown): number | null {
   return Number.isFinite(number) ? number : null;
 }
 
-function firstEntityId(value: unknown): string | undefined {
-  if (typeof value === "string" && value.trim()) return value.trim();
-  if (Array.isArray(value)) {
-    const first = value.find(
-      (item): item is string => typeof item === "string" && !!item.trim(),
-    );
-    if (first) return first.trim();
-  }
-  return undefined;
-}
 
 /**
  * The Arcus custom card. It owns the shadow root, the dynamic home model,
@@ -119,7 +108,6 @@ export class ArcusCard extends HTMLElement {
   _model!: HomeModel;
   _t: Translator;
   _history: HistoryCache;
-  _confirm: { text: string; act: string } | null = null;
   readonly updateComplete: Promise<void>;
 
   /**
@@ -144,10 +132,6 @@ export class ArcusCard extends HTMLElement {
         },
       );
     },
-    confirm: (text, act) => {
-      this._confirm = { text, act };
-      this._refreshConfirm();
-    },
     toast: (text) => this._toast(text),
     setAtmo: (mode) => this._setAtmo(mode),
   };
@@ -156,7 +140,6 @@ export class ArcusCard extends HTMLElement {
   private _language: Language;
   private _built = false;
   private _route: Route = { base: "hjem", sub: null };
-  private _scrub: number | null = null;
   private _scrubTimer: ReturnType<typeof setTimeout> | null = null;
   private _clockTimer: ReturnType<typeof setInterval> | null = null;
   private _toastTimer: ReturnType<typeof setTimeout> | null = null;
@@ -166,7 +149,6 @@ export class ArcusCard extends HTMLElement {
   private _weather: WeatherForecastDay[] | null = null;
   private _configSignature: string;
   private _reactRoot: Root | null = null;
-  private _reactContainer: HTMLElement | null = null;
   private _renderFrame: number | null = null;
 
   constructor() {
@@ -347,17 +329,7 @@ export class ArcusCard extends HTMLElement {
     return this._solarPhase();
   }
 
-  private _cycleAtmo(): void {
-    const order: AtmosphereSetting[] = ["auto", "night", "day"];
-    const index = order.indexOf(this._atmoMode);
-    this._atmoMode = order[(index + 1) % order.length];
-    try {
-      localStorage.setItem("arcus-atmo", this._atmoMode);
-    } catch {
-      /* ignore */
-    }
-    this._applyAtmo();
-  }
+
 
   private _setAtmo(mode: AtmosphereSetting): void {
     this._atmoMode = mode;
@@ -772,10 +744,6 @@ export class ArcusCard extends HTMLElement {
     bindings.weatherStrip = this._weatherStripHTML();
     bindings.version = ARCUS_VERSION;
 
-    const sheet = this._root.querySelector<ArcusSheetsElement>("arcus-sheets");
-    if (sheet?.binds) {
-      Object.assign(bindings, sheet.binds());
-    }
     return bindings;
   }
 
@@ -788,7 +756,6 @@ export class ArcusCard extends HTMLElement {
     const container = this._root.querySelector<HTMLElement>(".arcus-react");
     if (!container) return;
     container.style.display = "contents";
-    this._reactContainer = container;
     this._reactRoot = createRoot(container);
     this._route = this._parseHash();
     flushSync(() => this._renderIntoReact());
@@ -814,7 +781,6 @@ export class ArcusCard extends HTMLElement {
         actions: this.actions,
         history: this._history,
         now: () => this._now(),
-        app: this as unknown as SheetApp,
         atmo: this._atmo(),
         dark: this._themeDark(),
       }),
@@ -829,7 +795,6 @@ export class ArcusCard extends HTMLElement {
     }
     const root = this._reactRoot;
     this._reactRoot = null;
-    this._reactContainer = null;
     if (root) root.unmount();
   }
 
@@ -979,7 +944,6 @@ export class ArcusCard extends HTMLElement {
     this._applyBindings(bindings);
     this._applyState();
 
-    this._root.querySelector<ArcusSheetsElement>("arcus-sheets")?.update?.();
     // The sheet may have rendered new nodes; apply the same flat bindings once
     // more before drawing charts and sparks.
     this._applyBindings(bindings);
@@ -992,7 +956,6 @@ export class ArcusCard extends HTMLElement {
     this._refreshAlerts();
     this._refreshArt();
     this._refreshClockState();
-    this._refreshConfirm();
   }
 
   private _refreshSparks(): void {
@@ -1257,7 +1220,6 @@ export class ArcusCard extends HTMLElement {
     const rect = arc.getBoundingClientRect();
     if (!rect.width) return;
     const fraction = clamp((clientX - rect.left) / rect.width, 0, 1);
-    this._scrub = fraction;
 
     const price = this._priceToday();
     if (!price.values.length) return;
@@ -1285,7 +1247,6 @@ export class ArcusCard extends HTMLElement {
   }
 
   private _clearScrub(): void {
-    this._scrub = null;
     this._root
       .querySelector<HTMLElement>("[data-arc-readout]")
       ?.classList.remove("show");
@@ -1491,7 +1452,6 @@ export class ArcusCard extends HTMLElement {
       this._renderFrame = null;
       if (!this._built || !this._hass) return;
       flushSync(() => this._renderIntoReact());
-      // The legacy sheet is still populated imperatively by the card.
       this._refresh();
     };
     this._renderFrame =
@@ -1535,33 +1495,6 @@ export class ArcusCard extends HTMLElement {
     }
     this._route = { base: "hjem", sub: null };
     this._schedule();
-  }
-
-  _sheetHeader(kicker: string, title: string, sum: string): string {
-    return `<div class="sheet-head">
-      <div class="sheet-kicker">${escapeHtml(kicker)}</div>
-      <h2 class="sheet-title">${escapeHtml(title)}</h2>
-      <div class="sheet-sum" data-bind="sheet_sum">${sum}</div>
-      <button class="sheet-close" data-act="close" aria-label="${escapeHtml(
-        this._t("sheet.close"),
-      )}">${icon("close")}</button>
-    </div>`;
-  }
-
-  _sheetTabs(
-    tabs: Array<{ key: string; label: string; route: string }>,
-    active: string,
-  ): string {
-    return `<div class="sheet-tabs">${tabs
-      .map(
-        (tab) =>
-          `<button class="tab${
-            tab.key === active ? " active" : ""
-          }" data-nav="${escapeHtml(tab.route)}">${escapeHtml(
-            tab.label,
-          )}</button>`,
-      )
-      .join("")}</div>`;
   }
 
   private _historyIds(): string[] {
@@ -1652,15 +1585,6 @@ export class ArcusCard extends HTMLElement {
     this._onHash = () => this._applyRoute();
     window.addEventListener("hashchange", this._onHash);
 
-    this._onClick = (event: Event) => this._click(event);
-    this._root.addEventListener("click", this._onClick);
-
-    this._onInput = (event: Event) => this._input(event);
-    this._root.addEventListener("input", this._onInput);
-
-    this._onChange = (event: Event) => this._change(event);
-    this._root.addEventListener("change", this._onChange);
-
     this._onPointerMove = (event: Event) => {
       const pointer = event as PointerEvent;
       const target = event.target as Element | null;
@@ -1685,9 +1609,6 @@ export class ArcusCard extends HTMLElement {
     if (!this._listeners) return;
     this._listeners = false;
     window.removeEventListener("hashchange", this._onHash);
-    this._root.removeEventListener("click", this._onClick);
-    this._root.removeEventListener("input", this._onInput);
-    this._root.removeEventListener("change", this._onChange);
     this._root.removeEventListener("pointermove", this._onPointerMove);
     this._root.removeEventListener("pointerdown", this._onPointerDown);
     this._graphTips?.destroy();
@@ -1695,407 +1616,8 @@ export class ArcusCard extends HTMLElement {
   }
 
   private _onHash!: () => void;
-  private _onClick!: (event: Event) => void;
-  private _onInput!: (event: Event) => void;
-  private _onChange!: (event: Event) => void;
   private _onPointerMove!: (event: Event) => void;
   private _onPointerDown!: (event: Event) => void;
-
-  private _click(event: Event): void {
-    const target = event.target as Element | null;
-    // React owns the home tree and the sheet frame now. Delegation is kept
-    // only for the legacy `arcus-sheets` element until the last layer lands.
-    if (!target?.closest?.("arcus-sheets")) return;
-
-    // React-owned layers handle their own events; only legacy markup goes
-    // through the card's event delegation.
-    if (target?.closest?.("[data-react-layer]")) return;
-
-    if (target?.closest?.("[data-scrim]")) {
-      event.preventDefault();
-      this._closeRoute();
-      return;
-    }
-
-    const nav = target?.closest?.("[data-nav]") as HTMLElement | null;
-    if (nav && this._root.contains(nav)) {
-      event.preventDefault();
-      this._navigate(nav.dataset.nav ?? "hjem");
-      return;
-    }
-
-    const action = target?.closest?.("[data-act]") as HTMLElement | null;
-    if (action && this._root.contains(action)) {
-      event.preventDefault();
-      this._action(action.dataset.act ?? "", action.dataset, action);
-    }
-  }
-
-  private _input(event: Event): void {
-    const target = event.target as Element | null;
-    // React controls handle their own input events. Only the legacy sheet
-    // still relies on the card's delegation.
-    if (!target?.closest?.("arcus-sheets")) return;
-
-    const range = target?.closest?.(
-      "input[data-range-entity]",
-    ) as HTMLInputElement | null;
-    if (range) {
-      const pct = Number(range.value);
-      range.style.setProperty("--p", `${pct}%`);
-      const label = range
-        .closest(".slider-wrap")
-        ?.querySelector<HTMLElement>(".pct");
-      if (label) label.textContent = `${pct} %`;
-      return;
-    }
-
-    const temperature = target?.closest?.(
-      "input[data-temp-range]",
-    ) as HTMLInputElement | null;
-    if (temperature) {
-      const label = temperature
-        .closest(".slider-wrap")
-        ?.querySelector<HTMLElement>(".pct");
-      if (label) label.textContent = `${temperature.value}°`;
-      temperature.style.setProperty(
-        "--p",
-        `${((Number(temperature.value) - 5) / 30) * 100}%`,
-      );
-    }
-  }
-
-  private _change(event: Event): void {
-    const target = event.target as Element | null;
-    if (!target?.closest?.("arcus-sheets")) return;
-
-    const range = target?.closest?.(
-      "input[data-range-entity]",
-    ) as HTMLInputElement | null;
-    if (range) {
-      const entityId = range.dataset.rangeEntity;
-      const pct = Number(range.value);
-      if (pct <= 0) {
-        this._call("light", "turn_off", {}, { entity_id: entityId });
-      } else {
-        this._call(
-          "light",
-          "turn_on",
-          { brightness_pct: pct },
-          { entity_id: entityId },
-        );
-      }
-      return;
-    }
-
-    const temperature = target?.closest?.(
-      "input[data-temp-range]",
-    ) as HTMLInputElement | null;
-    if (temperature) {
-      this._call(
-        "climate",
-        "set_temperature",
-        { temperature: Number(temperature.value) },
-        { entity_id: temperature.dataset.tempRange },
-      );
-      return;
-    }
-
-    const select = target?.closest?.(
-      "select[data-select-entity]",
-    ) as HTMLSelectElement | null;
-    if (select) {
-      this._call(
-        "select",
-        "select_option",
-        { option: select.value },
-        { entity_id: select.dataset.selectEntity },
-      );
-    }
-  }
-
-  private _action(
-    act: string,
-    data: DOMStringMap,
-    _element?: HTMLElement,
-  ): void {
-    if (act === "close") return this._closeRoute();
-    if (act === "atmo") return this._cycleAtmo();
-
-    if (act === "toggle-light") {
-      return this._call("light", "toggle", {}, { entity_id: data.entity });
-    }
-    if (act === "toggle-switch") {
-      return this._call("switch", "toggle", {}, { entity_id: data.entity });
-    }
-    if (act === "toggle-bool") {
-      return this._call(
-        "input_boolean",
-        "toggle",
-        {},
-        {
-          entity_id: data.entity,
-        },
-      );
-    }
-    if (act === "press") {
-      return this._call(
-        "input_button",
-        "press",
-        {},
-        {
-          entity_id: data.entity,
-        },
-      );
-    }
-    if (act === "press-button") {
-      return this._call("button", "press", {}, { entity_id: data.entity });
-    }
-
-    if (act === "temp-step" || act === "input-step" || act === "number-step") {
-      const entityId = data.entity;
-      const direction = Number(data.dir || 1);
-      const step = Number(data.step || 0.5);
-      const isClimate = act === "temp-step";
-      const current = isClimate
-        ? refNumber(this._attr(entityId, "temperature"))
-        : this._n(entityId);
-      const min = Number(
-        this._attr(entityId, isClimate ? "min_temp" : "min", 5),
-      );
-      const max = Number(
-        this._attr(entityId, isClimate ? "max_temp" : "max", 35),
-      );
-      if (current === null || !Number.isFinite(current)) return;
-      const next = clamp(current + direction * step, min, max);
-      if (isClimate) {
-        return this._call(
-          "climate",
-          "set_temperature",
-          { temperature: next },
-          { entity_id: entityId },
-        );
-      }
-      if (act === "input-step") {
-        return this._call(
-          "input_number",
-          "set_value",
-          { value: next },
-          { entity_id: entityId },
-        );
-      }
-      return this._call(
-        "number",
-        "set_value",
-        { value: next },
-        { entity_id: entityId },
-      );
-    }
-
-    if (act === "temp-up" || act === "temp-down") {
-      const entityId = data.entity;
-      const current = refNumber(this._attr(entityId, "temperature"));
-      const step = Number(data.step || 0.5);
-      const min = Number(this._attr(entityId, "min_temp", 5));
-      const max = Number(this._attr(entityId, "max_temp", 35));
-      if (current === null || !Number.isFinite(current)) return;
-      const next = clamp(
-        current + (act === "temp-up" ? step : -step),
-        min,
-        max,
-      );
-      return this._call(
-        "climate",
-        "set_temperature",
-        { temperature: next },
-        { entity_id: entityId },
-      );
-    }
-
-    if (act === "hvac-toggle") {
-      const entityId = data.entity;
-      const mode = this._state(entityId) === "off" ? "heat" : "off";
-      return this._call(
-        "climate",
-        "set_hvac_mode",
-        { hvac_mode: mode },
-        { entity_id: entityId },
-      );
-    }
-    if (act === "hvac") {
-      return this._call(
-        "climate",
-        "set_hvac_mode",
-        { hvac_mode: data.mode },
-        { entity_id: data.entity },
-      );
-    }
-    if (act === "fan") {
-      return this._call(
-        "climate",
-        "set_fan_mode",
-        { fan_mode: data.mode },
-        { entity_id: data.entity },
-      );
-    }
-
-    if (act === "sluk-alt") {
-      this._confirm = {
-        text: this._t("confirm.allLights"),
-        act: "sluk-alt-go",
-      };
-      this._refreshConfirm();
-      return;
-    }
-    if (act === "sluk-alt-go") {
-      this._confirm = null;
-      const areas = this._allLightAreas();
-      const ids = this._allLightIds();
-      if (areas.length) {
-        this._call("light", "turn_off", {}, { area_id: areas });
-      } else if (ids.length) {
-        this._call("light", "turn_off", {}, { entity_id: ids });
-      }
-      this._refreshConfirm();
-      return;
-    }
-    if (act === "cancel-confirm") {
-      this._confirm = null;
-      this._refreshConfirm();
-      return;
-    }
-
-    if (act === "set-number" || act === "set-input-number") {
-      const entityId = data.entity;
-      const current = this._n(entityId, 0) ?? 0;
-      const step = Number(data.step || 1);
-      const min = Number(this._attr(entityId, "min", 0));
-      const max = Number(this._attr(entityId, "max", 100));
-      const next = clamp(current + Number(data.dir || 1) * step, min, max);
-      return this._call(
-        act === "set-number" ? "number" : "input_number",
-        "set_value",
-        { value: next },
-        { entity_id: entityId },
-      );
-    }
-
-    if (act === "select") {
-      return this._call(
-        "select",
-        "select_option",
-        { option: data.option },
-        { entity_id: data.entity },
-      );
-    }
-    if (act === "media-toggle") {
-      return this._call(
-        "media_player",
-        "media_play_pause",
-        {},
-        { entity_id: data.entity },
-      );
-    }
-
-    if (act === "map") {
-      try {
-        window.history.pushState(null, "", "/map");
-      } catch {
-        /* ignore */
-      }
-      window.dispatchEvent(
-        new CustomEvent("location-changed", {
-          bubbles: true,
-          composed: true,
-        }),
-      );
-      return;
-    }
-    if (act === "helios") {
-      const path =
-        this._config.solar?.heliosPath ?? "/nyt-overblik/solceller-helios";
-      try {
-        window.history.pushState(null, "", path);
-      } catch {
-        /* ignore */
-      }
-      window.dispatchEvent(
-        new CustomEvent("location-changed", {
-          bubbles: true,
-          composed: true,
-        }),
-      );
-      return;
-    }
-    if (act === "scroll-top") {
-      this._root
-        .querySelector<HTMLElement>(".scroll")
-        ?.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
-    if (act === "quick") {
-      this._quick(Number(data.quick));
-    }
-  }
-
-  private _quick(index: number): void {
-    const quick = this._config.quick_actions[index];
-    if (!quick || !this._hass) return;
-
-    let action: ActionConfig = { ...quick.action };
-    const entityId = firstEntityId(quick.entity) ?? firstEntityId(action);
-    if (entityId) {
-      if (action.action === "toggle" && !action.target && !action.entity_id) {
-        action = { ...action, entity_id: entityId };
-      } else if (
-        (action.action === "perform-action" ||
-          action.action === "call-service") &&
-        !action.target &&
-        !action.entity_id
-      ) {
-        action = { ...action, target: { entity_id: entityId } };
-      }
-    }
-
-    try {
-      void performAction(this._hass, action, this._config).catch(
-        (error: Error) => {
-          this._toast(
-            this._t("common.error", {
-              message: error?.message || quick.label,
-            }),
-          );
-        },
-      );
-    } catch (error) {
-      this._toast(
-        this._t("common.error", {
-          message: error instanceof Error ? error.message : quick.label,
-        }),
-      );
-    }
-  }
-
-  private _allLightAreas(): string[] {
-    const areas = this._model.rooms
-      .filter((room) => room.lights.length > 0)
-      .map((room) => room.areaId);
-    return [...new Set(areas)];
-  }
-
-  private _allLightIds(): string[] {
-    const ids = new Set<string>();
-    for (const group of this._model.lights) {
-      if (group.members.length) {
-        group.members.forEach((id) => ids.add(id));
-      } else {
-        ids.add(group.entityId);
-      }
-      group.extra.forEach((id) => ids.add(id));
-    }
-    return [...ids];
-  }
 
   _call(
     domain: string,
@@ -2124,21 +1646,7 @@ export class ArcusCard extends HTMLElement {
     this._toastTimer = setTimeout(() => element.classList.remove("show"), 3200);
   }
 
-  _refreshConfirm(): void {
-    const element = this._root.querySelector<HTMLElement>("[data-confirm]");
-    if (!element) return;
-    if (!this._confirm) {
-      element.innerHTML = "";
-      return;
-    }
-    element.innerHTML = `<div class="confirm"><span class="txt">${escapeHtml(
-      this._confirm.text,
-    )}</span><button class="btn small" data-act="cancel-confirm">${escapeHtml(
-      this._t("confirm.cancel"),
-    )}</button><button class="btn small danger" data-act="${escapeHtml(
-      this._confirm.act,
-    )}">${escapeHtml(this._t("confirm.yesLightOff"))}</button></div>`;
-  }
+
 }
 
 if (

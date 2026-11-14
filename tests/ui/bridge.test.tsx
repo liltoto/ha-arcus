@@ -7,7 +7,6 @@ import { buildBindings } from "../../src/model/bindings";
 import { buildModel } from "../../src/model/build";
 import type { ArcusActions } from "../../src/ui/types";
 import { ArcusApp } from "../../src/ui/ArcusApp";
-import type { SheetApp } from "../../src/views/layers/types";
 import { makeConfig, makeHass } from "../fixtures/home";
 
 const FIXED_NOW = new Date("2026-11-13T01:19:00+01:00");
@@ -28,22 +27,11 @@ function actionsStub(): ArcusActions {
     openSheet: vi.fn(),
     closeSheet: vi.fn(),
     performAction: vi.fn(),
-    confirm: vi.fn(),
     toast: vi.fn(),
     setAtmo: vi.fn(),
   };
 }
 
-function appStub(): SheetApp {
-  return {
-    _call: vi.fn(),
-    _closeRoute: vi.fn(),
-    _sheetHeader: vi.fn(() => ""),
-    _sheetTabs: vi.fn(() => ""),
-    _confirm: null,
-    _refreshConfirm: vi.fn(),
-  } as unknown as SheetApp;
-}
 
 /** Props matching the card bridge, so a render here proves the shell alone. */
 function bridgeProps() {
@@ -76,7 +64,6 @@ function bridgeProps() {
     actions: actionsStub(),
     history: historyStub(),
     now: () => FIXED_NOW,
-    app: appStub(),
     atmo: "night" as const,
     dark: true,
   };

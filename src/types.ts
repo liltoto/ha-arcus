@@ -710,29 +710,8 @@ export interface HomeModel {
 /* Routes and translation                                              */
 /* ------------------------------------------------------------------ */
 
-export type SheetBase =
-  | "rum"
-  | "lys"
-  | "varme"
-  | "ventilation"
-  | "energi"
-  | "sol"
-  | "vand"
-  | "sikkerhed"
-  | "teknik"
-  | "oekonomi"
-  | "alarmer"
-  | "bon"
-  | "skur"
-  | "alle";
-
 export type SolarTab =
   "overblik" | "produktion" | "batteri" | "prognose" | "afkast";
-
-export type SheetRoute =
-  | { base: "rum"; sub: string }
-  | { base: "sol"; sub?: SolarTab | null }
-  | { base: Exclude<SheetBase, "rum" | "sol">; sub?: string | null };
 
 export type Translator = (
   key: string,

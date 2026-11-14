@@ -10,7 +10,7 @@ import type { LayerBodyProps } from "../../../src/ui/pages/layerRegistry";
 import { ArcusProvider } from "../../../src/ui/providers/ArcusProvider";
 import type { ArcusRoute } from "../../../src/ui/types";
 import { makeArcusProps } from "../home-test-utils";
-import { appStub, renderLayer } from "../layer-test-utils";
+import { renderLayer } from "../layer-test-utils";
 
 const TECH_ROUTE: ArcusRoute = { base: "teknik", sub: null };
 const ECONOMY_ROUTE: ArcusRoute = { base: "oekonomi", sub: null };
@@ -28,7 +28,7 @@ function renderWithHistory(
   const props = makeArcusProps({ route });
   const result = render(
     <ArcusProvider {...props} history={history}>
-      <Body app={appStub()} route={route} />
+      <Body route={route} />
     </ArcusProvider>,
   );
   return { ...result, props };

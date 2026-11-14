@@ -7,7 +7,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import type { Decorator } from "@storybook/react";
-import { STYLES } from "../../render/styles";
+import { STYLES } from "../../ui/styles";
 
 /**
  * Storybook renders outside the card's shadow root, but Arcus CSS is written

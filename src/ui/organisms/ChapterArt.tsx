@@ -1,5 +1,5 @@
 import type { ChapterKey, LanguageSetting, Translator } from "../../types";
-import { renderChapterArt } from "../../views/home";
+import { renderChapterArt } from "../../render/chapter-art";
 import { useConfig, useHass, useModel, useTranslator } from "../hooks";
 
 export interface ChapterArtProps {

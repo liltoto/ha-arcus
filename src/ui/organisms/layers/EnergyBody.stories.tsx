@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { storyApp } from "../../providers/StoryProviders";
 import { EnergyBody } from "./EnergyBody";
 
 /**
@@ -11,7 +10,6 @@ const meta = {
   title: "Sheets/Energy",
   component: EnergyBody,
   args: {
-    app: storyApp,
     route: { base: "energi", sub: null },
   },
 } satisfies Meta<typeof EnergyBody>;

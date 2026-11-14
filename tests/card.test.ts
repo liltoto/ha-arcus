@@ -2,33 +2,6 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { ArcusCard } from "../src/card";
 import { HOME_AREA_IDS, makeConfig, makeHass } from "./fixtures/home";
 
-/**
- * Minimal sheet surface for the card tests. The real `arcus-sheets` element
- * lives in Task 7; this stub proves the card's frame contract (app, route,
- * update, close button) without depending on the sheet renderer.
- */
-class ArcusSheetsStub extends HTMLElement {
-  app: any = null;
-  route: any = null;
-
-  update(): void {
-    this.render();
-  }
-
-  render(): void {
-    if (!this.app || !this.route) return;
-    this.innerHTML = `${this.app._sheetHeader(
-      "RUM",
-      this.route.base === "rum" ? "Stue" : "Detaljer",
-      "<b>test</b>",
-    )}<div class="sheet-scroll"><div data-confirm></div><button data-act="close">Luk</button></div>`;
-  }
-}
-
-if (!customElements.get("arcus-sheets")) {
-  customElements.define("arcus-sheets", ArcusSheetsStub);
-}
-
 async function mount(
   config = makeConfig(),
   hass = makeHass(),
@@ -173,30 +146,6 @@ describe("ArcusCard", () => {
     expect(card.shadowRoot!.querySelector(".sheet.open")).toBeNull();
   });
 
-  test("delegates a light toggle to light.toggle", async () => {
-    const hass = makeHass();
-    const callService = vi.spyOn(hass, "callService");
-    const card = await mount(makeConfig(), hass);
-
-    // Delegation now belongs to the legacy sheet only; React owns the home.
-    const sheet = document.createElement("arcus-sheets");
-    const button = document.createElement("button");
-    button.dataset.act = "toggle-light";
-    button.dataset.entity = "light.kokken";
-    sheet.appendChild(button);
-    card.shadowRoot!.appendChild(sheet);
-
-    button.click();
-    await Promise.resolve();
-
-    expect(callService).toHaveBeenCalledWith(
-      "light",
-      "toggle",
-      {},
-      { entity_id: "light.kokken" },
-    );
-  });
-
   test("hides a chapter disabled in config", async () => {
     const card = await mount(makeConfig({ chapters: { sol: false } }));
 
@@ -269,15 +218,17 @@ describe("ArcusCard", () => {
     expect(card.shadowRoot!.querySelector(".sheet.open")).not.toBeNull();
   });
 
-  test("exposes the sheet header/tabs markup and the stub config", async () => {
+  test("renders the sheet header/tabs and exposes the stub config", async () => {
+    window.history.replaceState(null, "", "/#/sol");
     const card = await mount();
-    const header = card._sheetHeader("RUM", "Stue", "<b>22,9°</b>");
-    const tabs = card._sheetTabs([{ key: "a", label: "A", route: "a" }], "a");
+    const header = card.shadowRoot!.querySelector(".sheet-head");
+    const tabs = card.shadowRoot!.querySelector(".sheet-tabs");
 
-    expect(header).toContain('class="sheet-head"');
-    expect(header).toContain('data-act="close"');
-    expect(header).toContain("<b>22,9°</b>");
-    expect(tabs).toContain('class="tab active"');
+    expect(header).not.toBeNull();
+    expect(header!.querySelector(".sheet-title")).toHaveTextContent("Sol");
+    expect(header!.querySelector(".sheet-close")).not.toBeNull();
+    expect(tabs).not.toBeNull();
+    expect(tabs!.querySelector(".tab.active")).not.toBeNull();
     expect(ArcusCard.getStubConfig()).toEqual({
       type: "custom:arcus-card",
     });
