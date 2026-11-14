@@ -1466,6 +1466,10 @@ arcus-sheets {
   overflow: hidden;
 }
 
+/* A chart that follows a readings grid needs its own breathing room; the
+   grid has no bottom margin and the chart has no top margin. */
+.readings + .chart-box { margin-top: 16px; }
+
 .chart-empty {
   position: absolute;
   inset: 0;
