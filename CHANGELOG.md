@@ -2,7 +2,7 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.4.7 - 2026-11-15
 
 Layout, legibility, and light-theme hardening for a public card on every screen.
 
@@ -11,7 +11,7 @@ Layout, legibility, and light-theme hardening for a public card on every screen.
 - Layout now follows the card's own width with container queries instead of the browser window. A card in a 380 px sidebar, a 600 px dashboard column, and a full-width panel get the right room, vital, chapter, and sheet layout independently of the viewport.
 - Room, vital, and chapter grids adapt by card width; the four fixed vital columns now follow the configured number of vitals, and sparse chapter sets drop the oversized “large” span.
 - The room sheet becomes a bottom sheet below a 900 px card width, so embedded cards no longer get a clipped side panel.
-- Typography has a higher floor: protocol labels are 11 px, secondary text is 11–12 px, and the smallest phone overrides were raised. The tiny 7–9 px labels are gone.
+- Typography has a higher floor: protocol labels are 11 px, secondary text is 11–12 px, and the smallest phone overrides were raised. Most tiny 7–9 px labels were raised; the compact flow-diagram room names remain the only exception.
 - Phone controls are 44 px (top bar, sheet close, primary buttons); desktop buttons and steppers grew to 40 px.
 - Light theme has its own surfaces and text roles: darker muted/accent text, a warm scrim, ink-tinted panels, and stronger hairlines. The palette's text roles now meet AA contrast in all four atmospheres.
 - The day arc drops overlapping prayer labels at tablet widths and keeps only the next prayer/sunrise on the narrowest cards.
@@ -24,7 +24,7 @@ Layout, legibility, and light-theme hardening for a public card on every screen.
 ### Verified
 
 - 459 tests, typecheck, lint, Fallow gates, build, size budget (395.2 KB gzip), and Storybook.
-- Visual baselines need the usual CI refresh (`gh workflow run Visual -f update_snapshots=true`).
+- Visual baselines were refreshed through the Visual workflow.
 
 ## 0.4.6 - 2026-11-15
 

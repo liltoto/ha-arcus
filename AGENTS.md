@@ -3,7 +3,7 @@
 Arcus is a Home Assistant Marketplace Dashboard plugin: one self-contained
 frontend bundle (`dist/arcus.js`), a dashboard strategy, and two visual editors.
 Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
-`v0.4.6`. CI runs on Node 22 with pnpm 12; `tsc` is strict.
+`v0.4.7`. CI runs on Node 22 with pnpm 12; `tsc` is strict.
 
 ## Commands
 
@@ -148,6 +148,10 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
 - In `css()` conditions use underscore keys (`_phone`, `_compact`, `_light`).
   `globalCss` is the base layer and loses to utilities, so keep component
   responsive/density overrides in `css()`.
+- `.app` is the named `arcus` inline-size container, so layout conditions are
+  `@container arcus` (`_phone`, `_tablet`, `_cardSm`, `_cardMd`) and `cqw`
+  units, not viewport media queries. The host itself still follows the HA
+  viewport.
 - When generating HTML strings, put `c()` on the element that owns a standalone
   style (`wday`, `price-bars`, …); child classes can rely on nested selectors.
 - A chart that sets `pointer-events: none` must restore `pointer-events: auto`
