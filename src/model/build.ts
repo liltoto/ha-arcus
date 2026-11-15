@@ -38,6 +38,7 @@ import {
   resolveEntityRef,
 } from "./discover";
 import { discoverSystems } from "./discover-systems";
+import { filterOk } from "./filter";
 import { lightIdsForGroups } from "./lights";
 
 const MAX_CHEAP_HOURS = 3;
@@ -1095,13 +1096,7 @@ function pushFilterAlert(
   const filterAlarm = isOnState(
     stringState(hass, config.ventilation?.filterAlarm),
   );
-  if (
-    (filterState &&
-      !["OK", "Nej", "Neutral", "off", "unknown", "unavailable"].includes(
-        filterState,
-      )) ||
-    filterAlarm
-  ) {
+  if (!filterOk(filterState) || filterAlarm) {
     const title = config.ventilation?.name
       ? t("alerts.filterTitle").replace(/^Nilan\b/, config.ventilation.name)
       : t("alerts.filterTitle");
@@ -1399,7 +1394,7 @@ export function buildModel(
 
   const alerts = buildAlerts(
     hass,
-    config,
+    resolved,
     rooms,
     solar,
     water,

@@ -1,4 +1,5 @@
 import { formatNumber } from "../../../format";
+import { filterOk } from "../../../model/filter";
 import type {
   ArcusHass,
   TemperatureUnit,
@@ -20,7 +21,6 @@ import {
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { c } from "../../styles/classes";
 import {
-  filterOk,
   resolveVentilationView,
   type SheetLanguage,
 } from "./ventilation/ventilation-view";
