@@ -2,6 +2,27 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.6 - 2026-11-15
+
+Performance and correctness pass over the React surface.
+
+### Changed
+
+- History batches are fetched through a bounded pool (four in flight) instead of one 4-entity request after another, so charts fill without a startup waterfall.
+- `applyGraph` diffs the `data-g*` attributes before writing; re-applying identical chart data performs no DOM writes. `parseGraph` caches the parsed dataset per element, and `DayBars` skips unchanged `innerHTML` rebuilds.
+- `QuickActions` subscribes only to the configured toggle entities instead of the whole `hass` object. `TopBar` reads the card's `personHome` binding, `DayArc` reads `model.language`, and `RoomBody` depends on chart entity IDs rather than the `hass` object.
+- `SegmentedTabs` depends on a stable tab signature, `SolarBody` memoizes its tab array, and the sheet drag pointer listener is passive.
+- `HistoryChart` writes its hover dataset in `useEffect` instead of blocking paint.
+
+### Fixed
+
+- `config.person` now takes precedence in `_personId`, so the top-bar label and presence dot agree when another person is home.
+- Indoor averages and the rooms meta filter `room.kind !== "outdoor"` instead of the `skur` area id, so arbitrary outdoor rooms no longer skew the indoor figures.
+
+### Verified
+
+- 454 tests, coverage 88.8% / 74.2% / 92.0%, typecheck, lint, Fallow audit, build, size budget (394.2 KB gzip), Storybook, and the functional graph-tooltip visual tests.
+
 ## 0.4.5 - 2026-11-15
 
 Web Interface Guidelines pass: keyboard, screen-reader, and mobile-interaction fixes across the React tree.

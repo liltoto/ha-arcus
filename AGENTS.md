@@ -3,7 +3,7 @@
 Arcus is a Home Assistant Marketplace Dashboard plugin: one self-contained
 frontend bundle (`dist/arcus.js`), a dashboard strategy, and two visual editors.
 Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
-`v0.4.5`. CI runs on Node 22 with pnpm 12; `tsc` is strict.
+`v0.4.6`. CI runs on Node 22 with pnpm 12; `tsc` is strict.
 
 ## Commands
 
