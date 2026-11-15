@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { areaPath, sparkPath } from "../../render/charts";
 import { applyGraph, type GraphInput } from "../../render/graph";
 import type { Translator } from "../../types";
@@ -67,7 +67,7 @@ export function HistoryChart({
     })),
   };
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const box =
       svgRef.current?.closest(".chart-box") ??
       svgRef.current?.parentElement ??

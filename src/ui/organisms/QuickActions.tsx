@@ -1,6 +1,8 @@
+import { useMemo } from "react";
+import { useStore } from "zustand";
 import { firstEntity } from "../../actions";
 import { Icon } from "../atoms/Icon";
-import { useActions, useConfig, useHass, useTranslator } from "../hooks";
+import { useActions, useArcusStore, useConfig, useTranslator } from "../hooks";
 import { c } from "../styles/classes";
 
 interface QuickButtonProps {
@@ -56,10 +58,41 @@ function QuickButton({
 export function QuickActions() {
   const config = useConfig();
   const t = useTranslator();
-  const hass = useHass();
+  const store = useArcusStore();
   const actions = useActions();
 
   const configured = config.quick_actions.length > 0;
+
+  /**
+   * The toggle entities this section cares about. With no configured toggles
+   * the list is empty, so the selector below always returns the same string
+   * and an unrelated state push cannot re-render this section.
+   */
+  const toggleEntities = useMemo(
+    () =>
+      config.quick_actions
+        .filter((quick) => quick.action.action === "toggle")
+        .map((quick) => quick.entity ?? firstEntity(quick.action))
+        .filter((entity): entity is string => Boolean(entity)),
+    [config.quick_actions],
+  );
+
+  // A string snapshot subscribes to only those entities: Zustand compares the
+  // selector result, so a changed room sensor leaves it untouched.
+  const toggleStates = useStore(store, (state) =>
+    toggleEntities
+      .map((entity) => `${entity}:${state.hass.states?.[entity]?.state ?? ""}`)
+      .join("|"),
+  );
+
+  const onEntities = useMemo(() => {
+    const entities = new Set<string>();
+    for (const pair of toggleStates.split("|")) {
+      if (!pair.endsWith(":on")) continue;
+      entities.add(pair.slice(0, pair.lastIndexOf(":")));
+    }
+    return entities;
+  }, [toggleStates]);
 
   const openMap = () => {
     try {
@@ -90,10 +123,7 @@ export function QuickActions() {
           ? config.quick_actions.map((quick, index) => {
               const entity = quick.entity ?? firstEntity(quick.action);
               const toggle = quick.action.action === "toggle";
-              const on =
-                toggle && entity
-                  ? hass.states?.[entity]?.state === "on"
-                  : false;
+              const on = toggle && entity ? onEntities.has(entity) : false;
               return (
                 <QuickButton
                   key={`${quick.label}-${index}`}

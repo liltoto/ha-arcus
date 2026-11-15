@@ -54,6 +54,28 @@ export interface ParsedGraph {
 
 const GRAPH_ATTRS = ["graph", "gv", "gs", "gp", "gt0", "gt1", "gu", "gd"];
 
+/** Raw attribute names, in the order used to sign a chart's dataset. */
+const RAW_GRAPH_ATTRS = [
+  "data-graph",
+  "data-gv",
+  "data-gs",
+  "data-gp",
+  "data-gt0",
+  "data-gt1",
+  "data-gu",
+  "data-gd",
+] as const;
+
+/**
+ * Parsed datasets by owning element. Charts re-apply the same attributes on
+ * every commit and the readout re-parses on every pointermove, so keep the
+ * result until one of the raw attributes actually changes.
+ */
+const parsedCache = new WeakMap<
+  Element,
+  { sig: string; value: ParsedGraph | null }
+>();
+
 function escapeAttr(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -104,10 +126,16 @@ export function graphAttrs(input: GraphInput): string {
 
 /** Assign the attributes in place; used when the card redraws a spark. */
 export function applyGraph(element: Element, input: GraphInput | null): void {
-  for (const name of GRAPH_ATTRS) element.removeAttribute(`data-${name}`);
-  if (!input) return;
-  for (const [key, value] of Object.entries(graphDataset(input))) {
-    element.setAttribute(`data-${key}`, value);
+  const dataset = input ? graphDataset(input) : null;
+  for (const name of GRAPH_ATTRS) {
+    const attr = `data-${name}`;
+    const next = dataset?.[name];
+    const current = element.getAttribute(attr);
+    if (next === undefined) {
+      if (current !== null) element.removeAttribute(attr);
+      continue;
+    }
+    if (current !== next) element.setAttribute(attr, next);
   }
 }
 
@@ -158,68 +186,113 @@ function graphDataset(input: GraphInput): Record<string, string> {
   return dataset;
 }
 
-/** Read the attributes back when the pointer enters a chart. */
-export function parseGraph(element: Element): ParsedGraph | null {
-  const mode = element.getAttribute("data-graph");
-  if (mode !== "line" && mode !== "bars" && mode !== "timed") return null;
+function graphSignature(element: Element): string {
+  let sig = "";
+  for (const name of RAW_GRAPH_ATTRS) {
+    const raw = element.getAttribute(name);
+    // Length-prefixed frames keep null, an empty string, embedded separators
+    // and neighbouring values from ever producing the same signature.
+    sig += raw === null ? "-" : `${raw.length}:${raw};`;
+  }
+  return sig;
+}
 
-  const unit = element.getAttribute("data-gu") ?? "";
+/**
+ * Read the attributes back when the pointer enters a chart.
+ *
+ * The returned object is shared with the cache: treat it as read-only.
+ */
+export function parseGraph(element: Element): ParsedGraph | null {
+  const sig = graphSignature(element);
+  const cached = parsedCache.get(element);
+  if (cached && cached.sig === sig) return cached.value;
+  const value = readGraph(element);
+  parsedCache.set(element, { sig, value });
+  return value;
+}
+
+interface GraphMeta {
+  unit: string;
+  decimals: number;
+  start: number;
+  end: number;
+}
+
+function readGraphMode(element: Element): GraphMode | null {
+  const mode = element.getAttribute("data-graph");
+  return mode === "line" || mode === "bars" || mode === "timed" ? mode : null;
+}
+
+function readGraphMeta(element: Element): GraphMeta {
   const decimals = Number(element.getAttribute("data-gd") ?? 0);
   const start = Number(element.getAttribute("data-gt0") ?? 0);
   const end = Number(element.getAttribute("data-gt1") ?? 0);
+  return {
+    unit: element.getAttribute("data-gu") ?? "",
+    decimals: Number.isFinite(decimals) ? decimals : 0,
+    start: Number.isFinite(start) ? start : 0,
+    end: Number.isFinite(end) ? end : 0,
+  };
+}
 
-  if (mode === "timed") {
-    const points = decodePoints(element.getAttribute("data-gp"));
-    if (!points.length) return null;
-    return {
-      mode,
-      points,
-      series: [
-        {
-          label: "",
-          color: "",
-          values: points.map((point) => point.v),
-          unit,
-          decimals: Number.isFinite(decimals) ? decimals : 0,
-        },
-      ],
-      start: Number.isFinite(start) ? start : points[0].t,
-      end: Number.isFinite(end) ? end : points[points.length - 1].t,
-    };
+function readTimedGraph(
+  element: Element,
+  mode: GraphMode,
+  meta: GraphMeta,
+): ParsedGraph | null {
+  const points = decodePoints(element.getAttribute("data-gp"));
+  if (!points.length) return null;
+  return {
+    mode,
+    points,
+    series: [
+      {
+        label: "",
+        color: "",
+        values: points.map((point) => point.v),
+        unit: meta.unit,
+        decimals: meta.decimals,
+      },
+    ],
+    start: meta.start,
+    end: meta.end,
+  };
+}
+
+function readMultiSeriesGraph(
+  rawSeries: string,
+  mode: GraphMode,
+  meta: GraphMeta,
+): ParsedGraph | null {
+  try {
+    const parsed = JSON.parse(rawSeries) as Array<{
+      l?: string;
+      c?: string;
+      v?: string;
+      u?: string;
+      d?: number;
+    }>;
+    const series = parsed
+      .map((entry) => ({
+        label: String(entry.l ?? ""),
+        color: String(entry.c ?? ""),
+        values: decodeValues(entry.v ?? ""),
+        unit: String(entry.u ?? meta.unit),
+        decimals: Number.isFinite(entry.d) ? Number(entry.d) : meta.decimals,
+      }))
+      .filter((entry) => entry.values.length > 0);
+    if (!series.length) return null;
+    return { mode, points: null, series, start: meta.start, end: meta.end };
+  } catch {
+    return null;
   }
+}
 
-  const rawSeries = element.getAttribute("data-gs");
-  if (rawSeries) {
-    try {
-      const parsed = JSON.parse(rawSeries) as Array<{
-        l?: string;
-        c?: string;
-        v?: string;
-        u?: string;
-        d?: number;
-      }>;
-      const series = parsed
-        .map((entry) => ({
-          label: String(entry.l ?? ""),
-          color: String(entry.c ?? ""),
-          values: decodeValues(entry.v ?? ""),
-          unit: String(entry.u ?? unit),
-          decimals: Number.isFinite(entry.d) ? Number(entry.d) : decimals,
-        }))
-        .filter((entry) => entry.values.length > 0);
-      if (!series.length) return null;
-      return {
-        mode,
-        points: null,
-        series,
-        start: Number.isFinite(start) ? start : 0,
-        end: Number.isFinite(end) ? end : 0,
-      };
-    } catch {
-      return null;
-    }
-  }
-
+function readSingleSeriesGraph(
+  element: Element,
+  mode: GraphMode,
+  meta: GraphMeta,
+): ParsedGraph | null {
   const values = decodeValues(element.getAttribute("data-gv"));
   if (!values.length) return null;
   return {
@@ -230,13 +303,23 @@ export function parseGraph(element: Element): ParsedGraph | null {
         label: "",
         color: "",
         values,
-        unit,
-        decimals: Number.isFinite(decimals) ? decimals : 0,
+        unit: meta.unit,
+        decimals: meta.decimals,
       },
     ],
-    start: Number.isFinite(start) ? start : 0,
-    end: Number.isFinite(end) ? end : 0,
+    start: meta.start,
+    end: meta.end,
   };
+}
+
+function readGraph(element: Element): ParsedGraph | null {
+  const mode = readGraphMode(element);
+  if (!mode) return null;
+  const meta = readGraphMeta(element);
+  if (mode === "timed") return readTimedGraph(element, mode, meta);
+  const rawSeries = element.getAttribute("data-gs");
+  if (rawSeries) return readMultiSeriesGraph(rawSeries, mode, meta);
+  return readSingleSeriesGraph(element, mode, meta);
 }
 
 function indexAt(fraction: number, length: number, mode: GraphMode): number {

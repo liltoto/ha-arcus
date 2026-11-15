@@ -91,6 +91,25 @@ describe("TopBar", () => {
     ).toBe("var(--muted)");
   });
 
+  it("reads the card's personHome binding instead of scanning hass", () => {
+    // The card resolves the configured person before publishing, so an
+    // unrelated person entity at home must not flip the dot on its own.
+    const hass = makeHass();
+    hass.states["person.liltoto"] = {
+      ...hass.states["person.liltoto"],
+      state: "not_home",
+    };
+
+    const { container } = renderTopBar({
+      hass,
+      bindings: { ...BINDINGS, personHome: "1" },
+    });
+
+    expect(
+      container.querySelector<HTMLElement>(".pill.name .dot")?.style.background,
+    ).toBe("var(--sage)");
+  });
+
   it("hides the alert pill when the model has no alerts", () => {
     const { container } = renderTopBar({
       model: { ...baseModel, alerts: [] },

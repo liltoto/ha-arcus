@@ -5,7 +5,6 @@ import {
   useAtmoMode,
   useBindings,
   useConfig,
-  useHass,
   useModel,
   useTranslator,
 } from "../hooks";
@@ -38,17 +37,11 @@ export function TopBar({ className }: TopBarProps = {}) {
   const bindings = useBindings();
   const model = useModel();
   const actions = useActions();
-  const hass = useHass();
   const atmo = useAtmoMode();
 
-  const configuredPerson = config.person?.trim();
-  const personHome = configuredPerson
-    ? hass.states[configuredPerson]?.state === "home"
-    : Object.keys(hass.states).some(
-        (entityId) =>
-          entityId.startsWith("person.") &&
-          hass.states[entityId]?.state === "home",
-      );
+  // The card resolves the configured/first person once per publish, so the
+  // dot and the label below can never disagree.
+  const personHome = bindings.personHome === "1";
 
   const cycleAtmo = () => {
     const next = ATMO_ORDER[(ATMO_ORDER.indexOf(atmo) + 1) % ATMO_ORDER.length];

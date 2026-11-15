@@ -372,6 +372,8 @@ export class ArcusCard extends HTMLElement {
 
   private _personId(): string | undefined {
     const states = this._hass?.states ?? {};
+    const configured = this._config.person?.trim();
+    if (configured && states[configured]) return configured;
     const ids = Object.keys(states).filter((id) => id.startsWith("person."));
     return ids.find((id) => states[id]?.state === "home") ?? ids[0];
   }
@@ -442,7 +444,7 @@ export class ArcusCard extends HTMLElement {
 
   _indoor(): number | null {
     const values = this._model.rooms
-      .filter((room) => room.id !== "skur")
+      .filter((room) => room.kind !== "outdoor")
       .map((room) => this._tempFor(room).v)
       .filter((value): value is number => value !== null);
     if (values.length) {
@@ -545,7 +547,9 @@ export class ArcusCard extends HTMLElement {
     const next = this._nextPrayer();
     const person = this._personState();
     const language = this._language;
-    const displayRooms = this._model.rooms.filter((room) => room.id !== "skur");
+    const displayRooms = this._model.rooms.filter(
+      (room) => room.kind !== "outdoor",
+    );
     const stats = this._model.roomStats;
     const open = displayRooms.reduce(
       (total, room) => total + (stats?.[room.id]?.open ?? 0),
@@ -596,6 +600,7 @@ export class ArcusCard extends HTMLElement {
             ? "ude"
             : "away"
           : person || "–";
+    bindings.personHome = person === "home" ? "1" : "0";
     bindings.weatherTemp =
       weather.temp === null
         ? "–"

@@ -165,6 +165,89 @@ describe("graph attributes", () => {
     expect(element.getAttribute("data-gv")).toBeNull();
   });
 
+  test("applyGraph with identical data performs no DOM writes", () => {
+    const element = document.createElement("div");
+    const input: GraphInput = {
+      start: 0,
+      end: 10,
+      unit: "W",
+      decimals: 0,
+      series: [{ values: [1, 2] }],
+    };
+    applyGraph(element, input);
+
+    const set = vi.spyOn(element, "setAttribute");
+    const remove = vi.spyOn(element, "removeAttribute");
+    applyGraph(element, {
+      start: 0,
+      end: 10,
+      unit: "W",
+      decimals: 0,
+      series: [{ values: [1, 2] }],
+    });
+
+    expect(set).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  test("applyGraph only writes the attribute whose value changed", () => {
+    const element = document.createElement("div");
+    applyGraph(element, {
+      start: 0,
+      end: 10,
+      series: [{ values: [1, 2] }],
+    });
+
+    const set = vi.spyOn(element, "setAttribute");
+    applyGraph(element, {
+      start: 0,
+      end: 20,
+      series: [{ values: [1, 2] }],
+    });
+
+    expect(set).toHaveBeenCalledTimes(1);
+    expect(set).toHaveBeenCalledWith("data-gt1", "20");
+    expect(element.getAttribute("data-gt1")).toBe("20");
+    expect(element.getAttribute("data-gv")).toBe("1;2");
+  });
+
+  test("applyGraph(null) clears every graph attribute and nothing else", () => {
+    const element = document.createElement("div");
+    for (const name of ["graph", "gv", "gs", "gp", "gt0", "gt1", "gu", "gd"]) {
+      element.setAttribute(`data-${name}`, "x");
+    }
+    element.setAttribute("data-chart", "keep");
+
+    applyGraph(element, null);
+
+    for (const name of ["graph", "gv", "gs", "gp", "gt0", "gt1", "gu", "gd"]) {
+      expect(element.hasAttribute(`data-${name}`)).toBe(false);
+    }
+    expect(element.getAttribute("data-chart")).toBe("keep");
+  });
+
+  test("parseGraph returns the cached graph until an attribute changes", () => {
+    const element = elementWith(
+      graphAttrs({
+        start: 0,
+        end: 10,
+        unit: "W",
+        decimals: 0,
+        series: [{ values: [1, 2] }],
+      }),
+    );
+
+    const first = parseGraph(element);
+    expect(parseGraph(element)).toBe(first);
+
+    element.setAttribute("data-gv", "3;4");
+    const changed = parseGraph(element);
+
+    expect(changed).not.toBe(first);
+    expect(changed?.series[0].values).toEqual([3, 4]);
+    expect(parseGraph(element)).toBe(changed);
+  });
+
   test("missing or malformed data is ignored", () => {
     expect(parseGraph(document.createElement("div"))).toBeNull();
 

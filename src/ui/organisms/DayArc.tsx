@@ -1,11 +1,9 @@
 import { formatTime } from "../../format";
-import { resolveLanguage } from "../../localize";
 import { arcPoint, priceColor } from "../../render/charts";
 import type { ArcusConfig, HomeModel, Language, Translator } from "../../types";
 import type { HistoryCache } from "../../data/history";
 import {
   useConfig,
-  useHass,
   useHistory,
   useHistoryVersion,
   useModel,
@@ -194,14 +192,13 @@ function buildLabels(
 export function DayArc() {
   const model = useModel();
   const config = useConfig();
-  const hass = useHass();
   const history = useHistory();
   const now = useNow();
   const t = useTranslator();
   useHistoryVersion();
 
   const current = now();
-  const language = resolveLanguage(hass.language, config);
+  const language = model.language;
   const point = arcPoint(dayFraction(current));
   const series = buildSeries(history, config, model, current);
   const price = model.price;

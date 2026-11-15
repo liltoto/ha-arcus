@@ -66,6 +66,15 @@ const CACHE_MS = 5 * 60 * 1000;
  */
 const FETCH_BATCH = 4;
 
+/**
+ * How many batches may be in flight at once. Startup asks for every entity on
+ * the dashboard, so waiting for one batch before starting the next turned the
+ * first paint into a serial request waterfall; an unbounded fan-out would
+ * instead flood the recorder. Four batches (sixteen entities) matches the
+ * per-request budget above without starving the recorder.
+ */
+const FETCH_CONCURRENCY = 4;
+
 /** Opt-in console diagnostics: set `localStorage.arcus-debug = "1"`. */
 function debugHistory(message: string, details: unknown): void {
   try {
@@ -277,9 +286,22 @@ export class HistoryCache {
   }
 
   private async fetch(entityIds: string[], hours: number): Promise<void> {
+    const batches: string[][] = [];
     for (let index = 0; index < entityIds.length; index += FETCH_BATCH) {
-      await this.fetchBatch(entityIds.slice(index, index + FETCH_BATCH), hours);
+      batches.push(entityIds.slice(index, index + FETCH_BATCH));
     }
+
+    // Worker pool: at most FETCH_CONCURRENCY batches are in flight, and every
+    // batch is still started in request order.
+    let next = 0;
+    const worker = async (): Promise<void> => {
+      while (next < batches.length) {
+        const batch = batches[next++];
+        await this.fetchBatch(batch, hours);
+      }
+    };
+    const workers = Math.min(FETCH_CONCURRENCY, batches.length);
+    await Promise.all(Array.from({ length: workers }, worker));
   }
 
   private async fetchBatch(entityIds: string[], hours: number): Promise<void> {

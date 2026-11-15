@@ -220,6 +220,28 @@ describe("ArcusCard", () => {
     );
   });
 
+  test("prefers config.person over a different person who is home", async () => {
+    const hass = makeHass();
+    hass.states["person.liltoto"] = {
+      ...hass.states["person.liltoto"],
+      state: "not_home",
+    };
+    hass.states["person.guest"] = {
+      ...hass.states["person.liltoto"],
+      entity_id: "person.guest",
+      attributes: { friendly_name: "Guest" },
+      state: "home",
+    };
+
+    const card = await mount(makeConfig({ person: "person.liltoto" }), hass);
+    const pill = card.shadowRoot!.querySelector<HTMLElement>(".pill.name")!;
+
+    expect(pill).toHaveTextContent("ude");
+    expect(pill.querySelector<HTMLElement>(".dot")?.style.background).toBe(
+      "var(--muted)",
+    );
+  });
+
   test("cycles the atmosphere through the card store", async () => {
     const card = await mount();
     const app = card.shadowRoot!.querySelector<HTMLElement>(".app")!;

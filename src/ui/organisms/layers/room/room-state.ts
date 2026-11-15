@@ -91,7 +91,7 @@ export function roomStatFor(
 /**
  * `skur` is a top-level sheet route with no sub-segment, so it resolves the
  * skur room directly; every other room uses the route's sub. The prototype
- * fell back to the first discovered room, which is the first non-skur room.
+ * fell back to the first discovered room, which is the first indoor room.
  */
 export function resolveRoom(
   model: HomeModel,
@@ -106,7 +106,7 @@ export function resolveRoom(
   }
   return (
     model.rooms.find((room) => room.id === route.sub) ??
-    model.rooms.find((room) => room.id !== "skur" && room.kind !== "outdoor") ??
+    model.rooms.find((room) => room.kind !== "outdoor") ??
     model.rooms.find((room) => room.id !== "skur") ??
     null
   );
