@@ -2,6 +2,22 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.8 - 2026-11-15
+
+Accessibility and sensor-state follow-up.
+
+### Changed
+
+- Room and chapter cards are now articles with real `h3` headings and one stretched card-link button. The whole card stays clickable, heading navigation works, and the accessible name no longer reads every status line and SVG label.
+- Light rows in the room and lights sheets use a full-row toggle button; the brightness slider stays outside it. The atmosphere control names its current mode.
+- Chips and the danger button use text-role palette tokens instead of fill tokens. The last 7.5 px flow-diagram label is 10 px.
+- Charts distinguish loading, empty, and unavailable sensors. Non-ready charts collapse to a compact note, and room readouts only render tiles for sensors the room actually has.
+- `HistoryCache.status()` reports `idle`, `loading`, `ready`, or `empty`, including entities the recorder omits and empty results after a refresh.
+
+### Verified
+
+- 491 tests, coverage 89.0% statements / 74.7% branches / 92.2% functions, typecheck, lint, Fallow gates, build, size budget (396.6 KB gzip), Storybook, functional Playwright checks, and refreshed visual baselines.
+
 ## 0.4.7 - 2026-11-15
 
 Layout, legibility, and light-theme hardening for a public card on every screen.
