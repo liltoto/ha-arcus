@@ -220,7 +220,7 @@ export const sheetStyles: Record<string, string> = {
   }),
   readings: css({
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
     gap: "10px",
     _phone: { gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))" },
   }),
