@@ -44,6 +44,21 @@ describe("ArcusConfigEditor", () => {
     expect(changes[0]).toMatchObject({ title: "Mit hjem" });
   });
 
+  test("editing the text size emits the new scale", () => {
+    const editor = new ArcusConfigEditor();
+    editor.setConfig({ type: "custom:arcus-card" });
+    editor.hass = makeHass();
+    document.body.appendChild(editor);
+
+    const changes = trackConfigChanges(editor);
+    const select = field<HTMLSelectElement>(editor.shadowRoot!, "text_scale");
+    select.value = "large";
+    change(select);
+
+    expect(changes).toHaveLength(1);
+    expect(changes[0]).toMatchObject({ text_scale: "large" });
+  });
+
   test("invalid advanced JSON shows an error and emits nothing", () => {
     const editor = new ArcusConfigEditor();
     editor.setConfig({ type: "custom:arcus-card", title: "Hjem" });

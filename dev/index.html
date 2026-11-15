@@ -31,17 +31,23 @@
     <script type="module">
       import { makeConfig, makeHass } from "./fixture.js";
       await import("../dist/arcus.js");
+      const params = new URLSearchParams(location.search);
       const el = document.createElement("arcus-card");
       document.body.appendChild(el);
-      el.setConfig(makeConfig());
+      const text = params.get("text");
+      el.setConfig(
+        makeConfig(
+          text === "large" || text === "xlarge" ? { text_scale: text } : {},
+        ),
+      );
       const hass = makeHass();
-      if (new URLSearchParams(location.search).get("light") === "1") {
+      if (params.get("light") === "1") {
         hass.themes.darkMode = false;
       }
       setTimeout(() => (el.hass = hass), 40);
       document.getElementById("pending").remove();
 
-      if (new URLSearchParams(location.search).get("full") === "1") {
+      if (params.get("full") === "1") {
         const style = document.createElement("style");
         style.textContent = `:host{height:auto!important;min-height:0!important}.app{height:auto!important;min-height:0!important;overflow:visible!important}.scroll{position:relative!important;inset:auto!important;height:auto!important;overflow:visible!important}`;
         setTimeout(() => el.shadowRoot.appendChild(style), 100);

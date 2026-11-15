@@ -37,6 +37,13 @@ describe("ArcusCard", () => {
     expect(card.shadowRoot!.querySelector('[data-room="stue"]')).not.toBeNull();
   });
 
+  test("publishes the configured text scale on the app shell", async () => {
+    const card = await mount(makeConfig({ text_scale: "large" }));
+    expect(
+      card.shadowRoot!.querySelector<HTMLElement>(".app")?.dataset.text,
+    ).toBe("large");
+  });
+
   test("renders a calm empty state with no areas", async () => {
     const card = await mount(
       makeConfig(),

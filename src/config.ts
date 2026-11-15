@@ -25,6 +25,7 @@ import type {
   SecurityConfig,
   SolarConfig,
   TemperatureUnit,
+  TextScaleSetting,
   UnitsConfig,
   VentilationConfig,
   VitalItemConfig,
@@ -44,6 +45,7 @@ export const DEFAULT_CONFIG: ArcusConfig = {
   appearance: "auto",
   atmosphere: "auto",
   density: "comfortable",
+  text_scale: "normal",
   areas: { include: [], exclude: [], order: [] },
   quick_actions: [],
   rooms: {},
@@ -55,6 +57,7 @@ const LANGUAGE_SETTINGS = ["auto", "da", "en"] as const;
 const APPEARANCE_SETTINGS = ["auto", "dark", "light"] as const;
 const ATMOSPHERE_SETTINGS = ["auto", "night", "dawn", "day", "dusk"] as const;
 const DENSITY_SETTINGS = ["comfortable", "compact"] as const;
+const TEXT_SCALE_SETTINGS = ["normal", "large", "xlarge"] as const;
 const ROOM_KINDS: readonly RoomKind[] = ["indoor", "outdoor", "utility"];
 const TEMPERATURE_UNITS: readonly TemperatureUnit[] = ["°C", "°F"];
 const VITAL_PRESET_KEYS: readonly VitalPresetKey[] = [
@@ -782,6 +785,12 @@ export function normalizeConfig(input: unknown): ArcusConfig {
       "density",
       DENSITY_SETTINGS,
       DEFAULT_CONFIG.density,
+    ),
+    text_scale: readEnum<TextScaleSetting>(
+      raw.text_scale,
+      "text_scale",
+      TEXT_SCALE_SETTINGS,
+      DEFAULT_CONFIG.text_scale,
     ),
     areas: normalizeAreas(raw.areas),
     quick_actions: normalizeQuickActions(raw.quick_actions),

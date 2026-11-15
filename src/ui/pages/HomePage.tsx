@@ -16,6 +16,7 @@ export function HomePage() {
       atmo={atmo}
       dark={dark}
       density={config.density}
+      textScale={config.text_scale}
       sheet={<SheetFrame />}
     />
   );

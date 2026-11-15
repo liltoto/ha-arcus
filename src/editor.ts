@@ -559,6 +559,12 @@ const DENSITY_OPTIONS = [
   ["compact", "Compact"],
 ] as const;
 
+const TEXT_SCALE_OPTIONS = [
+  ["normal", "Normal"],
+  ["large", "Large"],
+  ["xlarge", "Extra large"],
+] as const;
+
 /** Shared styles for both editors. */
 export const EDITOR_STYLES = `
   :host {
@@ -1089,6 +1095,7 @@ export class ArcusConfigEditor extends HTMLElement {
           ${selectMarkup("appearance", "Appearance", APPEARANCE_OPTIONS, this.selectValue("appearance", "auto"))}
           ${selectMarkup("atmosphere", "Atmosphere", ATMOSPHERE_OPTIONS, this.selectValue("atmosphere", "auto"))}
           ${selectMarkup("density", "Density", DENSITY_OPTIONS, this.selectValue("density", "comfortable"))}
+          ${selectMarkup("text_scale", "Text size", TEXT_SCALE_OPTIONS, this.selectValue("text_scale", "normal"))}
         </div>
         <section class="section">
           <h3>Discovery</h3>
@@ -1239,7 +1246,8 @@ export class ArcusConfigEditor extends HTMLElement {
       name === "language" ||
       name === "appearance" ||
       name === "atmosphere" ||
-      name === "density"
+      name === "density" ||
+      name === "text_scale"
     ) {
       setPath(this._config, name, raw);
       return;

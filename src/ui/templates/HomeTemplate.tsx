@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
-import type { AtmosphereSetting, DensitySetting } from "../../types";
+import type {
+  AtmosphereSetting,
+  DensitySetting,
+  TextScaleSetting,
+} from "../../types";
 import { ChapterGrid } from "../organisms/ChapterGrid";
 import { Footer } from "../organisms/Footer";
 import { Hero } from "../organisms/Hero";
@@ -13,6 +17,7 @@ export interface HomeTemplateProps {
   atmo: AtmosphereSetting;
   dark: boolean;
   density: DensitySetting;
+  textScale: TextScaleSetting;
   sheet: ReactNode;
 }
 
@@ -39,6 +44,7 @@ export function HomeTemplate({
   atmo,
   dark,
   density,
+  textScale,
   sheet,
 }: HomeTemplateProps) {
   return (
@@ -46,6 +52,7 @@ export function HomeTemplate({
       className={c("app", !dark && "light")}
       data-atmo={atmo}
       data-density={density}
+      data-text={textScale}
     >
       <div className={c("sky")} />
       <div className={c("stars")}>
