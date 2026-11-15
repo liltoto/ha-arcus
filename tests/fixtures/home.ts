@@ -102,6 +102,7 @@ function baseConfig(): ArcusConfig {
     appearance: "auto",
     atmosphere: "auto",
     density: "comfortable",
+    text_scale: "normal",
     areas: {
       include: [...HOME_AREA_IDS],
       exclude: [],

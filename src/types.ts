@@ -118,6 +118,7 @@ export type LanguageSetting = "auto" | Language;
 export type AppearanceSetting = "auto" | "dark" | "light";
 export type AtmosphereSetting = "auto" | "night" | "dawn" | "day" | "dusk";
 export type DensitySetting = "comfortable" | "compact";
+export type TextScaleSetting = "normal" | "large" | "xlarge";
 
 export type EntityId = string;
 
@@ -442,6 +443,7 @@ export interface ArcusConfigInput {
   appearance?: AppearanceSetting;
   atmosphere?: AtmosphereSetting;
   density?: DensitySetting;
+  text_scale?: TextScaleSetting;
   auto_discover?: boolean;
   group_by_floor?: boolean;
   person?: string;
@@ -474,6 +476,7 @@ export interface ArcusConfig {
   appearance: AppearanceSetting;
   atmosphere: AtmosphereSetting;
   density: DensitySetting;
+  text_scale: TextScaleSetting;
   auto_discover?: boolean;
   group_by_floor?: boolean;
   person?: string;

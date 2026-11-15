@@ -171,13 +171,24 @@ export default defineConfig({
         '"Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
       "--mono":
         '"SFMono-Regular", "Cascadia Code", "Roboto Mono", ui-monospace, monospace',
+      /**
+       * Recurring UI type roles. The text-scale setting overrides these six
+       * variables, so labels and body copy can grow for a wall display without
+       * touching the component-specific display sizes.
+       */
+      "--arcus-fs-micro": "10px",
+      "--arcus-fs-label": "11px",
+      "--arcus-fs-body": "12px",
+      "--arcus-fs-body-lg": "14px",
+      "--arcus-fs-value-sm": "15px",
+      "--arcus-fs-value": "18px",
       position: "relative",
       height: "100%",
       overflow: "hidden",
       background: "var(--bg-0)",
       color: "var(--text)",
       fontFamily: "var(--sans)",
-      fontSize: "14px",
+      fontSize: "var(--arcus-fs-body-lg)",
       lineHeight: "1.45",
       WebkitFontSmoothing: "antialiased",
       textRendering: "optimizeLegibility",
@@ -187,6 +198,22 @@ export default defineConfig({
       "--arcus-grid-gap": "10px",
       "--arcus-section-gap": "32px",
       "--arcus-sheet-pad": "20px",
+    },
+    ".app[data-text='large']": {
+      "--arcus-fs-micro": "11px",
+      "--arcus-fs-label": "13px",
+      "--arcus-fs-body": "14px",
+      "--arcus-fs-body-lg": "16px",
+      "--arcus-fs-value-sm": "17px",
+      "--arcus-fs-value": "20px",
+    },
+    ".app[data-text='xlarge']": {
+      "--arcus-fs-micro": "12px",
+      "--arcus-fs-label": "14px",
+      "--arcus-fs-body": "16px",
+      "--arcus-fs-body-lg": "18px",
+      "--arcus-fs-value-sm": "19px",
+      "--arcus-fs-value": "22px",
     },
     ".app.light": {
       colorScheme: "light",

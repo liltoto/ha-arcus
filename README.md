@@ -19,7 +19,7 @@ Arcus is a Dashboard plugin for the Home Assistant Marketplace. It installs as o
 - **Chapters that earn their place.** Energy, solar, water, security, ventilation, tech, economy, lights, heating, and alerts only appear when there is data for them.
 - **Sheets for the details.** Room, light, heating, ventilation, energy, solar, water, security, tech, economy, prayer, and alert sheets use the same visual language as the home view.
 - **A dashboard that follows your home.** The strategy generates one panel view containing the card. When you add an area or rename a device, the card rebuilds without a dashboard edit.
-- **Made for the house, not a demo.** Danish and English, automatic dark and light appearance, four times of day, comfortable and compact density, and a layout that follows the card's own width — a 320 px sidebar and a full-width panel use the same components.
+- **Made for the house, not a demo.** Danish and English, automatic dark and light appearance, four times of day, comfortable and compact density, three text sizes for a wall display, and a layout that follows the card's own width — a 320 px sidebar and a full-width panel use the same components.
 - **Keyboard, touch, and motion aware.** Sheets trap focus, close on Escape, primary controls reach 44 px on phones, text and surface colours target AA contrast in both themes, and transitions respect `prefers-reduced-motion`.
 
 ## Requirements
@@ -57,6 +57,7 @@ strategy:
     appearance: auto
     atmosphere: auto
     density: comfortable
+    text_scale: normal
 ```
 
 The strategy generates one panel view with a single `custom:arcus-card`. The card fills the view and handles the room grid, chapters, and sheets.
@@ -101,6 +102,7 @@ language: auto # auto | da | en
 appearance: auto # auto | dark | light
 atmosphere: auto # auto | night | dawn | day | dusk
 density: comfortable # comfortable | compact
+text_scale: normal # normal | large | xlarge
 show_weather_forecast: true
 auto_discover: true
 group_by_floor: false
@@ -121,6 +123,7 @@ chapter_order: [lys, varme, sikkerhed]
 | `appearance`            | `auto`        | `auto` follows the active Home Assistant theme. `dark` and `light` pin the palette.                                                                                                                  |
 | `atmosphere`            | `auto`        | `auto` follows the time of day: night, dawn, day, or dusk.                                                                                                                                           |
 | `density`               | `comfortable` | `comfortable` is the designed layout; `compact` tightens card padding, grid gaps, and sheet padding.                                                                                                 |
+| `text_scale`            | `normal`      | `normal`, `large`, or `xlarge`. Scales labels, body copy, and values for a wall display without changing the layout or display headings.                                                             |
 | `show_weather_forecast` | `true`        | Show the short forecast strip under the vitals.                                                                                                                                                      |
 | `auto_discover`         | `true`        | Fill unconfigured sections (weather, price, solar, water, ventilation, prayers, security) from the HA registries.                                                                                    |
 | `group_by_floor`        | `false`       | Group the room grid by Home Assistant floor.                                                                                                                                                         |
@@ -373,7 +376,7 @@ Supported actions are `perform-action` (and the older `call-service`), `toggle`,
 
 ### Visual editor
 
-The card editor exposes the title, subtitle, language, appearance, atmosphere, density, auto-discovery and floor toggles, unit overrides, chapter toggles, area selection, and the global entity fields. Entity inputs autocomplete from a field-specific list: the weather field offers weather entities, solar power offers power sensors, the alarm field offers alarm panels, and so on. Auto-discovered values appear as placeholders, so most homes only need to review what Arcus already found. Quick actions and detailed room overrides still live in the advanced JSON block. The strategy editor adds the dashboard and view titles and embeds the same card editor, so there is one implementation for both entry points.
+The card editor exposes the title, subtitle, language, appearance, atmosphere, density, text size, auto-discovery and floor toggles, unit overrides, chapter toggles, area selection, and the global entity fields. Entity inputs autocomplete from a field-specific list: the weather field offers weather entities, solar power offers power sensors, the alarm field offers alarm panels, and so on. Auto-discovered values appear as placeholders, so most homes only need to review what Arcus already found. Quick actions and detailed room overrides still live in the advanced JSON block. The strategy editor adds the dashboard and view titles and embeds the same card editor, so there is one implementation for both entry points.
 
 ## Troubleshooting
 

@@ -147,9 +147,35 @@ test("home at 1440 (light) matches the baseline", async ({ page }) => {
   });
 });
 
+test("home at 1440 (large text) matches the baseline", async ({ page }) => {
+  await openHome(page, {
+    width: 1440,
+    height: 1200,
+    query: "full=1&text=large",
+  });
+
+  await expect(page.locator(".app")).toHaveAttribute("data-text", "large");
+  await expectNoHorizontalOverflow(page);
+  await expect(page).toHaveScreenshot("home-1440-large.png", {
+    fullPage: true,
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
 test("home at 360 has no horizontal overflow", async ({ page }) => {
   await openHome(page, { width: 360, height: 844 });
 
+  await expectNoHorizontalOverflow(page);
+});
+
+test("extra-large text has no horizontal overflow at 360", async ({ page }) => {
+  await openHome(page, {
+    width: 360,
+    height: 844,
+    query: "full=1&text=xlarge",
+  });
+
+  await expect(page.locator(".app")).toHaveAttribute("data-text", "xlarge");
   await expectNoHorizontalOverflow(page);
 });
 

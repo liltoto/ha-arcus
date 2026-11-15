@@ -12,6 +12,7 @@ describe("normalizeConfig defaults", () => {
   test("defaults to comfortable, auto language, auto appearance", () => {
     const c = normalizeConfig(card);
     expect(c.density).toBe("comfortable");
+    expect(c.text_scale).toBe("normal");
     expect(c.language).toBe("auto");
     expect(c.appearance).toBe("auto");
     expect(c.atmosphere).toBe("auto");
@@ -98,16 +99,24 @@ describe("enum fields", () => {
       appearance: "light",
       atmosphere: "dawn",
       density: "compact",
+      text_scale: "large",
     });
     expect(c.language).toBe("en");
     expect(c.appearance).toBe("light");
     expect(c.atmosphere).toBe("dawn");
     expect(c.density).toBe("compact");
+    expect(c.text_scale).toBe("large");
   });
 
   test("rejects an invalid density", () => {
     expect(() => normalizeConfig({ ...card, density: "tiny" })).toThrow(
       /density/,
+    );
+  });
+
+  test("rejects an invalid text scale", () => {
+    expect(() => normalizeConfig({ ...card, text_scale: "huge" })).toThrow(
+      /text_scale/,
     );
   });
 
@@ -325,11 +334,16 @@ describe("signature and validation", () => {
     const a = normalizeConfig(card);
     const b = normalizeConfig({ ...card, density: "compact" });
     expect(configSignature(a)).not.toBe(configSignature(b));
+    const c = normalizeConfig({ ...card, text_scale: "large" });
+    expect(configSignature(a)).not.toBe(configSignature(c));
   });
 
   test("validateConfig accepts a valid input and rejects an invalid one", () => {
     expect(() => validateConfig(card)).not.toThrow();
     expect(() => validateConfig({ ...card, density: "tiny" })).toThrow(
+      /Arcus:/,
+    );
+    expect(() => validateConfig({ ...card, text_scale: "huge" })).toThrow(
       /Arcus:/,
     );
   });

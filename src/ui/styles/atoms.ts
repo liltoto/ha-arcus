@@ -56,7 +56,7 @@ export const atomsStyles: Record<string, string> = {
     padding: "0 16px",
     border: "1px solid var(--line-strong)",
     borderRadius: "99px",
-    fontSize: "11px",
+    fontSize: "var(--arcus-fs-label)",
     letterSpacing: "0.1em",
     textTransform: "uppercase",
     color: "var(--text-2)",
@@ -81,7 +81,11 @@ export const atomsStyles: Record<string, string> = {
       borderColor: "color-mix(in srgb, var(--coral) 40%, transparent)",
       background: "color-mix(in srgb, var(--coral) 8%, transparent)",
     },
-    "&.small": { height: "34px", padding: "0 12px", fontSize: "11px" },
+    "&.small": {
+      height: "34px",
+      padding: "0 12px",
+      fontSize: "var(--arcus-fs-label)",
+    },
     "& .ico": { width: "15px", height: "15px" },
     _phone: { height: "44px" },
     _light: {
@@ -122,7 +126,7 @@ export const atomsStyles: Record<string, string> = {
       fontVariantNumeric: "tabular-nums",
       "& small": {
         fontFamily: "var(--sans)",
-        fontSize: "11px",
+        fontSize: "var(--arcus-fs-label)",
         color: "var(--muted)",
       },
     },
@@ -141,7 +145,7 @@ export const atomsStyles: Record<string, string> = {
       height: "32px",
       padding: "0 12px",
       borderRadius: "99px",
-      fontSize: "11px",
+      fontSize: "var(--arcus-fs-label)",
       letterSpacing: "0.08em",
       textTransform: "uppercase",
       color: "var(--muted)",
@@ -193,7 +197,7 @@ export const atomsStyles: Record<string, string> = {
   "light-row": css({
     "& .slider-wrap": { margin: "2px 0 8px 0", paddingLeft: "32px" },
     "& .slider-wrap .pct": {
-      fontSize: "11px",
+      fontSize: "var(--arcus-fs-label)",
       color: "var(--muted)",
       textAlign: "right",
       marginTop: "-2px",
@@ -216,7 +220,7 @@ export const atomsStyles: Record<string, string> = {
     borderRadius: "16px",
     textAlign: "center",
     color: "var(--muted)",
-    fontSize: "11px",
+    fontSize: "var(--arcus-fs-label)",
     lineHeight: "1.6",
     "& .ico": { width: "26px", height: "26px", opacity: 0.6 },
   }),
@@ -225,7 +229,7 @@ export const atomsStyles: Record<string, string> = {
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    fontSize: "11px",
+    fontSize: "var(--arcus-fs-label)",
     color: "var(--muted)",
     letterSpacing: "0.03em",
     "& .dot": {
@@ -279,7 +283,7 @@ export const atomsStyles: Record<string, string> = {
     },
     "& .val": {
       fontFamily: "var(--serif)",
-      fontSize: "11px",
+      fontSize: "var(--arcus-fs-label)",
       color: "var(--text-2)",
       fontVariantNumeric: "tabular-nums",
     },
@@ -298,7 +302,7 @@ export const atomsStyles: Record<string, string> = {
       opacity: 1,
     },
     "& .day-label": {
-      fontSize: "10px",
+      fontSize: "var(--arcus-fs-micro)",
       letterSpacing: "0.12em",
       textTransform: "uppercase",
       color: "var(--muted)",
@@ -310,7 +314,7 @@ export const atomsStyles: Record<string, string> = {
     justifyContent: "center",
     width: "100%",
     height: "100%",
-    fontSize: "11px",
+    fontSize: "var(--arcus-fs-label)",
     letterSpacing: "0.12em",
     textTransform: "uppercase",
     color: "var(--muted)",
@@ -320,7 +324,7 @@ export const atomsStyles: Record<string, string> = {
     "& summary": {
       cursor: "pointer",
       padding: "12px 0 10px",
-      fontSize: "11px",
+      fontSize: "var(--arcus-fs-label)",
       letterSpacing: "0.14em",
       textTransform: "uppercase",
       color: "var(--muted)",
@@ -345,7 +349,7 @@ export const atomsStyles: Record<string, string> = {
     background: "var(--panel)",
     color: "var(--text-2)",
     font: "inherit",
-    fontSize: "11px",
+    fontSize: "var(--arcus-fs-label)",
     backgroundImage:
       "linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%)",
     backgroundPosition: "calc(100% - 13px) 13px, calc(100% - 9px) 13px",
@@ -367,21 +371,21 @@ export const atomsStyles: Record<string, string> = {
     },
     "& b": {
       fontFamily: "var(--serif)",
-      fontSize: "15px",
+      fontSize: "var(--arcus-fs-value-sm)",
       fontWeight: 500,
       color: "var(--text)",
       fontVariantNumeric: "tabular-nums",
       whiteSpace: "nowrap",
     },
     "& small": {
-      fontSize: "10px",
+      fontSize: "var(--arcus-fs-micro)",
       letterSpacing: "0.12em",
       textTransform: "uppercase",
       color: "var(--muted)",
     },
   }),
   "air-flow": css({
-    "& .flow-val": { fontSize: "15px" },
+    "& .flow-val": { fontSize: "var(--arcus-fs-value-sm)" },
   }),
   "house-wrap": css({
     border: "1px solid var(--line)",
@@ -397,7 +401,7 @@ export const atomsStyles: Record<string, string> = {
   }),
   "flow-label": css({
     fontFamily: "var(--sans)",
-    fontSize: "10px",
+    fontSize: "var(--arcus-fs-micro)",
     letterSpacing: "0.12em",
     fill: "var(--muted)",
     textTransform: "uppercase",
@@ -409,7 +413,7 @@ export const atomsStyles: Record<string, string> = {
   }),
   "flow-unit": css({
     fontFamily: "var(--sans)",
-    fontSize: "10px",
+    fontSize: "var(--arcus-fs-micro)",
     fill: "var(--muted)",
   }),
   "house-svg": css({ width: "100%", height: "auto", display: "block" }),
@@ -420,7 +424,7 @@ export const atomsStyles: Record<string, string> = {
   }),
   "house-name": css({
     fontFamily: "var(--sans)",
-    fontSize: "10px",
+    fontSize: "var(--arcus-fs-micro)",
     letterSpacing: "0.1em",
     fill: "var(--muted)",
     textTransform: "uppercase",
@@ -464,7 +468,7 @@ export const atomsStyles: Record<string, string> = {
     borderRadius: "14px",
     background: "var(--panel)",
     "& .k": {
-      fontSize: "11px",
+      fontSize: "var(--arcus-fs-label)",
       letterSpacing: "0.1em",
       textTransform: "uppercase",
       color: "var(--muted)",
@@ -478,7 +482,7 @@ export const atomsStyles: Record<string, string> = {
     },
     "& .v small": {
       fontFamily: "var(--sans)",
-      fontSize: "11px",
+      fontSize: "var(--arcus-fs-label)",
       color: "var(--muted)",
       marginLeft: "2px",
     },
@@ -494,7 +498,7 @@ export const atomsStyles: Record<string, string> = {
     padding: "5px 10px",
     border: "1px solid var(--line)",
     borderRadius: "99px",
-    fontSize: "11px",
+    fontSize: "var(--arcus-fs-label)",
     letterSpacing: "0.1em",
     textTransform: "uppercase",
     color: "var(--muted)",
@@ -544,7 +548,7 @@ export const atomsStyles: Record<string, string> = {
     display: "inline-flex",
     alignItems: "center",
     gap: "4px",
-    fontSize: "11px",
+    fontSize: "var(--arcus-fs-label)",
     letterSpacing: "0.12em",
     textTransform: "uppercase",
     color: "var(--muted)",
@@ -554,7 +558,7 @@ export const atomsStyles: Record<string, string> = {
   note: css({
     padding: "14px 16px",
     borderLeft: "2px solid var(--line-strong)",
-    fontSize: "11px",
+    fontSize: "var(--arcus-fs-label)",
     lineHeight: "1.7",
     color: "var(--muted)",
     "& b": { color: "var(--text-2)", fontWeight: 500 },
@@ -573,7 +577,7 @@ export const atomsStyles: Record<string, string> = {
     background: "color-mix(in srgb, var(--bg-1) 90%, transparent)",
     backdropFilter: "blur(12px)",
     borderTop: "1px solid var(--line)",
-    fontSize: "11px",
+    fontSize: "var(--arcus-fs-label)",
     color: "var(--text-2)",
     "& .txt": { flex: 1 },
     _phone: {
