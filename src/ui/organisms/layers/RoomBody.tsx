@@ -107,6 +107,7 @@ export function RoomBody({ route }: LayerBodyProps) {
           room={room}
           view={view}
           history={history}
+          hass={hass}
           now={now}
           t={t}
           language={language}

@@ -29,6 +29,7 @@ const history = {
   series: () => [],
   window: () => [],
   raw: () => [],
+  status: () => "empty",
 } as unknown as HistoryCache;
 
 const providerState: ArcusStoreState = {

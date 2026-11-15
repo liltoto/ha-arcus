@@ -1,7 +1,14 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type RefObject,
+} from "react";
 import { clampPercent } from "../../../../format";
 import type { Translator } from "../../../../types";
 import { Icon } from "../../../atoms/Icon";
+import { LightRowMain } from "../../../molecules/LightRowMain";
 import { c } from "../../../styles/classes";
 
 export interface RoomLightRowProps {
@@ -18,6 +25,60 @@ export interface RoomLightRowProps {
   t: Translator;
   onToggle: () => void;
   onBrightness: (percent: number) => void;
+}
+
+interface RoomLightSliderProps {
+  sliderRef: RefObject<HTMLInputElement | null>;
+  entityId: string;
+  name: string;
+  pct: number;
+  displayPct: number;
+  sliderStyle: CSSProperties;
+  showPct: boolean;
+  t: Translator;
+  onInputPct: (percent: number) => void;
+}
+
+/** The uncontrolled brightness slider under a light row. */
+function RoomLightSlider({
+  sliderRef,
+  entityId,
+  name,
+  pct,
+  displayPct,
+  sliderStyle,
+  showPct,
+  t,
+  onInputPct,
+}: RoomLightSliderProps) {
+  return (
+    <div className={c("slider-wrap")}>
+      <div className={c("slider-line")}>
+        <Icon name="sun" />
+        <input
+          ref={sliderRef}
+          className={c("range")}
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          data-light-range={entityId}
+          data-range-entity={entityId}
+          defaultValue={pct}
+          aria-label={name}
+          style={sliderStyle}
+          onInput={(event) => {
+            const next = clampPercent(Number(event.currentTarget.value));
+            event.currentTarget.style.setProperty("--p", `${next}%`);
+            onInputPct(next);
+          }}
+        />
+      </div>
+      <div className={c("pct")}>
+        {showPct ? `${displayPct} %` : t("lights.sliderOff")}
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -62,51 +123,38 @@ export function RoomLightRow({
 
   return (
     <div className={c("light-row")}>
-      <div className={c("row")}>
-        <button
-          type="button"
-          className={c("toggle", isOn && "on")}
-          data-act="toggle-light"
-          data-entity={entityId}
-          data-on={entityId}
-          aria-label={t("lights.toggleAria", { name })}
-          aria-pressed={isOn}
-          onClick={onToggle}
+      <button
+        type="button"
+        className={c("row", "row-button", isOn && "on")}
+        data-act="toggle-light"
+        data-entity={entityId}
+        data-on={entityId}
+        aria-label={t("lights.toggleAria", { name })}
+        aria-pressed={isOn}
+        onClick={onToggle}
+      >
+        <span className={c("toggle", isOn && "on")} aria-hidden="true" />
+        <LightRowMain
+          name={name}
+          sub={sub}
+          value={isOn ? `${displayPct} %` : "–"}
         />
-        <div className={c("row-main")}>
-          <div className={c("row-name")}>{name}</div>
-          <div className={c("row-sub")}>{sub}</div>
-        </div>
-        <span className={c("row-val")}>{isOn ? `${displayPct} %` : "–"}</span>
-      </div>
+      </button>
       {showSlider ? (
-        <div className={c("slider-wrap")}>
-          <div className={c("slider-line")}>
-            <Icon name="sun" />
-            <input
-              ref={sliderRef}
-              className={c("range")}
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              data-light-range={entityId}
-              data-range-entity={entityId}
-              defaultValue={pct}
-              aria-label={name}
-              style={sliderStyle}
-              onInput={(event) => {
-                const next = clampPercent(Number(event.currentTarget.value));
-                setDisplayPct(next);
-                event.currentTarget.style.setProperty("--p", `${next}%`);
-                onBrightness(next);
-              }}
-            />
-          </div>
-          <div className={c("pct")}>
-            {showPct ? `${displayPct} %` : t("lights.sliderOff")}
-          </div>
-        </div>
+        <RoomLightSlider
+          sliderRef={sliderRef}
+          entityId={entityId}
+          name={name}
+          pct={pct}
+          displayPct={displayPct}
+          sliderStyle={sliderStyle}
+          showPct={showPct}
+          t={t}
+          onInputPct={(next) => {
+            setDisplayPct(next);
+            onBrightness(next);
+          }}
+        />
       ) : null}
     </div>
   );

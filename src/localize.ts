@@ -525,6 +525,7 @@ const da: Record<string, string> = {
   "empty.dataYet": "Ingen data endnu",
   "empty.chart": "Ingen data",
   "empty.loading": "Indlæser…",
+  "empty.unavailable": "Utilgængelig",
 
   /* Confirmations */
   "confirm.allLights": "Sluk alle lys i hjemmet?",
@@ -1154,6 +1155,7 @@ const en: Record<string, string> = {
   "empty.dataYet": "No data yet",
   "empty.chart": "No data",
   "empty.loading": "Loading…",
+  "empty.unavailable": "Unavailable",
 
   /* Confirmations */
   "confirm.allLights": "Turn off all lights in the home?",

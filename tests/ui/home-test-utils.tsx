@@ -52,6 +52,7 @@ function historyStub(): HistoryCache {
     series: () => [],
     window: () => [],
     raw: () => [],
+    status: () => "empty",
   } as unknown as HistoryCache;
 }
 

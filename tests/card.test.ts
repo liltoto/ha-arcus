@@ -53,8 +53,9 @@ describe("ArcusCard", () => {
 
   test("opens the sheet frame when a room card is clicked", async () => {
     const card = await mount();
-    const room =
-      card.shadowRoot!.querySelector<HTMLElement>('[data-room="stue"]');
+    const room = card.shadowRoot!.querySelector<HTMLElement>(
+      '[data-room="stue"] .card-link',
+    );
     expect(room).not.toBeNull();
 
     room!.click();
@@ -124,7 +125,9 @@ describe("ArcusCard", () => {
 
   test("closes the sheet from the close button and returns home", async () => {
     const card = await mount();
-    card.shadowRoot!.querySelector<HTMLElement>('[data-room="stue"]')!.click();
+    card
+      .shadowRoot!.querySelector<HTMLElement>('[data-room="stue"] .card-link')!
+      .click();
     await waitFor(() =>
       expect(card.shadowRoot!.querySelector(".sheet.open")).not.toBeNull(),
     );
@@ -156,8 +159,9 @@ describe("ArcusCard", () => {
     });
     const card = await mount(config);
 
-    const room =
-      card.shadowRoot!.querySelector<HTMLElement>('[data-room="stue"]');
+    const room = card.shadowRoot!.querySelector<HTMLElement>(
+      '[data-room="stue"] .card-link',
+    );
     room!.click();
     await waitFor(() => expect(location.hash).toBe("#/rum/stue"));
 

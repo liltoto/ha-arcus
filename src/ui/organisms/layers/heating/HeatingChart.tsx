@@ -45,7 +45,11 @@ export function HeatingChart({
   return (
     <div className={c("block")}>
       <div className={c("block-label")}>{label}</div>
-      <ChartBox title={title} noData={!hasData} emptyLabel={emptyLabel}>
+      <ChartBox
+        title={title}
+        state={hasData ? "ready" : "empty"}
+        emptyLabel={emptyLabel}
+      >
         <svg
           viewBox={`0 0 560 ${CHART_HEIGHT}`}
           preserveAspectRatio="none"

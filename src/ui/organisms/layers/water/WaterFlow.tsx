@@ -55,7 +55,10 @@ export function WaterFlow({ values, end, t }: WaterFlowProps) {
   return (
     <div className={c("block")}>
       <div className={c("block-label")}>{t("water.flow24")}</div>
-      <ChartBox noData={!hasData} emptyLabel={t("empty.chart")}>
+      <ChartBox
+        state={hasData ? "ready" : "empty"}
+        emptyLabel={t("empty.chart")}
+      >
         <svg
           viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
           preserveAspectRatio="none"

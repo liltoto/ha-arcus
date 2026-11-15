@@ -220,9 +220,9 @@ export const sheetStyles: Record<string, string> = {
   }),
   readings: css({
     display: "grid",
-    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
     gap: "10px",
-    _phone: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },
+    _phone: { gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))" },
   }),
   reading: css({
     padding: "12px 14px",
@@ -280,9 +280,20 @@ export const sheetStyles: Record<string, string> = {
       height: "auto",
       overflow: "visible",
     },
-    "&.no-data .chart-empty": { display: "flex" },
-    "&.no-data svg": { display: "none" },
-    "&.no-data": { minHeight: "68px" },
+    /**
+     * Empty, loading, and unavailable charts keep a readable placeholder
+     * height. `.no-data` is the legacy class the solar charts still set.
+     */
+    "&[data-state='loading'], &[data-state='empty'], &[data-state='unavailable'], &.no-data":
+      { minHeight: "68px" },
+    "&[data-state='loading'] svg, &[data-state='empty'] svg, &[data-state='unavailable'] svg, &.no-data svg":
+      { display: "none" },
+    "&[data-state='loading'] .chart-empty, &[data-state='empty'] .chart-empty, &[data-state='unavailable'] .chart-empty, &.no-data .chart-empty":
+      { display: "flex" },
+    "&[data-state='loading'] .chart-empty": {
+      animation: "twinkle 1.8s ease-in-out infinite",
+      _motionReduce: { animation: "none" },
+    },
   }),
   "chart-empty": css({
     position: "absolute",

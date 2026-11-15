@@ -130,13 +130,10 @@ export function ChapterGrid({ className }: ChapterGridProps = {}) {
           const sum = bindings[`ch_${chapter.key}_sum`] ?? "";
 
           return (
-            <button
+            <article
               key={chapter.key}
-              type="button"
               className={c("chapter", chapter.large && "large")}
-              data-nav={chapter.route}
               data-chapter={chapter.key}
-              onClick={() => actions.navigate(chapter.route)}
             >
               <div className={c("ch-top")}>
                 <span className={c("num")}>{number}</span>
@@ -144,15 +141,29 @@ export function ChapterGrid({ className }: ChapterGridProps = {}) {
                   <Icon name={chapter.icon} />
                 </span>
               </div>
-              <h3>{t(chapter.titleKey)}</h3>
+              <h3>
+                <button
+                  type="button"
+                  className={c("card-link")}
+                  data-nav={chapter.route}
+                  aria-label={t(chapter.titleKey)}
+                  onClick={() => actions.navigate(chapter.route)}
+                >
+                  {t(chapter.titleKey)}
+                </button>
+              </h3>
               <div
                 className={c("sum")}
                 dangerouslySetInnerHTML={{ __html: sum }}
               />
-              <div className={c("ch-art")} data-art={chapter.key}>
+              <div
+                className={c("ch-art")}
+                data-art={chapter.key}
+                aria-hidden="true"
+              >
                 <ChapterArt chKey={chapter.key} />
               </div>
-            </button>
+            </article>
           );
         })}
       </div>

@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { clampPercent } from "../../format";
 import { Icon } from "../atoms/Icon";
 import { c } from "../styles/classes";
+import { LightRowMain } from "./LightRowMain";
 
 export interface LightRowProps {
   name: string;
@@ -37,23 +38,19 @@ export function LightRow({
 
   return (
     <div className={c("light-row")}>
-      <div className={c("row")}>
-        <button
-          type="button"
-          className={c("toggle", isOn && "on")}
-          aria-pressed={isOn}
-          aria-label={toggleLabel}
-          data-act="toggle-light"
-          data-entity={entity}
-          onClick={onToggle}
-        />
+      <button
+        type="button"
+        className={c("row", "row-button", isOn && "on")}
+        aria-pressed={isOn}
+        aria-label={toggleLabel}
+        data-act="toggle-light"
+        data-entity={entity}
+        onClick={onToggle}
+      >
+        <span className={c("toggle", isOn && "on")} aria-hidden="true" />
         {icon ? <Icon name={icon} /> : null}
-        <div className={c("row-main")}>
-          <div className={c("row-name")}>{name}</div>
-          <div className={c("row-sub")}>{sub}</div>
-        </div>
-        <span className={c("row-val")}>{isOn ? `${pct} %` : "–"}</span>
-      </div>
+        <LightRowMain name={name} sub={sub} value={isOn ? `${pct} %` : "–"} />
+      </button>
       <div className={c("slider-wrap")}>
         <div className={c("slider-line")}>
           <Icon name="sun" />

@@ -13,6 +13,9 @@ export interface RoomChartBlockProps {
   history: HistoryCache;
   now: () => Date;
   emptyLabel: string;
+  loadingLabel: string;
+  unavailableLabel: string;
+  unavailable?: boolean;
 }
 
 /** One titled 24-hour room chart block. */
@@ -27,6 +30,9 @@ export function RoomChartBlock({
   history,
   now,
   emptyLabel,
+  loadingLabel,
+  unavailableLabel,
+  unavailable = false,
 }: RoomChartBlockProps) {
   return (
     <div className={c("block")}>
@@ -44,6 +50,9 @@ export function RoomChartBlock({
         unit={unit}
         decimals={decimals}
         emptyLabel={emptyLabel}
+        loadingLabel={loadingLabel}
+        unavailableLabel={unavailableLabel}
+        unavailable={unavailable}
         now={now}
       />
     </div>

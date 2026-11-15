@@ -141,26 +141,30 @@ describe("TopBar", () => {
   it("cycles the atmosphere icon and reports each mode", async () => {
     const user = userEvent.setup();
     const { props, store } = renderTopBar();
-    const button = screen.getByRole("button", { name: "Atmosfære" });
+    const button = screen.getByRole("button", { name: "Atmosfære: auto" });
 
     expect(button).toHaveAttribute("data-act", "atmo");
     expect(button).not.toHaveAttribute("data-atmo-btn");
+    expect(button).toHaveAttribute("title", "Atmosfære: auto");
     expect(renderedIcon(button)).toBe(iconBody("spark"));
 
     await user.click(button);
     expect(props.actions.setAtmo).toHaveBeenNthCalledWith(1, "night");
     act(() => store.setState({ atmoMode: "night" }));
     expect(renderedIcon(button)).toBe(iconBody("moon"));
+    expect(button).toHaveAttribute("aria-label", "Atmosfære: night");
 
     await user.click(button);
     expect(props.actions.setAtmo).toHaveBeenNthCalledWith(2, "day");
     act(() => store.setState({ atmoMode: "day" }));
     expect(renderedIcon(button)).toBe(iconBody("sun"));
+    expect(button).toHaveAttribute("aria-label", "Atmosfære: day");
 
     await user.click(button);
     expect(props.actions.setAtmo).toHaveBeenNthCalledWith(3, "auto");
     act(() => store.setState({ atmoMode: "auto" }));
     expect(renderedIcon(button)).toBe(iconBody("spark"));
+    expect(button).toHaveAttribute("aria-label", "Atmosfære: auto");
   });
 
   it("navigates from the brand and menu buttons", async () => {

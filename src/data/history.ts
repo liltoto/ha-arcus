@@ -56,6 +56,13 @@ interface CacheEntry {
   hours: number;
 }
 
+/**
+ * How far an entity's history has progressed. `ready` means rows are cached,
+ * `loading` means a request is in flight, `empty` means a request finished
+ * without rows, and `idle` means nothing has been requested yet.
+ */
+export type HistoryStatus = "idle" | "loading" | "ready" | "empty";
+
 const CACHE_MS = 5 * 60 * 1000;
 
 /**
@@ -125,6 +132,13 @@ export class HistoryCache {
   private readonly now: () => Date;
   private readonly cache = new Map<string, CacheEntry>();
   private readonly inflight = new Map<string, Promise<void>>();
+  /**
+   * Entities whose most recent fetch finished without cached rows. The
+   * recorder can omit an entity entirely (or both transports can fail), so
+   * the absence of a cache entry alone cannot distinguish "never asked" from
+   * "asked, nothing came back".
+   */
+  private readonly settled = new Set<string>();
   private readonly listeners = new Set<() => void>();
   private version = 0;
 
@@ -171,6 +185,8 @@ export class HistoryCache {
     );
     if (!need.length) return;
 
+    // A new request makes the previous "nothing came back" answer stale.
+    need.forEach((id) => this.settled.delete(id));
     const request = this.fetch(need, hours);
     need.forEach((id) => this.inflight.set(id, request));
     try {
@@ -278,6 +294,19 @@ export class HistoryCache {
     return this.cache.get(entityId)?.rows.slice() ?? [];
   }
 
+  /**
+   * Current load state for one entity. Cached rows win over an in-flight
+   * refresh so a chart keeps drawing the previous series while new history
+   * arrives.
+   */
+  status(entityId: string): HistoryStatus {
+    const entry = this.cache.get(entityId);
+    if (entry?.rows.length) return "ready";
+    if (this.inflight.has(entityId)) return "loading";
+    if (entry || this.settled.has(entityId)) return "empty";
+    return "idle";
+  }
+
   private needs(entityId: string, hours: number, nowMs: number): boolean {
     const entry = this.cache.get(entityId);
     if (!entry) return true;
@@ -301,7 +330,14 @@ export class HistoryCache {
       }
     };
     const workers = Math.min(FETCH_CONCURRENCY, batches.length);
-    await Promise.all(Array.from({ length: workers }, worker));
+    try {
+      await Promise.all(Array.from({ length: workers }, worker));
+    } finally {
+      // The recorder may omit entities without history, and both transports
+      // may fail. Either way the request is finished, so status must stop
+      // saying "loading" even when no cache entry was written.
+      entityIds.forEach((id) => this.settled.add(id));
+    }
   }
 
   private async fetchBatch(entityIds: string[], hours: number): Promise<void> {

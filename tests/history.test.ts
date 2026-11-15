@@ -374,3 +374,61 @@ test("holds the last known value across sparse temperature gaps", async () => {
   expect(values[48]).toBe(20);
   expect(values[90]).toBe(20);
 });
+
+test("reports empty when a completed fetch omits the entity", async () => {
+  const first = deferred<unknown>();
+  const second = deferred<unknown>();
+  const ws = vi.fn((_message: HistoryWsRequest) => first.promise);
+  const cache = new HistoryCache(makeHass(ws), () => FIXED);
+
+  const done = cache.ensure(["sensor.omitted"], 24);
+  expect(cache.status("sensor.omitted")).toBe("loading");
+  first.resolve({ "sensor.other": [] });
+  await done;
+
+  // The recorder answered, but not for the requested entity: that is empty,
+  // not idle, or a chart would show loading forever.
+  expect(cache.status("sensor.omitted")).toBe("empty");
+  expect(cache.raw("sensor.omitted")).toEqual([]);
+
+  // A refresh clears the settled answer while the new request is in flight.
+  ws.mockImplementationOnce(() => second.promise);
+  const refresh = cache.ensure(["sensor.omitted"], 48);
+  expect(cache.status("sensor.omitted")).toBe("loading");
+  second.resolve({});
+  await refresh;
+  expect(cache.status("sensor.omitted")).toBe("empty");
+});
+
+test("reports idle, loading, empty, and ready status transitions", async () => {
+  const first = deferred<unknown>();
+  const second = deferred<unknown>();
+  const third = deferred<unknown>();
+  const ws = vi.fn((_message: HistoryWsRequest) => first.promise);
+  const cache = new HistoryCache(makeHass(ws), () => FIXED);
+  const row = { s: "5", lu: Math.floor(FIXED.getTime() / 1000) - 3600 };
+
+  expect(cache.status("sensor.status")).toBe("idle");
+
+  const empty = cache.ensure(["sensor.status"], 24);
+  expect(cache.status("sensor.status")).toBe("loading");
+  first.resolve({ "sensor.status": [] });
+  await empty;
+  expect(cache.status("sensor.status")).toBe("empty");
+
+  ws.mockImplementationOnce(() => second.promise);
+  const load = cache.ensure(["sensor.status"], 48);
+  expect(cache.status("sensor.status")).toBe("loading");
+  second.resolve({ "sensor.status": [row] });
+  await load;
+  expect(cache.status("sensor.status")).toBe("ready");
+
+  // A refresh for a longer window keeps the cached rows available, so the
+  // status stays ready while the request is in flight.
+  ws.mockImplementationOnce(() => third.promise);
+  const refresh = cache.ensure(["sensor.status"], 72);
+  expect(cache.status("sensor.status")).toBe("ready");
+  third.resolve({ "sensor.status": [row] });
+  await refresh;
+  expect(cache.status("sensor.status")).toBe("ready");
+});

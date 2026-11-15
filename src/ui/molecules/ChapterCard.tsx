@@ -13,12 +13,9 @@ export interface ChapterCardProps {
  */
 export function ChapterCard({ chapter, onOpen }: ChapterCardProps) {
   return (
-    <button
-      type="button"
+    <article
       className={c("chapter", chapter.large && "large")}
-      data-nav={chapter.key}
       data-chapter={chapter.key}
-      onClick={onOpen}
     >
       <div className={c("ch-top")}>
         <span className={c("num")}>{chapter.num ?? ""}</span>
@@ -26,14 +23,24 @@ export function ChapterCard({ chapter, onOpen }: ChapterCardProps) {
           <Icon name={chapter.icon} />
         </span>
       </div>
-      <h3>{chapter.title}</h3>
+      <h3>
+        <button
+          type="button"
+          className={c("card-link")}
+          data-nav={chapter.key}
+          aria-label={chapter.title}
+          onClick={onOpen}
+        >
+          {chapter.title}
+        </button>
+      </h3>
       <div className={c("sum")}>{chapter.sum}</div>
-      <div className={c("ch-art")} data-art={chapter.key}>
+      <div className={c("ch-art")} data-art={chapter.key} aria-hidden="true">
         {chapter.art}
       </div>
       <div className={c("ch-foot")}>
         {chapter.meta ? <span>{chapter.meta}</span> : null}
       </div>
-    </button>
+    </article>
   );
 }

@@ -77,7 +77,7 @@ export function HistoryChart({
   });
 
   return (
-    <ChartBox noData={!hasData} emptyLabel={t("empty.chart")}>
+    <ChartBox state={hasData ? "ready" : "empty"} emptyLabel={t("empty.chart")}>
       <svg
         ref={svgRef}
         viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}

@@ -1,22 +1,40 @@
 import type { HistoryCache } from "../../../../data/history";
 import { formatNumber } from "../../../../format";
-import type { Language, RoomModel, Translator } from "../../../../types";
+import type {
+  ArcusHass,
+  EntityRef,
+  Language,
+  RoomModel,
+  Translator,
+} from "../../../../types";
 import { RoomChartBlock } from "./RoomChartBlock";
+import { refEntity } from "./room-state";
 import type { RoomView } from "./room-view";
 
 interface RoomSensorChartProps {
   room: RoomModel;
   view: RoomView;
   history: HistoryCache;
+  hass: ArcusHass;
   now: () => Date;
   t: Translator;
   language: Language;
+}
+
+/** A sensor that exists but currently reports no usable reading. */
+function isUnavailable(
+  hass: ArcusHass,
+  ref: EntityRef | null | undefined,
+): boolean {
+  const state = refEntity(hass, ref)?.state;
+  return state === "unavailable" || state === "unknown";
 }
 
 export function RoomHumidityChart({
   room,
   view,
   history,
+  hass,
   now,
   t,
 }: RoomSensorChartProps) {
@@ -33,6 +51,9 @@ export function RoomHumidityChart({
       history={history}
       now={now}
       emptyLabel={t("empty.chart")}
+      loadingLabel={t("empty.loading")}
+      unavailableLabel={t("empty.unavailable")}
+      unavailable={isUnavailable(hass, room.humidity)}
     />
   );
 }
@@ -41,6 +62,7 @@ export function RoomCo2Chart({
   room,
   view,
   history,
+  hass,
   now,
   t,
 }: RoomSensorChartProps) {
@@ -57,6 +79,9 @@ export function RoomCo2Chart({
       history={history}
       now={now}
       emptyLabel={t("empty.chart")}
+      loadingLabel={t("empty.loading")}
+      unavailableLabel={t("empty.unavailable")}
+      unavailable={isUnavailable(hass, room.co2)}
     />
   );
 }
@@ -65,6 +90,7 @@ export function RoomPm25Chart({
   room,
   view,
   history,
+  hass,
   now,
   t,
   language,
@@ -82,6 +108,9 @@ export function RoomPm25Chart({
       history={history}
       now={now}
       emptyLabel={t("empty.chart")}
+      loadingLabel={t("empty.loading")}
+      unavailableLabel={t("empty.unavailable")}
+      unavailable={isUnavailable(hass, room.pm25)}
     />
   );
 }

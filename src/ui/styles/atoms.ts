@@ -77,7 +77,7 @@ export const atomsStyles: Record<string, string> = {
       "&:hover": { opacity: 0.9, color: "var(--bg-0)" },
     },
     "&.danger": {
-      color: "var(--coral)",
+      color: "var(--coral-text)",
       borderColor: "color-mix(in srgb, var(--coral) 40%, transparent)",
       background: "color-mix(in srgb, var(--coral) 8%, transparent)",
     },
@@ -420,7 +420,7 @@ export const atomsStyles: Record<string, string> = {
   }),
   "house-name": css({
     fontFamily: "var(--sans)",
-    fontSize: "7.5px",
+    fontSize: "10px",
     letterSpacing: "0.1em",
     fill: "var(--muted)",
     textTransform: "uppercase",
@@ -504,17 +504,17 @@ export const atomsStyles: Record<string, string> = {
       background: "var(--panel-2)",
     },
     "&.crit": {
-      color: "var(--coral)",
+      color: "var(--coral-text)",
       borderColor: "color-mix(in srgb, var(--coral) 40%, transparent)",
       background: "color-mix(in srgb, var(--coral) 8%, transparent)",
     },
     "&.warn": {
-      color: "var(--brass)",
+      color: "var(--brass-text)",
       borderColor: "color-mix(in srgb, var(--brass) 40%, transparent)",
       background: "color-mix(in srgb, var(--brass) 7%, transparent)",
     },
     "&.info": {
-      color: "var(--sky)",
+      color: "var(--sky-text)",
       borderColor: "color-mix(in srgb, var(--sky) 35%, transparent)",
       background: "color-mix(in srgb, var(--sky) 7%, transparent)",
     },
