@@ -719,6 +719,10 @@ export const homeStyles: Record<string, string> = {
     "&.wide": { gridColumn: "span 2" },
     "&:hover .room-open": { opacity: 1, transform: "none" },
     "&.wide .room-main": { marginTop: "22px" },
+    "&:focus-within": {
+      outline: "2px solid var(--focus)",
+      outlineOffset: "3px",
+    },
     _phone: {
       minHeight: "160px",
       padding: "16px 16px calc(var(--arcus-spark-room) + 8px)",
@@ -737,6 +741,7 @@ export const homeStyles: Record<string, string> = {
     gap: "12px",
   }),
   "room-name": css({
+    margin: 0,
     fontFamily: "var(--serif)",
     fontSize: "20px",
     fontWeight: 500,
@@ -827,6 +832,7 @@ export const homeStyles: Record<string, string> = {
     height: "var(--arcus-spark-room)",
     opacity: 0.5,
     pointerEvents: "auto",
+    zIndex: 5,
   }),
   "room-open": css({
     position: "absolute",
@@ -862,6 +868,27 @@ export const homeStyles: Record<string, string> = {
       textAlign: "right",
       opacity: 0.55,
       transform: "none",
+    },
+  }),
+  /**
+   * The single interactive element in a room/chapter article. The pseudo
+   * element stretches the hit target over the whole card while the card keeps
+   * its non-interactive `<article>` semantics.
+   */
+  "card-link": css({
+    font: "inherit",
+    color: "inherit",
+    letterSpacing: "inherit",
+    textAlign: "left",
+    // The card itself draws the focus ring through `:focus-within`; a second
+    // ring around the inline title reads as a double focus state.
+    "&:focus-visible": { outline: "none" },
+    "&::after": {
+      content: '""',
+      position: "absolute",
+      inset: 0,
+      zIndex: 4,
+      borderRadius: "inherit",
     },
   }),
   "chapter-grid": css({
@@ -900,6 +927,10 @@ export const homeStyles: Record<string, string> = {
       borderColor: "var(--line-strong)",
       boxShadow: "0 14px 38px rgba(0, 0, 0, 0.22)",
       background: "var(--card-bg-hover)",
+    },
+    "&:focus-within": {
+      outline: "2px solid var(--focus)",
+      outlineOffset: "3px",
     },
     "&.large": {
       gridColumn: "span 2",

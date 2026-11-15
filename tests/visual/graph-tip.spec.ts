@@ -31,6 +31,27 @@ test("vital spark shows its value and time on hover", async ({ page }) => {
   await expect(page).toHaveURL(/#\/rum\//);
 });
 
+test("room spark keeps its readout above the stretched card link", async ({
+  page,
+}) => {
+  await open(page, "");
+
+  const spark = page.locator("[data-room] .room-spark[data-graph]").first();
+  await spark.hover();
+
+  const tip = page.locator("[data-graph-tip]");
+  await expect(tip).toHaveClass(/(^|\s)show(\s|$)/);
+  await expect(tip).toContainText("°C");
+  await expect(tip).toContainText(/\d{2}:\d{2}/);
+
+  // The rest of the card is still one stretched link.
+  await page
+    .locator("[data-room]")
+    .first()
+    .click({ position: { x: 20, y: 20 } });
+  await expect(page).toHaveURL(/#\/rum\//);
+});
+
 test("energy price bars show the hour and price", async ({ page }) => {
   await open(page, "#/energi");
   await page.waitForSelector(".bar-chart");

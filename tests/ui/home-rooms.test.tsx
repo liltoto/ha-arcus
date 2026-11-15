@@ -32,9 +32,15 @@ describe("RoomGrid", () => {
     ]);
 
     for (const room of displayRooms) {
+      const card = container.querySelector(`[data-room="${room.id}"]`);
+      expect(card).toHaveTextContent(room.name);
+      expect(card?.tagName).toBe("ARTICLE");
       expect(
-        container.querySelector(`[data-room="${room.id}"]`),
-      ).toHaveTextContent(room.name);
+        screen.getByRole("heading", { level: 3, name: room.name }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: `${room.name}, åbn rum →` }),
+      ).toHaveAttribute("data-nav", `rum/${room.id}`);
     }
 
     const skur = container.querySelector('[data-room="skur"]');
@@ -65,7 +71,7 @@ describe("RoomGrid", () => {
     const user = userEvent.setup();
     const { container, props } = renderWithArcus(<RoomGrid />);
 
-    await user.click(container.querySelector('[data-room="stue"]')!);
+    await user.click(container.querySelector('[data-room="stue"] .card-link')!);
     expect(props.actions.navigate).toHaveBeenCalledWith("rum/stue");
 
     await user.click(container.querySelector('[data-system="ventilation"]')!);

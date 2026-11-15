@@ -47,14 +47,25 @@ describe("ChapterGrid", () => {
     ];
     expect(cards).toHaveLength(CHAPTER_ORDER.length);
     expect(cards.map((card) => card.dataset.chapter)).toEqual(CHAPTER_ORDER);
+    expect(cards.every((card) => card.tagName === "ARTICLE")).toBe(true);
     expect(cards.map((card) => card.querySelector("h3")?.textContent)).toEqual(
       CHAPTER_TITLES,
     );
+    expect(
+      cards.map((card) =>
+        card.querySelector(".card-link")?.getAttribute("data-nav"),
+      ),
+    ).toEqual(CHAPTER_ORDER);
     expect(
       cards.map((card) => card.querySelector(".num")?.textContent),
     ).toEqual(["01", "02", "03", "04", "05", "06", "07", "08", "09", "AL"]);
 
     expect(screen.getAllByRole("button")).toHaveLength(CHAPTER_ORDER.length);
+    expect(
+      screen
+        .getAllByRole("heading", { level: 3 })
+        .map((heading) => heading.textContent),
+    ).toEqual(CHAPTER_TITLES);
   });
 
   it("filters disabled chapters without renumbering the survivors", () => {
@@ -102,7 +113,7 @@ describe("ChapterGrid", () => {
     ).not.toBeNull();
 
     const energy = container.querySelector<HTMLButtonElement>(
-      '[data-chapter="energi"]',
+      '[data-chapter="energi"] .card-link',
     );
     expect(energy).not.toBeNull();
     await user.click(energy!);

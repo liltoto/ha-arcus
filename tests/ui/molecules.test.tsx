@@ -65,10 +65,10 @@ describe("RoomCard", () => {
       <RoomCard room={room} onOpen={onOpen} language="en" />,
     );
 
-    const card =
-      container.querySelector<HTMLButtonElement>('[data-room="stue"]');
+    const card = container.querySelector<HTMLElement>('[data-room="stue"]');
     expect(card).not.toBeNull();
-    expect(card).toHaveAttribute("data-nav", "rum/stue");
+    expect(card?.tagName).toBe("ARTICLE");
+    expect(card).not.toHaveAttribute("data-nav");
     expect(card).toHaveClass("room-card", "wide");
     expect(card?.style.getPropertyValue("--room")).toBe("var(--sage)");
     expect(card).toHaveTextContent("Stue");
@@ -77,8 +77,14 @@ describe("RoomCard", () => {
     expect(card).toHaveTextContent("2/5 tændt");
     expect(card).toHaveTextContent("1 åben");
     expect(card?.querySelector("svg.room-spark")).not.toBeNull();
+    expect(
+      screen.getByRole("heading", { level: 3, name: "Stue" }),
+    ).toBeInTheDocument();
 
-    await user.click(card!);
+    const link = screen.getByRole("button", { name: "Stue, Open room" });
+    expect(link).toHaveAttribute("data-nav", "rum/stue");
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    await user.click(link);
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
@@ -105,18 +111,26 @@ describe("ChapterCard", () => {
       <ChapterCard chapter={chapter} onOpen={onOpen} />,
     );
 
-    const card = container.querySelector<HTMLButtonElement>(
+    const card = container.querySelector<HTMLElement>(
       '[data-chapter="energi"]',
     );
     expect(card).not.toBeNull();
-    expect(card).toHaveAttribute("data-nav", "energi");
+    expect(card?.tagName).toBe("ARTICLE");
+    expect(card).not.toHaveAttribute("data-nav");
     expect(card).toHaveClass("chapter", "large");
     expect(card?.querySelector(".num")).toHaveTextContent("01");
     expect(screen.getByRole("heading", { name: "Energi" })).toBeInTheDocument();
     expect(card?.querySelector(".ch-art .price-bars")).not.toBeNull();
+    expect(card?.querySelector(".ch-art")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
     expect(card?.querySelector(".ch-foot")).toHaveTextContent("Live");
 
-    await user.click(card!);
+    const link = screen.getByRole("button", { name: "Energi" });
+    expect(link).toHaveAttribute("data-nav", "energi");
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    await user.click(link);
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 });
@@ -315,8 +329,15 @@ describe("LightRow", () => {
     );
 
     const toggle = screen.getByRole("button", { name: "Toggle Stue" });
+    expect(toggle).toHaveClass("row", "row-button", "on");
     expect(toggle).toHaveAttribute("aria-pressed", "true");
+    expect(toggle).toHaveAttribute("data-act", "toggle-light");
     expect(toggle).toHaveAttribute("data-entity", "light.stue");
+    expect(toggle.querySelector(".toggle")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+    expect(toggle.querySelector(".toggle")).toHaveClass("on");
     await user.click(toggle);
     expect(onToggle).toHaveBeenCalledTimes(1);
 
@@ -518,12 +539,12 @@ describe("MediaRow", () => {
 });
 
 describe("ChartBox", () => {
-  it("renders the no-data overlay and the caption row", () => {
+  it("renders the empty overlay and the caption row", () => {
     const { container } = render(
       <ChartBox
         title="Solar"
         caption={<span>24 h</span>}
-        noData
+        state="empty"
         emptyLabel="No history"
       >
         <svg data-testid="chart" />
@@ -531,7 +552,7 @@ describe("ChartBox", () => {
     );
 
     const box = container.querySelector(".chart-box");
-    expect(box).toHaveClass("no-data");
+    expect(box).toHaveAttribute("data-state", "empty");
     expect(screen.getByTestId("chart")).toBeInTheDocument();
     expect(container.querySelector(".chart-empty")).toHaveTextContent(
       "No history",

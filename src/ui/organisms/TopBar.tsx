@@ -48,6 +48,11 @@ export function TopBar({ className }: TopBarProps = {}) {
     actions.setAtmo(next);
   };
 
+  const atmoLabel =
+    atmo === "auto"
+      ? t("brand.atmosphereAuto")
+      : t("brand.atmosphereMode", { mode: atmo });
+
   return (
     <div className={c("topbar-inner", className)}>
       <button
@@ -96,8 +101,8 @@ export function TopBar({ className }: TopBarProps = {}) {
           type="button"
           className={c("icon-btn")}
           data-act="atmo"
-          title={t("brand.atmosphere")}
-          aria-label={t("brand.atmosphere")}
+          title={atmoLabel}
+          aria-label={atmoLabel}
           onClick={cycleAtmo}
         >
           <Icon name={atmoIcon(atmo)} />

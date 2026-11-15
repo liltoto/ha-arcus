@@ -17,6 +17,34 @@ export interface RoomCardProps {
   sparkGraph?: GraphInput | null;
 }
 
+/** The air/lights/openings status line under the room temperature. */
+function RoomStatus({ room }: { room: RoomView }) {
+  const airTone =
+    room.air === "warn" ? "warn" : room.air === "off" ? "off" : "ok";
+  return (
+    <div className={c("room-status")}>
+      <span>
+        <Dot tone={airTone} />
+        <span>{room.airLabel}</span>
+      </span>
+      {room.lightsTotal > 0 ? (
+        <span>
+          <Dot tone={room.lightsOn > 0 ? "ok" : "off"} />
+          <span>
+            {room.lightsLabel ?? `${room.lightsOn}/${room.lightsTotal} lights`}
+          </span>
+        </span>
+      ) : null}
+      {room.openLabel ? (
+        <span>
+          <Dot tone={room.open > 0 ? "warn" : "off"} />
+          <span>{room.openLabel}</span>
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 /**
  * One room tile on the home view. Mirrors the legacy `roomCard()` markup:
  * the room tint is exposed as `--room` for the icon, dots, and sparkline.
@@ -30,22 +58,27 @@ export function RoomCard({
   sparkGraph = null,
 }: RoomCardProps) {
   const temp = room.temp === null ? "–" : formatNumber(room.temp, 1, language);
-  const airTone =
-    room.air === "warn" ? "warn" : room.air === "off" ? "off" : "ok";
   const style = { "--room": room.tint } as CSSProperties;
 
   return (
-    <button
-      type="button"
+    <article
       className={c("room-card", room.wide && "wide")}
       style={style}
-      data-nav={`rum/${room.id}`}
       data-room={room.id}
-      onClick={onOpen}
     >
       <div className={c("room-top")}>
         <div>
-          <div className={c("room-name")}>{room.name}</div>
+          <h3 className={c("room-name")}>
+            <button
+              type="button"
+              className={c("card-link")}
+              data-nav={`rum/${room.id}`}
+              aria-label={`${room.name}, ${openLabel}`}
+              onClick={onOpen}
+            >
+              {room.name}
+            </button>
+          </h3>
           <div className={c("room-kind")}>{room.kind}</div>
         </div>
         <span className={c("room-icon")}>
@@ -57,27 +90,7 @@ export function RoomCard({
           {temp}
           <sup>°</sup>
         </div>
-        <div className={c("room-status")}>
-          <span>
-            <Dot tone={airTone} />
-            <span>{room.airLabel}</span>
-          </span>
-          {room.lightsTotal > 0 ? (
-            <span>
-              <Dot tone={room.lightsOn > 0 ? "ok" : "off"} />
-              <span>
-                {room.lightsLabel ??
-                  `${room.lightsOn}/${room.lightsTotal} lights`}
-              </span>
-            </span>
-          ) : null}
-          {room.openLabel ? (
-            <span>
-              <Dot tone={room.open > 0 ? "warn" : "off"} />
-              <span>{room.openLabel}</span>
-            </span>
-          ) : null}
-        </div>
+        <RoomStatus room={room} />
       </div>
       <Sparkline
         className={c("room-spark")}
@@ -88,6 +101,6 @@ export function RoomCard({
         style={{ color: room.tint }}
       />
       <span className={c("room-open")}>{openLabel}</span>
-    </button>
+    </article>
   );
 }

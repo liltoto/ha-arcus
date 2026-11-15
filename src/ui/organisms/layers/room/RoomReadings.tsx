@@ -1,6 +1,7 @@
 import type { HistoryCache } from "../../../../data/history";
 import { formatNumber } from "../../../../format";
 import type {
+  ArcusHass,
   Language,
   RoomModel,
   TemperatureUnit,
@@ -20,6 +21,7 @@ export interface RoomReadingsProps {
   room: RoomModel;
   view: RoomView;
   history: HistoryCache;
+  hass: ArcusHass;
   now: () => Date;
   t: Translator;
   language: Language;
@@ -27,14 +29,15 @@ export interface RoomReadingsProps {
 }
 
 /**
- * The four room readouts and the 24-hour temperature/humidity/CO2/PM2.5
- * charts. Each optional sensor keeps its own chart block, exactly as the
- * legacy renderer emitted it.
+ * The room readouts and the 24-hour temperature/humidity/CO2/PM2.5 charts.
+ * Each optional sensor keeps its own chart block, exactly as the legacy
+ * renderer emitted it.
  */
 export function RoomReadings({
   room,
   view,
   history,
+  hass,
   now,
   t,
   language,
@@ -42,7 +45,13 @@ export function RoomReadings({
 }: RoomReadingsProps) {
   return (
     <>
-      <RoomReadouts view={view} t={t} language={language} tempUnit={tempUnit} />
+      <RoomReadouts
+        room={room}
+        view={view}
+        t={t}
+        language={language}
+        tempUnit={tempUnit}
+      />
       {view.fallbackNote ? (
         <div className={c("block-note")}>{t("room.tempFallbackNote")}</div>
       ) : null}
@@ -57,11 +66,15 @@ export function RoomReadings({
         history={history}
         now={now}
         emptyLabel={t("empty.chart")}
+        loadingLabel={t("empty.loading")}
+        unavailableLabel={t("empty.unavailable")}
+        unavailable={view.temp === null}
       />
       <RoomHumidityChart
         room={room}
         view={view}
         history={history}
+        hass={hass}
         now={now}
         t={t}
         language={language}
@@ -70,6 +83,7 @@ export function RoomReadings({
         room={room}
         view={view}
         history={history}
+        hass={hass}
         now={now}
         t={t}
         language={language}
@@ -78,6 +92,7 @@ export function RoomReadings({
         room={room}
         view={view}
         history={history}
+        hass={hass}
         now={now}
         t={t}
         language={language}

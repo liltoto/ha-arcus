@@ -31,10 +31,27 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const WithData: Story = {};
+export const Ready: Story = {};
 
-export const NoData: Story = {
-  args: { noData: true, emptyLabel: "Ingen historik endnu" },
+export const Empty: Story = {
+  args: {
+    state: "empty",
+    emptyLabel: "Ingen historik endnu",
+  },
+};
+
+export const Loading: Story = {
+  args: {
+    state: "loading",
+    loadingLabel: "Indlæser historik…",
+  },
+};
+
+export const Unavailable: Story = {
+  args: {
+    state: "unavailable",
+    unavailableLabel: "Utilgængelig",
+  },
 };
 
 export const WithoutCaption: Story = {
