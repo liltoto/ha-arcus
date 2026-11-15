@@ -634,6 +634,26 @@ describe("buildModel", () => {
     expect(overridden.chapters.varme).toBe(true);
   });
 
+  test("clears the filter alert once the filter reports Filter OK", () => {
+    const hass = makeHass();
+    hass.states["sensor.nilan602_air_filter_alarm_status"].state = "Filter OK";
+
+    const model = buildModel(hass, makeConfig(), NOW);
+
+    expect(model.alerts.map((alert) => alert.key)).not.toContain("nilanfilter");
+  });
+
+  test("alerts from an auto-discovered ventilation filter", () => {
+    const model = buildModel(
+      makeHass(),
+      normalizeConfig({ type: "custom:arcus-card" }),
+      NOW,
+    );
+
+    expect(model.ventilation?.filter).toBe("Skift filter");
+    expect(model.alerts.map((alert) => alert.key)).toContain("nilanfilter");
+  });
+
   test("raises leak and window alerts from room data", () => {
     const hass = makeHass();
     hass.states["binary_sensor.klippbok_water_leak_sensor_water_leak"].state =

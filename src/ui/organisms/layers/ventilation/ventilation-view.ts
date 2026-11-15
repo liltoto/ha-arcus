@@ -1,4 +1,5 @@
 import { numberFrom, resolveTempUnit } from "../../../../format";
+import { filterOk } from "../../../../model/filter";
 import type {
   ArcusConfig,
   ArcusHass,
@@ -11,19 +12,6 @@ import type {
 } from "../../../../types";
 
 export type SheetLanguage = "da" | "en";
-
-const FILTER_OK = new Set([
-  "ok",
-  "nej",
-  "neutral",
-  "off",
-  "unknown",
-  "unavailable",
-]);
-
-export function filterOk(filter: string | null | undefined): boolean {
-  return !filter || FILTER_OK.has(filter.toLowerCase());
-}
 
 function filterLabel(t: Translator, filter: string | null | undefined): string {
   if (!filter) return "–";

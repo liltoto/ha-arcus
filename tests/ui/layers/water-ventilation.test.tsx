@@ -270,6 +270,27 @@ describe("VentilationBody", () => {
     expect(screen.getAllByText("Auto").length).toBeGreaterThan(0);
   });
 
+  test("shows Filter OK as healthy after the filter is reset", () => {
+    const hass = makeHass();
+    hass.states["sensor.nilan602_air_filter_alarm_status"].state = "Filter OK";
+
+    const { container } = renderLayer(VentilationBody, {
+      route: VENT_ROUTE,
+      hass,
+    });
+
+    expect(container.querySelector(".sheet-sum")).toHaveTextContent(
+      "23,2° · trin 2 · Filter OK",
+    );
+
+    const filter = block(container, "Filter");
+    expect(filter.querySelector(".block-head b")).toHaveTextContent(
+      "Filter OK",
+    );
+    expect(filter.querySelector(".status-line")).toHaveTextContent("Filter OK");
+    expect(filter.querySelector(".status-line .dot")).not.toHaveClass("warn");
+  });
+
   test("draws the five-node airflow", () => {
     const { container } = renderLayer(VentilationBody, {
       route: VENT_ROUTE,

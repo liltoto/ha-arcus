@@ -15,6 +15,7 @@ import type {
   SystemCardModel,
   Translator,
 } from "../types";
+import { filterOk } from "./filter";
 
 const CHAPTER_KEYS: ChapterKey[] = [
   "energi",
@@ -263,9 +264,6 @@ function ventilationSummary(
   t: Translator,
 ): string {
   const filter = model.ventilation?.filter;
-  const filterOk =
-    !filter ||
-    ["OK", "Nej", "Neutral", "off", "unknown", "unavailable"].includes(filter);
   return `<b>${formatNumber(
     model.ventilation?.temperature,
     1,
@@ -273,7 +271,9 @@ function ventilationSummary(
   )}°</b> · ${lower(t("ventilation.fanStep"))} ${
     model.ventilation?.step ?? "–"
   } · ${
-    filterOk ? t("ventilation.filterOk") : escapeHtml(filter.toLowerCase())
+    filterOk(filter)
+      ? t("ventilation.filterOk")
+      : escapeHtml((filter ?? "").toLowerCase())
   }`;
 }
 
