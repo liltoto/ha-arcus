@@ -2,6 +2,19 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.1 - 2026-11-15
+
+Nilan filter alerts clear when the filter is reset.
+
+### Fixed
+
+- A Nilan unit that reports `Filter OK` no longer keeps the “needs a new filter” alert, the warning dot in the ventilation sheet, or the alarm-styled chapter summary. Filter status matching is now one shared helper that is case- and whitespace-insensitive and understands the localized `Filter OK` state.
+- Alerts for auto-discovered systems now use the same resolved config as the rest of the model, so a discovered Nilan filter is watched without an explicit `ventilation` block.
+
+### Verified
+
+- 500 tests, coverage 89.3% statements / 75.3% branches / 92.2% functions, typecheck, lint, Fallow gates, build, size budget (396.9 KB gzip), and Storybook.
+
 ## 0.5.0 - 2026-11-15
 
 Wall-display text scale and named type roles.
