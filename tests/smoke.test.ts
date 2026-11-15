@@ -3,7 +3,7 @@ import "../src/main";
 import { ARCUS_VERSION } from "../src/version";
 
 test("version is the Marketplace version", () => {
-  expect(ARCUS_VERSION).toBe("0.4.8");
+  expect(ARCUS_VERSION).toBe("0.5.0");
 });
 
 test("the bundle registers every Arcus custom element", () => {

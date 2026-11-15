@@ -2,6 +2,23 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.0 - 2026-11-15
+
+Wall-display text scale and named type roles.
+
+### Added
+
+- `text_scale: normal | large | xlarge`. The option scales labels, metadata, body copy, and values for a wall display without changing the layout or the editorial display sizes.
+- Six recurring type roles as CSS variables on `.app`: `micro`, `label`, `body`, `body-lg`, `value-sm`, and `value`.
+
+### Changed
+
+- The 86 raw 10/11/12 px declarations and the 15/18 px value declarations now resolve through those roles. The option is available in the card editor and the README.
+
+### Verified
+
+- 494 tests, coverage 89.0% statements / 74.7% branches / 92.2% functions, typecheck, lint, Fallow gates, build, size budget (396.9 KB gzip), Storybook, and the new large-text visual baseline.
+
 ## 0.4.8 - 2026-11-15
 
 Accessibility and sensor-state follow-up.
