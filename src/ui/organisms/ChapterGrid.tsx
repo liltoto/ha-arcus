@@ -106,6 +106,7 @@ export function ChapterGrid({ className }: ChapterGridProps = {}) {
     .filter(({ chapter }) => model.chapters[chapter.key]);
 
   if (!enabled.length) return null;
+  const sparse = enabled.length <= 3;
 
   return (
     <>
@@ -120,7 +121,7 @@ export function ChapterGrid({ className }: ChapterGridProps = {}) {
           <b>{t("section.chaptersMetaSub")}</b>
         </div>
       </div>
-      <div className={c("chapter-grid", className)}>
+      <div className={c("chapter-grid", sparse && "sparse", className)}>
         {enabled.map(({ chapter, index }) => {
           const number =
             chapter.key === "alarmer"

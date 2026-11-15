@@ -471,6 +471,78 @@ function fillTip(
   tip.replaceChildren(fragment);
 }
 
+export interface TipFrame {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+export interface ChartBoxRect {
+  top: number;
+  bottom: number;
+  height: number;
+}
+
+export interface TipPlacement {
+  left: number;
+  top: number;
+  cursorLeft: number;
+  cursorTop: number;
+  cursorHeight: number;
+}
+
+/**
+ * Place the floating readout and the cursor line inside the card frame. The
+ * card is a size container, so `position: fixed` would resolve against the
+ * card instead of the viewport; every coordinate is therefore expressed
+ * relative to the frame returned by `frameOf`.
+ */
+export function placeTip(
+  x: number,
+  chart: ChartBoxRect,
+  tip: { width: number; height: number },
+  frame: TipFrame,
+): TipPlacement {
+  const localX = x - frame.left;
+  let left = localX + 14;
+  if (left + tip.width > frame.width - 8) left = localX - tip.width - 14;
+  if (left < 8) left = 8;
+
+  let top = chart.top - frame.top - tip.height - 10;
+  if (top < 8) top = chart.bottom - frame.top + 10;
+  if (top + tip.height > frame.height - 8) {
+    top = frame.height - tip.height - 8;
+  }
+
+  return {
+    left,
+    top,
+    cursorLeft: localX,
+    cursorTop: chart.top - frame.top,
+    cursorHeight: chart.height,
+  };
+}
+
+function frameOf(tip: HTMLElement): TipFrame {
+  const parent = tip.offsetParent as HTMLElement | null;
+  const rect = parent?.getBoundingClientRect();
+  if (!rect) {
+    return {
+      left: 0,
+      top: 0,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+  }
+  return {
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
 /** Bind one hover/touch readout for every chart inside `root`. */
 export function mountGraphTips(
   root: ShadowRoot,
@@ -556,22 +628,19 @@ export function mountGraphTips(
 
     fillTip(elements.tip, graph, index, fraction, timestamp, language());
     elements.tip.classList.add("show");
-    const width = elements.tip.offsetWidth;
-    const height = elements.tip.offsetHeight;
-    let left = x + 14;
-    if (left + width > window.innerWidth - 8) left = x - width - 14;
-    if (left < 8) left = 8;
-    let top = rect.top - height - 10;
-    if (top < 8) top = rect.bottom + 10;
-    if (top + height > window.innerHeight - 8) {
-      top = window.innerHeight - height - 8;
-    }
-    elements.tip.style.left = `${Math.round(left)}px`;
-    elements.tip.style.top = `${Math.round(top)}px`;
+    const frame = frameOf(elements.tip);
+    const placement = placeTip(
+      x,
+      rect,
+      { width: elements.tip.offsetWidth, height: elements.tip.offsetHeight },
+      frame,
+    );
+    elements.tip.style.left = `${Math.round(placement.left)}px`;
+    elements.tip.style.top = `${Math.round(placement.top)}px`;
 
-    elements.cursor.style.left = `${Math.round(x)}px`;
-    elements.cursor.style.top = `${Math.round(rect.top)}px`;
-    elements.cursor.style.height = `${Math.round(rect.height)}px`;
+    elements.cursor.style.left = `${Math.round(placement.cursorLeft)}px`;
+    elements.cursor.style.top = `${Math.round(placement.cursorTop)}px`;
+    elements.cursor.style.height = `${Math.round(placement.cursorHeight)}px`;
     elements.cursor.classList.add("show");
     active = true;
     return true;

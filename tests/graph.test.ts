@@ -5,6 +5,7 @@ import {
   graphAttrs,
   mountGraphTips,
   parseGraph,
+  placeTip,
   type GraphInput,
 } from "../src/render/graph";
 
@@ -593,5 +594,65 @@ describe("graph tips", () => {
     expect(click).toHaveBeenCalledTimes(1);
 
     dispose();
+  });
+});
+
+describe("placeTip", () => {
+  const frame = { left: 0, top: 0, width: 600, height: 400 };
+  const chart = { top: 200, bottom: 300, height: 100 };
+
+  test("places the readout beside and above the pointer", () => {
+    expect(placeTip(300, chart, { width: 80, height: 40 }, frame)).toEqual({
+      left: 314,
+      top: 150,
+      cursorLeft: 300,
+      cursorTop: 200,
+      cursorHeight: 100,
+    });
+  });
+
+  test("flips left at the right edge", () => {
+    expect(placeTip(590, chart, { width: 80, height: 40 }, frame).left).toBe(
+      496,
+    );
+  });
+
+  test("flips below when there is no room above", () => {
+    expect(
+      placeTip(
+        300,
+        { top: 20, bottom: 120, height: 100 },
+        { width: 80, height: 40 },
+        frame,
+      ).top,
+    ).toBe(130);
+  });
+
+  test("clamps to the bottom edge", () => {
+    expect(
+      placeTip(
+        300,
+        { top: 350, bottom: 450, height: 100 },
+        { width: 80, height: 40 },
+        { left: 0, top: 0, width: 600, height: 320 },
+      ).top,
+    ).toBe(272);
+  });
+
+  test("expresses every coordinate relative to an offset frame", () => {
+    expect(
+      placeTip(
+        300,
+        chart,
+        { width: 80, height: 40 },
+        { left: 100, top: 50, width: 600, height: 400 },
+      ),
+    ).toEqual({
+      left: 214,
+      top: 100,
+      cursorLeft: 200,
+      cursorTop: 150,
+      cursorHeight: 100,
+    });
   });
 });

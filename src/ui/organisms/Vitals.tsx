@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
   formatNumber,
   numberFrom,
@@ -517,10 +517,15 @@ export function Vitals() {
   const alert = model.alerts[0];
   const navigate = (route?: string) =>
     route ? () => actions.navigate(route) : undefined;
+  const cols = Math.min(Math.max(views.length, 1), 4);
+  const gridStyle = {
+    "--vitals-cols": cols,
+    "--vitals-cols-sm": Math.min(cols, 2),
+  } as CSSProperties;
 
   return (
     <>
-      <div className={c("vitals")}>
+      <div className={c("vitals")} style={gridStyle}>
         {views.map((view, index) => (
           <VitalStat
             key={`${view.id}:${index}`}
