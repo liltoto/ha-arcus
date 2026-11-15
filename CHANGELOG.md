@@ -2,6 +2,30 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+Layout, legibility, and light-theme hardening for a public card on every screen.
+
+### Changed
+
+- Layout now follows the card's own width with container queries instead of the browser window. A card in a 380 px sidebar, a 600 px dashboard column, and a full-width panel get the right room, vital, chapter, and sheet layout independently of the viewport.
+- Room, vital, and chapter grids adapt by card width; the four fixed vital columns now follow the configured number of vitals, and sparse chapter sets drop the oversized “large” span.
+- The room sheet becomes a bottom sheet below a 900 px card width, so embedded cards no longer get a clipped side panel.
+- Typography has a higher floor: protocol labels are 11 px, secondary text is 11–12 px, and the smallest phone overrides were raised. The tiny 7–9 px labels are gone.
+- Phone controls are 44 px (top bar, sheet close, primary buttons); desktop buttons and steppers grew to 40 px.
+- Light theme has its own surfaces and text roles: darker muted/accent text, a warm scrim, ink-tinted panels, and stronger hairlines. The palette's text roles now meet AA contrast in all four atmospheres.
+- The day arc drops overlapping prayer labels at tablet widths and keeps only the next prayer/sunrise on the narrowest cards.
+- The weather strip becomes a 2×2 grid on phones, and the top-bar controls stay right-aligned when the date is hidden.
+- Long `title`/`subtitle` config values truncate instead of pushing the top bar apart.
+- Room cards never clip long names or status text; the open affordance is visible on touch and narrow cards instead of hover-only.
+- Empty sensor charts collapse to a compact 68 px note instead of three tall boxes.
+- Graph tooltips and the cursor line position relative to the card, so they work in embedded cards.
+
+### Verified
+
+- 459 tests, typecheck, lint, Fallow gates, build, size budget (395.2 KB gzip), and Storybook.
+- Visual baselines need the usual CI refresh (`gh workflow run Visual -f update_snapshots=true`).
+
 ## 0.4.6 - 2026-11-15
 
 Performance and correctness pass over the React surface.

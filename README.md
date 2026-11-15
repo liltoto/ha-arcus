@@ -19,8 +19,8 @@ Arcus is a Dashboard plugin for the Home Assistant Marketplace. It installs as o
 - **Chapters that earn their place.** Energy, solar, water, security, ventilation, tech, economy, lights, heating, and alerts only appear when there is data for them.
 - **Sheets for the details.** Room, light, heating, ventilation, energy, solar, water, security, tech, economy, prayer, and alert sheets use the same visual language as the home view.
 - **A dashboard that follows your home.** The strategy generates one panel view containing the card. When you add an area or rename a device, the card rebuilds without a dashboard edit.
-- **Made for the house, not a demo.** Danish and English, automatic dark and light appearance, four times of day, comfortable and compact density, and a 360 px mobile layout.
-- **Keyboard and motion aware.** Sheets trap focus, close on Escape, and transitions respect `prefers-reduced-motion`.
+- **Made for the house, not a demo.** Danish and English, automatic dark and light appearance, four times of day, comfortable and compact density, and a layout that follows the card's own width — a 320 px sidebar and a full-width panel use the same components.
+- **Keyboard, touch, and motion aware.** Sheets trap focus, close on Escape, primary controls reach 44 px on phones, text and surface colours target AA contrast in both themes, and transitions respect `prefers-reduced-motion`.
 
 ## Requirements
 
