@@ -15,14 +15,21 @@ export interface DayBarsProps {
  * The seven-day production bars.
  *
  * The bars are written imperatively so the `applyGraph` dataset can be rebuilt
- * from the same day buckets on every history refresh.
+ * from the same day buckets on every history refresh. Rebuilding is skipped
+ * while the rendered signature (`days`, `empty`, `language`) is unchanged.
  */
 export function DayBars({ days, empty, language }: DayBarsProps) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const paintedRef = useRef<{ element: HTMLElement; sig: string } | null>(null);
 
   useEffect(() => {
     const element = hostRef.current;
     if (!element) return;
+
+    const sig = JSON.stringify([days, empty, language]);
+    const painted = paintedRef.current;
+    if (painted?.element === element && painted.sig === sig) return;
+    paintedRef.current = { element, sig };
 
     if (!days.length) {
       element.innerHTML = `<span class="day-empty">${escapeHtml(empty)}</span>`;

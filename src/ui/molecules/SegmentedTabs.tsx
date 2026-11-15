@@ -26,6 +26,10 @@ export function SegmentedTabs({
 }: SegmentedTabsProps) {
   const stripRef = useRef<HTMLDivElement>(null);
 
+  // Only the labels and order affect the layout work below; the caller may
+  // rebuild the array on every render (a clock tick, a hass push).
+  const tabSignature = tabs.map((tab) => `${tab.key}:${tab.label}`).join("|");
+
   useEffect(() => {
     const strip = stripRef.current;
     if (!strip) return;
@@ -71,7 +75,7 @@ export function SegmentedTabs({
       window.removeEventListener("resize", sync);
       if (frame !== null) cancelAnimationFrame(frame);
     };
-  }, [active, tabs]);
+  }, [active, tabSignature]);
 
   return (
     <div

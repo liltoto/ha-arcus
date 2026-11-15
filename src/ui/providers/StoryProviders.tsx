@@ -44,6 +44,7 @@ const providerState: ArcusStoreState = {
     eyebrow: "NÆSTE BØN · Fajr 05:12",
     greet: "Godnat, <em>Liltoto</em>",
     person: "hjemme",
+    personHome: "1",
     weatherTemp: "7°",
     weatherSub: "Let skyet",
     weatherStrip: "",

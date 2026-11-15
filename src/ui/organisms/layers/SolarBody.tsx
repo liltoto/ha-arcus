@@ -1,4 +1,4 @@
-import { useEffect, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, type CSSProperties, type ReactNode } from "react";
 import type { HistoryCache } from "../../../data/history";
 import { resolveCurrency, resolveTempUnit } from "../../../format";
 import type {
@@ -1261,13 +1261,16 @@ export function SolarBody({ route }: LayerBodyProps) {
   const hasBattery = hasSolarBattery(config, solar);
   const summary = solarHeaderSummary(solar, hasData, hasBattery, language, t);
 
-  const tabs = [
-    { key: "overblik", label: t("sheet.tabOverview") },
-    { key: "produktion", label: t("sheet.tabProduction") },
-    { key: "batteri", label: t("sheet.tabBattery") },
-    { key: "prognose", label: t("sheet.tabForecast") },
-    { key: "afkast", label: t("sheet.tabPayback") },
-  ];
+  const tabs = useMemo(
+    () => [
+      { key: "overblik", label: t("sheet.tabOverview") },
+      { key: "produktion", label: t("sheet.tabProduction") },
+      { key: "batteri", label: t("sheet.tabBattery") },
+      { key: "prognose", label: t("sheet.tabForecast") },
+      { key: "afkast", label: t("sheet.tabPayback") },
+    ],
+    [t],
+  );
 
   const changeTab = (key: string): void => {
     actions.navigate(key === "overblik" ? "sol" : `sol/${key}`);

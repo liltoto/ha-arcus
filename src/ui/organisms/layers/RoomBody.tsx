@@ -39,7 +39,7 @@ const LAYER_STYLE: CSSProperties = {
  * The room sheet, ported from `views/layers/room.ts`.
  *
  * `route.base === "skur"` is the special top-level shed route; every other
- * room uses `route.sub`. Unknown rooms fall back to the first non-skur room,
+ * room uses `route.sub`. Unknown rooms fall back to the first indoor room,
  * matching the prototype's first-room fallback.
  */
 export function RoomBody({ route }: LayerBodyProps) {
@@ -51,16 +51,23 @@ export function RoomBody({ route }: LayerBodyProps) {
   const tempUnit = resolveTempUnit(hass, config);
   const nowMs = now().getTime();
 
+  // The chart ids, not the hass object: a state push that leaves the room's
+  // sensors alone must not re-run the fetch effect.
+  const historyKey = room
+    ? [
+        temperatureChartId(hass, room),
+        room.humidity?.entityId,
+        room.co2?.entityId,
+        room.pm25?.entityId,
+      ]
+        .filter((id): id is string => typeof id === "string" && id.length > 0)
+        .join("|")
+    : "";
+
   useEffect(() => {
-    if (!room) return;
-    const ids = [
-      temperatureChartId(hass, room),
-      room.humidity?.entityId,
-      room.co2?.entityId,
-      room.pm25?.entityId,
-    ].filter((id): id is string => typeof id === "string" && id.length > 0);
-    if (ids.length) void history.ensure(ids, 24);
-  }, [hass, history, room]);
+    if (!historyKey) return;
+    void history.ensure(historyKey.split("|"), 24);
+  }, [history, historyKey]);
 
   if (!room) {
     return (

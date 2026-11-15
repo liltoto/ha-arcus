@@ -55,14 +55,31 @@ function historyStub(): HistoryCache {
   } as unknown as HistoryCache;
 }
 
+/**
+ * Mirror the card's `_personId`/`_personState` resolution so presence-dependent
+ * organisms see the same `personHome` binding the card publishes. TopBar reads
+ * the binding instead of scanning `hass.states` itself.
+ */
+function personHomeBinding(hass: ArcusHass, config: ArcusConfig): string {
+  const states = hass.states ?? {};
+  const configured = config.person?.trim();
+  const ids = Object.keys(states).filter((id) => id.startsWith("person."));
+  const id =
+    configured && states[configured]
+      ? configured
+      : (ids.find((entityId) => states[entityId]?.state === "home") ?? ids[0]);
+  return id && states[id]?.state === "home" ? "1" : "0";
+}
+
 export function makeArcusProps(options: ArcusRenderOptions = {}) {
   const hass = options.hass ?? makeHass();
   const config = options.config ?? makeConfig();
   const now = options.now ?? (() => new Date("2026-11-13T01:19:00+01:00"));
   const model = options.model ?? buildModel(hass, config, now());
   const t: Translator = createTranslator("da");
-  const bindings = {
+  const bindings: Record<string, string> = {
     ...buildBindings(model, config, t),
+    personHome: personHomeBinding(hass, config),
     ...options.bindings,
   };
 

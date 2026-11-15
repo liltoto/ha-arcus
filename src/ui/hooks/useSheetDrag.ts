@@ -62,7 +62,7 @@ export function useSheetDrag(
       const cancel = (): void => finish(false);
 
       sheet.style.transition = "none";
-      window.addEventListener("pointermove", move);
+      window.addEventListener("pointermove", move, { passive: true });
       window.addEventListener("pointerup", up);
       window.addEventListener("pointercancel", cancel);
       stopDrag = () => finish(false);

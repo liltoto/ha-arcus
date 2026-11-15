@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import type { QuickActionConfig } from "../../src/types";
@@ -130,6 +130,43 @@ describe("QuickActions", () => {
         ],
       }),
     });
+
+    expect(screen.getByRole("button", { name: "Ferie" })).toHaveClass(
+      "quick",
+      "on",
+    );
+  });
+
+  it("follows toggle state pushes through the store selector", () => {
+    const base = makeHass();
+    const config = makeConfig({
+      quick_actions: [
+        {
+          label: "Ferie",
+          icon: "car",
+          entity: "input_boolean.vacation_mode",
+          action: {
+            action: "toggle",
+            entity_id: "input_boolean.vacation_mode",
+          },
+        },
+      ],
+    });
+
+    const { store } = renderWithArcus(<QuickActions />, { config, hass: base });
+    const ferie = screen.getByRole("button", { name: "Ferie" });
+    expect(ferie).not.toHaveClass("on");
+
+    const next = makeHass({
+      states: {
+        ...base.states,
+        "input_boolean.vacation_mode": {
+          ...base.states["input_boolean.vacation_mode"],
+          state: "on",
+        },
+      },
+    });
+    act(() => store.setState({ hass: next }));
 
     expect(screen.getByRole("button", { name: "Ferie" })).toHaveClass(
       "quick",

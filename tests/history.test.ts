@@ -19,6 +19,25 @@ function makeHass(
   return { callWS, callApi };
 }
 
+interface Deferred<T> {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+}
+
+/** Promise plus its `resolve`, so a test can hold a request open. */
+function deferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
+/** Let promise continuations queued by a release run to completion. */
+async function flushMicrotasks(ticks = 16): Promise<void> {
+  for (let tick = 0; tick < ticks; tick += 1) await Promise.resolve();
+}
+
 afterEach(() => {
   vi.useRealTimers();
 });
@@ -251,6 +270,57 @@ test("batches large history requests instead of sending one giant payload", asyn
   expect(nonNull(cache.series("sensor.batch_0"))).toEqual([7]);
   expect(nonNull(cache.series("sensor.batch_8"))).toEqual([7]);
   expect(nonNull(cache.series("sensor.batch_16"))).toEqual([7]);
+});
+
+test("runs history batches concurrently within the pool limit", async () => {
+  // Mirrors `FETCH_CONCURRENCY` in `src/data/history.ts`: startup must neither
+  // fall back to a serial waterfall nor fan out past the recorder budget.
+  const pool = 4;
+  const pending: Array<{ request: Deferred<unknown>; ids: string[] }> = [];
+  let active = 0;
+  let maxActive = 0;
+  const ws = vi.fn((message: HistoryWsRequest) => {
+    active += 1;
+    maxActive = Math.max(maxActive, active);
+    const request = deferred<unknown>();
+    pending.push({ request, ids: message.entity_ids });
+    // Decrement only once the batch is released, so `active` counts exactly
+    // the requests the cache is waiting on.
+    return request.promise.finally(() => {
+      active -= 1;
+    });
+  });
+  const cache = new HistoryCache(makeHass(ws), () => FIXED);
+  const ids = Array.from({ length: 20 }, (_, index) => `sensor.pool_${index}`);
+
+  const done = cache.ensure(ids, 24);
+
+  // Twenty entities are five batches; the pool starts four before settling.
+  await flushMicrotasks();
+  expect(ws).toHaveBeenCalledTimes(pool);
+  expect(active).toBe(pool);
+  expect(maxActive).toBe(pool);
+
+  // Release each wave so the fifth batch can take a free slot.
+  for (let round = 0; round < 8 && pending.length; round += 1) {
+    pending.splice(0).forEach(({ request, ids: batchIds }) => {
+      request.resolve(
+        Object.fromEntries(
+          batchIds.map((id) => [
+            id,
+            [{ s: "7", lu: Math.floor(FIXED.getTime() / 1000) - 3600 }],
+          ]),
+        ),
+      );
+    });
+    await flushMicrotasks();
+  }
+  await done;
+
+  expect(ws).toHaveBeenCalledTimes(5);
+  expect(maxActive).toBeGreaterThan(1);
+  expect(maxActive).toBeLessThanOrEqual(pool);
+  ids.forEach((id) => expect(nonNull(cache.series(id))).toEqual([7]));
 });
 
 test("aligns explicit calendar-day windows and fills empty buckets", async () => {

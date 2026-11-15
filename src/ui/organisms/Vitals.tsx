@@ -45,9 +45,9 @@ const DEFAULT_VITALS: VitalPresetKey[] = [
   "solar",
 ];
 
-/** `skur` predates room kinds; both markers mean "outside". */
+/** `skur` predates room kinds; the id is only a legacy fallback. */
 function isOutdoorRoom(room: RoomModel): boolean {
-  return room.id === "skur" || room.kind === "outdoor";
+  return room.kind === "outdoor" || (!room.kind && room.id === "skur");
 }
 
 function average(values: Array<number | null>): number | null {
