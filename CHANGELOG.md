@@ -2,6 +2,21 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.2 - 2026-11-16
+
+Crash containment and bounded history requests.
+
+### Fixed
+
+- A failed `buildModel` no longer throws inside Home Assistant's `hass` setter. The card keeps the last good model and, when no model has built yet, renders a retryable failure panel instead of mounting React.
+- An uncaught render error no longer removes the whole card root. An error boundary inside the provider shows a themed fallback with a retry action.
+- A hung history request no longer pins an entity at "loading" and blocks later refreshes. Both transports are bounded by a 10 s timeout, the WebSocket request is retried once before the REST fallback, and an outage reports `failed` ("Unavailable") instead of `empty` ("No data").
+- A rejected history refresh is caught, so it cannot surface as an unhandled rejection.
+
+### Verified
+
+- 511 tests, coverage 90.5% statements / 75.3% branches / 92.3% functions, typecheck, lint, Fallow gates, build, size budget (398.2 KB gzip), and Storybook.
+
 ## 0.5.1 - 2026-11-15
 
 Nilan filter alerts clear when the filter is reset.
