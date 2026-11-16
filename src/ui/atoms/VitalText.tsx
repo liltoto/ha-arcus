@@ -12,7 +12,7 @@ export interface VitalTextProps {
  * The label/value/sub text stack shared by `Stat` and `VitalStat`. It is a
  * fragment because each caller owns the surrounding `.vital` element.
  */
-export function VitalText({ label, value, unit, sub }: VitalTextProps) {
+export const VitalText = ({ label, value, unit, sub }: VitalTextProps) => {
   return (
     <>
       <div className={c("vital-label")}>{label}</div>
@@ -23,4 +23,4 @@ export function VitalText({ label, value, unit, sub }: VitalTextProps) {
       {sub ? <div className={c("vital-sub")}>{sub}</div> : null}
     </>
   );
-}
+};

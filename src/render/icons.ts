@@ -121,9 +121,9 @@ const ICONS = {
 
 type IconName = keyof typeof ICONS;
 
-export function icon(name: string, cls = ""): string {
+export const icon = (name: string, cls = ""): string => {
   const s = ICONS[name as IconName] || ICONS.info;
   return cls
     ? s.replace(`class="${ICO_CLASS}"`, `class="${ICO_CLASS} ${cls}"`)
     : s;
-}
+};

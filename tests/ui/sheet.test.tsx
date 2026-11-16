@@ -35,11 +35,11 @@ interface SheetHarnessProps {
 }
 
 /** Route/state harness for interactions that need a live provider. */
-function SheetHarness({
+const SheetHarness = ({
   actions,
   controls,
   hass: initialHass,
-}: SheetHarnessProps) {
+}: SheetHarnessProps) => {
   const base = useMemo(
     () =>
       makeArcusProps({
@@ -88,7 +88,7 @@ function SheetHarness({
       <SheetFrame />
     </ArcusProvider>
   );
-}
+};
 
 beforeEach(() => {
   window.history.replaceState(null, "", "/");

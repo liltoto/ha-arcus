@@ -9,12 +9,12 @@ export interface QuickActionProps {
 }
 
 /** A pill-shaped shortcut below the chapter grid. */
-export function QuickAction({
+export const QuickAction = ({
   icon,
   label,
   on = false,
   onClick,
-}: QuickActionProps) {
+}: QuickActionProps) => {
   return (
     <button
       type="button"
@@ -26,4 +26,4 @@ export function QuickAction({
       {label}
     </button>
   );
-}
+};

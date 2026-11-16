@@ -13,7 +13,7 @@ import { resolveEnergyView } from "./energy/energy-view";
  * The price section always renders; the optional EV, standby, and appliance
  * blocks come from `config.energy` and read their live values from `hass`.
  */
-export function EnergyBody(_props: LayerBodyProps) {
+export const EnergyBody = (_props: LayerBodyProps) => {
   const { hass, model, config, t, history, now, actions } = useHistoryFrame();
   const view = resolveEnergyView(hass, model, config, history, now, t);
 
@@ -83,4 +83,4 @@ export function EnergyBody(_props: LayerBodyProps) {
       </div>
     </div>
   );
-}
+};

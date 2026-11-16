@@ -8,26 +8,28 @@ export type TechFormat = (
 ) => string;
 
 /** A held history series for one network probe, empty when unwired. */
-export function seriesOf(
+export const seriesOf = (
   history: HistoryCache,
   entityId: string | undefined,
-): Array<number | null> {
+): Array<number | null> => {
   if (!entityId) return [];
   return typeof history.series === "function"
     ? history.series(entityId, { fill: "hold" })
     : [];
-}
+};
 
 /** Uptime in whole hours, or an en dash when the model has no reading. */
-export function uptimeHours(uptime: number | null | undefined): number | "–" {
+export const uptimeHours = (
+  uptime: number | null | undefined,
+): number | "–" => {
   return uptime === null || uptime === undefined
     ? "–"
     : Math.round(uptime / 3600);
-}
+};
 
-export function hoursUnit(language: Language): string {
+export const hoursUnit = (language: Language): string => {
   return language === "da" ? "t" : "h";
-}
+};
 
 export interface TechStatus {
   text: string;
@@ -36,10 +38,10 @@ export interface TechStatus {
 }
 
 /** Router reachability, phrased once for the row and its status dot. */
-export function techStatus(
+export const techStatus = (
   t: Translator,
   online: boolean | undefined,
-): TechStatus {
+): TechStatus => {
   if (online === true) {
     return { text: t("tech.responds"), label: t("common.ok"), warn: false };
   }
@@ -51,4 +53,4 @@ export function techStatus(
     };
   }
   return { text: "–", label: "–", warn: false };
-}
+};

@@ -83,7 +83,7 @@ const FETCH_BATCH = 4;
 const FETCH_CONCURRENCY = 4;
 
 /** Opt-in console diagnostics: set `localStorage.arcus-debug = "1"`. */
-function debugHistory(message: string, details: unknown): void {
+const debugHistory = (message: string, details: unknown): void => {
   try {
     if (globalThis.localStorage?.getItem("arcus-debug") === "1") {
       console.debug(`[arcus history] ${message}`, details);
@@ -91,11 +91,11 @@ function debugHistory(message: string, details: unknown): void {
   } catch {
     /* localStorage can be unavailable in embedded browsers. */
   }
-}
+};
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Numeric epoch seconds or an ISO/numeric date string -> milliseconds. */
-function rowTimestamp(row: HistoryRow): number {
+const rowTimestamp = (row: HistoryRow): number => {
   const raw = row.lu ?? row.last_updated ?? row.last_changed ?? row.lc;
   if (typeof raw === "number") return Number.isFinite(raw) ? raw * 1000 : 0;
   if (typeof raw === "string") {
@@ -104,10 +104,10 @@ function rowTimestamp(row: HistoryRow): number {
     return Number.isNaN(parsed) ? 0 : parsed;
   }
   return 0;
-}
+};
 
 /** State value -> number, preserving gaps as `null`. */
-export function rowValue(row: HistoryRow): number | null {
+export const rowValue = (row: HistoryRow): number | null => {
   const raw = row.s ?? row.state;
   if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
   if (typeof raw === "string") {
@@ -117,7 +117,7 @@ export function rowValue(row: HistoryRow): number | null {
     return Number.isFinite(number) ? number : null;
   }
   return null;
-}
+};
 
 /**
  * Per-entity history cache used by the cards and sheets.

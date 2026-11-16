@@ -3,13 +3,13 @@ import { firstEntity, performAction } from "../src/actions";
 import type { ActionConfig } from "../src/types";
 import { makeHass, type MockHass } from "./fixtures/home";
 
-function spyOnOpen() {
+const spyOnOpen = () => {
   return vi.spyOn(window, "open").mockImplementation(() => null);
-}
+};
 
-function callServiceSpy(hass: MockHass) {
+const callServiceSpy = (hass: MockHass) => {
   return vi.spyOn(hass, "callService").mockResolvedValue(undefined);
-}
+};
 
 afterEach(() => {
   window.history.replaceState(null, "", "/");

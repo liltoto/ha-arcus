@@ -8,7 +8,7 @@ export interface ReadoutProps {
 }
 
 /** One cell of a `.readings` grid. */
-export function Readout({ label, value, unit }: ReadoutProps) {
+export const Readout = ({ label, value, unit }: ReadoutProps) => {
   return (
     <div className={c("reading")}>
       <div className={c("v")}>
@@ -18,4 +18,4 @@ export function Readout({ label, value, unit }: ReadoutProps) {
       <div className={c("l")}>{label}</div>
     </div>
   );
-}
+};

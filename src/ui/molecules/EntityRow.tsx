@@ -19,7 +19,7 @@ export interface EntityRowProps {
  * button so a row can host an interactive `trailing` control without nesting
  * buttons; clickable rows get button semantics via role/tabIndex.
  */
-export function EntityRow({
+export const EntityRow = ({
   name,
   sub,
   value,
@@ -28,7 +28,7 @@ export function EntityRow({
   on = false,
   onClick,
   trailing,
-}: EntityRowProps) {
+}: EntityRowProps) => {
   const interactive = Boolean(onClick);
   const activate = rowActivation(onClick);
 
@@ -57,4 +57,4 @@ export function EntityRow({
       {right}
     </div>
   );
-}
+};

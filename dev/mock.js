@@ -4,7 +4,7 @@
 const HOUR = 3600e3;
 const DAY = 24 * HOUR;
 
-function state(id, s, attrs = {}) {
+const state = (id, s, attrs = {}) => {
   return {
     entity_id: id,
     state: String(s),
@@ -12,9 +12,9 @@ function state(id, s, attrs = {}) {
     last_changed: new Date(Date.now() - 800000).toISOString(),
     last_updated: new Date(Date.now() - 60000).toISOString(),
   };
-}
+};
 
-export function makeHass(overrides = {}) {
+export const makeHass = (overrides = {}) => {
   const st = {};
   const add = (id, s, attrs) => (st[id] = state(id, s, attrs));
 
@@ -1825,9 +1825,9 @@ export function makeHass(overrides = {}) {
     },
   };
   return Object.assign(hass, overrides);
-}
+};
 
-function makeHistory(ids, start, end) {
+const makeHistory = (ids, start, end) => {
   const out = {};
   const span = end.getTime() - start.getTime();
   const step =
@@ -1924,4 +1924,4 @@ function makeHistory(ids, start, end) {
     out[id] = rows;
   }
   return out;
-}
+};

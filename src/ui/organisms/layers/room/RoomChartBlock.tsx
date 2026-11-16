@@ -19,7 +19,7 @@ export interface RoomChartBlockProps {
 }
 
 /** One titled 24-hour room chart block. */
-export function RoomChartBlock({
+export const RoomChartBlock = ({
   title,
   value,
   entityId,
@@ -33,7 +33,7 @@ export function RoomChartBlock({
   loadingLabel,
   unavailableLabel,
   unavailable = false,
-}: RoomChartBlockProps) {
+}: RoomChartBlockProps) => {
   return (
     <div className={c("block")}>
       <div className={c("block-head")}>
@@ -57,4 +57,4 @@ export function RoomChartBlock({
       />
     </div>
   );
-}
+};

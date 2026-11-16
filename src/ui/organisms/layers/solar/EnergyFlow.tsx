@@ -9,7 +9,7 @@ export interface EnergyFlowProps {
 }
 
 /** The four-node solar flow diagram from the legacy overview. */
-export function EnergyFlow({ solar, language, t }: EnergyFlowProps) {
+export const EnergyFlow = ({ solar, language, t }: EnergyFlowProps) => {
   const grid = solar.grid;
   const gridValue = grid === null ? "–" : fmt(Math.abs(grid), 0, language);
   const gridUnit =
@@ -150,4 +150,4 @@ export function EnergyFlow({ solar, language, t }: EnergyFlowProps) {
       </svg>
     </div>
   );
-}
+};

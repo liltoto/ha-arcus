@@ -1,6 +1,6 @@
 import type { ActionConfig, ArcusConfig, ArcusHass, EntityId } from "./types";
 
-function firstString(value: unknown): string | undefined {
+const firstString = (value: unknown): string | undefined => {
   if (typeof value === "string") {
     const trimmed = value.trim();
     return trimmed || undefined;
@@ -11,54 +11,54 @@ function firstString(value: unknown): string | undefined {
     }
   }
   return undefined;
-}
+};
 
-function firstEntity(action: ActionConfig): EntityId | undefined {
+const firstEntity = (action: ActionConfig): EntityId | undefined => {
   return (
     firstString(action.target?.entity_id) ??
     firstString(action.entity_id) ??
     firstString(action.data?.entity_id)
   );
-}
+};
 
-function targetOf(action: ActionConfig): Record<string, unknown> {
+const targetOf = (action: ActionConfig): Record<string, unknown> => {
   if (action.target && typeof action.target === "object") {
     return action.target;
   }
   const entityId = firstEntity(action);
   return entityId ? { entity_id: entityId } : {};
-}
+};
 
-function hasScopedTarget(action: ActionConfig): boolean {
+const hasScopedTarget = (action: ActionConfig): boolean => {
   return !!(
     firstString(action.target?.area_id) ?? firstString(action.target?.device_id)
   );
-}
+};
 
-function splitService(value: string | undefined): [string, string] {
+const splitService = (value: string | undefined): [string, string] => {
   const raw = String(value ?? "").trim();
   const dot = raw.indexOf(".");
   if (dot <= 0 || dot === raw.length - 1) {
     throw new Error(`Invalid service: ${raw || "(missing)"}`);
   }
   return [raw.slice(0, dot).trim(), raw.slice(dot + 1).trim()];
-}
+};
 
-async function callServiceAction(
+const callServiceAction = async (
   hass: ArcusHass,
   action: ActionConfig,
   serviceValue?: string,
-): Promise<void> {
+): Promise<void> => {
   const [domain, service] = splitService(serviceValue);
   await hass.callService(domain, service, action.data ?? {}, targetOf(action));
-}
+};
 
 /**
  * Only absolute `http(s)` URLs may reach `window.open`. A dashboard action
  * comes from user config, so `javascript:`, `data:`, `blob:`, protocol-relative
  * and relative values are open-redirect/XSS vectors and must be ignored.
  */
-function safeExternalUrl(value: string): string | null {
+const safeExternalUrl = (value: string): string | null => {
   if (!/^https?:\/\//i.test(value)) return null;
   try {
     const url = new URL(value);
@@ -68,18 +68,18 @@ function safeExternalUrl(value: string): string | null {
   } catch {
     return null;
   }
-}
+};
 
-function openExternalAction(action: ActionConfig): void {
+const openExternalAction = (action: ActionConfig): void => {
   const url = String(action.url_path ?? action.url ?? "").trim();
   if (!url) return;
   const safeUrl = safeExternalUrl(url);
   if (!safeUrl) return;
   const target = String(action.url_target ?? "_blank");
   window.open(safeUrl, target, "noopener,noreferrer");
-}
+};
 
-function navigate(path: string | undefined): void {
+const navigate = (path: string | undefined): void => {
   const raw = String(path ?? "").trim();
   if (!raw) return;
 
@@ -103,18 +103,18 @@ function navigate(path: string | undefined): void {
   if (typeof location !== "undefined") {
     location.hash = `#/${raw.replace(/^#?\/?/, "")}`;
   }
-}
+};
 
 /**
  * Run a Home Assistant action config. The card uses this for
  * `config.quick_actions`; the supported action kinds are the ones the
  * prototype exposed plus the common HA navigation/url actions.
  */
-export async function performAction(
+export const performAction = async (
   hass: ArcusHass,
   action: ActionConfig,
   _config?: ArcusConfig,
-): Promise<void> {
+): Promise<void> => {
   if (!action || typeof action !== "object") return;
 
   const kind =
@@ -172,6 +172,6 @@ export async function performAction(
       throw new Error(`Unsupported action: ${kind || "unknown"}`);
     }
   }
-}
+};
 
 export { firstEntity };

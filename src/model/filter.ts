@@ -19,7 +19,7 @@ const FILTER_OK_STATES = new Set([
 ]);
 
 /** Whether a ventilation filter status means the filter is healthy. */
-export function filterOk(value: string | null | undefined): boolean {
+export const filterOk = (value: string | null | undefined): boolean => {
   if (!value) return true;
   return FILTER_OK_STATES.has(value.trim().toLowerCase().replace(/\s+/g, " "));
-}
+};

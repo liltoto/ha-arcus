@@ -10,7 +10,12 @@ export interface MediaRowProps {
 }
 
 /** A speaker/media row with the play/pause round button. */
-export function MediaRow({ name, state, isPlaying, onToggle }: MediaRowProps) {
+export const MediaRow = ({
+  name,
+  state,
+  isPlaying,
+  onToggle,
+}: MediaRowProps) => {
   return (
     <div className={c("row")}>
       <Icon name="play" />
@@ -26,4 +31,4 @@ export function MediaRow({ name, state, isPlaying, onToggle }: MediaRowProps) {
       />
     </div>
   );
-}
+};

@@ -17,7 +17,7 @@ interface SetpointProps {
 }
 
 /** One setpoint stepper carrying the legacy temp-step/input-step hooks. */
-export function Setpoint({
+export const Setpoint = ({
   entityId,
   value,
   min,
@@ -28,7 +28,7 @@ export function Setpoint({
   t,
   dataAct,
   onChange,
-}: SetpointProps) {
+}: SetpointProps) => {
   if (value === null) return <span className={c("row-val")}>–</span>;
   return (
     <span
@@ -50,4 +50,4 @@ export function Setpoint({
       />
     </span>
   );
-}
+};

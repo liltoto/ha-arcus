@@ -11,7 +11,7 @@ interface TechReadingsProps {
 }
 
 /** The four-cell latency grid above the pulse chart. */
-export function TechReadings({ tech, fmt, t }: TechReadingsProps) {
+export const TechReadings = ({ tech, fmt, t }: TechReadingsProps) => {
   return (
     <div className={c("readings")}>
       <Readout label={t("tech.router")} value={fmt(tech.router, 1)} unit="ms" />
@@ -28,7 +28,7 @@ export function TechReadings({ tech, fmt, t }: TechReadingsProps) {
       />
     </div>
   );
-}
+};
 
 interface TechQualityProps {
   tech: TechModel;
@@ -38,7 +38,7 @@ interface TechQualityProps {
 }
 
 /** Jitter, packet loss and the probe endpoints below the pulse chart. */
-export function TechQuality({ tech, fmt, t, status }: TechQualityProps) {
+export const TechQuality = ({ tech, fmt, t, status }: TechQualityProps) => {
   return (
     <div className={c("block")}>
       <div className={c("block-label")}>{t("tech.quality")}</div>
@@ -84,4 +84,4 @@ export function TechQuality({ tech, fmt, t, status }: TechQualityProps) {
       </div>
     </div>
   );
-}
+};

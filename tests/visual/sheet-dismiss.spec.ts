@@ -1,15 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
 
-async function openSolar(
+const openSolar = async (
   page: Page,
   width: number,
   height: number,
-): Promise<void> {
+): Promise<void> => {
   await page.setViewportSize({ width, height });
   await page.goto("/dev/index.html#/sol");
   await page.waitForSelector(".sheet.open");
   await expect(page.locator(".sheet")).toHaveCSS("transform", "none");
-}
+};
 
 test("clicking outside the sheet closes it on desktop", async ({ page }) => {
   await openSolar(page, 1440, 1200);

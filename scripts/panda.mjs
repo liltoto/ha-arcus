@@ -12,13 +12,13 @@ export const PANDA_BIN = path.join(
 );
 
 // Generate the helper modules and the stylesheet via the Panda CLI.
-export function runPandaBuild(env = process.env) {
+export const runPandaBuild = (env = process.env) => {
   execFileSync(PANDA_BIN, ["build"], {
     cwd: ROOT,
     stdio: "inherit",
     env,
   });
-}
+};
 
 // Resolve `*.css?inline` imports to their file contents; `panda.css` inlines the
 // generated Panda stylesheet and watches it so dev rebuilds on cssgen writes.

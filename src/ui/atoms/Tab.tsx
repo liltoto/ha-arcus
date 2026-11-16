@@ -9,13 +9,13 @@ export interface TabProps {
   dataTab?: string;
 }
 
-export function Tab({
+export const Tab = ({
   active,
   children,
   onClick,
   className,
   dataTab,
-}: TabProps) {
+}: TabProps) => {
   return (
     <button
       type="button"
@@ -27,4 +27,4 @@ export function Tab({
       {children}
     </button>
   );
-}
+};

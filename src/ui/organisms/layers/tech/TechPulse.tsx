@@ -15,13 +15,13 @@ export interface TechPulseProps {
  * The pulse chart: one held history series per network probe, drawn by the
  * shared history chart so the card's hover readout keeps working.
  */
-export function TechPulse({
+export const TechPulse = ({
   t,
   nowMs,
   router,
   google,
   cloudflare,
-}: TechPulseProps) {
+}: TechPulseProps) => {
   return (
     <div className={c("block")}>
       <div className={c("block-head")}>
@@ -68,4 +68,4 @@ export function TechPulse({
       />
     </div>
   );
-}
+};

@@ -17,27 +17,27 @@ import {
   roomStatFor,
 } from "./room-state";
 
-export function clamp(value: number, min: number, max: number): number {
+export const clamp = (value: number, min: number, max: number): number => {
   return Math.max(min, Math.min(max, value));
-}
+};
 
 /** The 24-hour chart entity: the live sensor, then the fallback sensor. */
-export function temperatureChartId(
+export const temperatureChartId = (
   hass: ArcusHass,
   room: RoomModel,
-): string | undefined {
+): string | undefined => {
   const directTemp = numberOf(hass, room.temp);
   return directTemp !== null
     ? room.temp?.entityId
     : (room.tempFallback?.entityId ?? room.temp?.entityId);
-}
+};
 
-export function relativeChanged(
+export const relativeChanged = (
   hass: ArcusHass,
   t: Translator,
   nowMs: number,
   entityId: string,
-): string {
+): string => {
   const raw = hass.states?.[entityId]?.last_changed;
   const date = raw ? new Date(raw) : null;
   if (!date || Number.isNaN(date.getTime())) return "";
@@ -48,14 +48,14 @@ export function relativeChanged(
   const hours = Math.round(minutes / 60);
   if (hours < 24) return t("room.relativeHours", { count: hours });
   return t("room.relativeDays", { count: Math.round(hours / 24) });
-}
+};
 
-function airSummary(
+const airSummary = (
   t: Translator,
   humidity: number | null,
   co2: number | null,
   language: Language,
-): string {
+): string => {
   if (co2 !== null) {
     return `${t("room.air")} ${formatUnit(co2, "ppm", language, 0)}`;
   }
@@ -68,7 +68,7 @@ function airSummary(
     )}`;
   }
   return `${t("room.air")} –`;
-}
+};
 
 /** Everything the room header, readouts, and chart blocks need. */
 export interface RoomView {
@@ -82,13 +82,13 @@ export interface RoomView {
   fallbackNote: boolean;
 }
 
-export function resolveRoomView(
+export const resolveRoomView = (
   hass: ArcusHass,
   model: HomeModel,
   room: RoomModel,
   t: Translator,
   language: Language,
-): RoomView {
+): RoomView => {
   const stat = roomStatFor(hass, model, room);
   const directTemp = numberOf(hass, room.temp);
   const temp =
@@ -129,7 +129,7 @@ export function resolveRoomView(
       room.tempFallback && directTemp === null && stat.temp !== null,
     ),
   };
-}
+};
 
 export interface RoomClimateView {
   ref: EntityRef;
@@ -139,11 +139,11 @@ export interface RoomClimateView {
   currentText: string;
 }
 
-export function resolveClimateView(
+export const resolveClimateView = (
   hass: ArcusHass,
   ref: EntityRef | null | undefined,
   language: Language,
-): RoomClimateView | null {
+): RoomClimateView | null => {
   if (!ref) return null;
   const entity = refEntity(hass, ref);
   if (!entity) return null;
@@ -159,7 +159,7 @@ export function resolveClimateView(
     currentText:
       currentTemp === null ? "–" : `${formatNumber(currentTemp, 1, language)}°`,
   };
-}
+};
 
 export interface RoomFanView {
   ref: EntityRef;
@@ -169,10 +169,10 @@ export interface RoomFanView {
   resetId: string | undefined;
 }
 
-export function resolveFanView(
+export const resolveFanView = (
   hass: ArcusHass,
   room: RoomModel,
-): RoomFanView | null {
+): RoomFanView | null => {
   const ref = room.fan;
   if (!ref) return null;
   const entity = refEntity(hass, ref);
@@ -188,40 +188,40 @@ export function resolveFanView(
     filterHours: numberOf(hass, room.filter),
     resetId,
   };
-}
+};
 
 export interface RoomMotionView {
   on: boolean;
   lux: number | null;
 }
 
-export function resolveMotionView(
+export const resolveMotionView = (
   hass: ArcusHass,
   room: RoomModel,
-): RoomMotionView | null {
+): RoomMotionView | null => {
   const motion = room.motion;
   if (!motion) return null;
   return {
     on: isOn(hass, motion.entityId, motion),
     lux: numberOf(hass, room.illuminance),
   };
-}
+};
 
 export interface RoomBatteryView {
   entity: HassEntity | EntityRef | undefined;
   level: number | null;
 }
 
-export function resolveBatteryView(
+export const resolveBatteryView = (
   hass: ArcusHass,
   room: RoomModel,
-): RoomBatteryView | null {
+): RoomBatteryView | null => {
   if (!room.battery) return null;
   return {
     entity: refEntity(hass, room.battery),
     level: numberOf(hass, room.battery),
   };
-}
+};
 
 export interface RoomMediaView {
   ref: EntityRef;
@@ -230,11 +230,11 @@ export interface RoomMediaView {
   stateText: string;
 }
 
-export function resolveMediaView(
+export const resolveMediaView = (
   hass: ArcusHass,
   room: RoomModel,
   t: Translator,
-): RoomMediaView | null {
+): RoomMediaView | null => {
   const ref = room.media;
   if (!ref) return null;
   const entity = refEntity(hass, ref);
@@ -246,9 +246,9 @@ export function resolveMediaView(
         ? t("room.heatingOff")
         : (state ?? "–");
   return { ref, entity, state, stateText };
-}
+};
 
 /** The cover label, falling back to the entity ID. */
-export function coverName(cover: EntityRef, hass: ArcusHass): string {
+export const coverName = (cover: EntityRef, hass: ArcusHass): string => {
   return entityName(refEntity(hass, cover), cover.name ?? cover.entityId);
-}
+};

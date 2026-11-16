@@ -34,26 +34,26 @@ interface ArcLabel {
   offset: number;
 }
 
-function dayFraction(date: Date): number {
+const dayFraction = (date: Date): number => {
   return (
     (date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60) / 1440
   );
-}
+};
 
-function positionStyle(x: number, y: number): { left: string; top: string } {
+const positionStyle = (x: number, y: number): { left: string; top: string } => {
   return { left: `${x / 10}%`, top: `${y / 3}%` };
-}
+};
 
-function pathFrom(points: Point[]): string {
+const pathFrom = (points: Point[]): string => {
   if (!points.length) return "";
   return `M${points
     .map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`)
     .join("L")}`;
-}
+};
 
-function lift(point: Point, value: number, max: number): Point {
+const lift = (point: Point, value: number, max: number): Point => {
   return { x: point.x, y: point.y - (value / max) * PEAK_HEIGHT };
-}
+};
 
 interface DaySeries {
   solarLine: string;
@@ -61,12 +61,12 @@ interface DaySeries {
   actualLine: string;
 }
 
-function buildSeries(
+const buildSeries = (
   history: HistoryCache,
   config: ArcusConfig,
   model: HomeModel,
   current: Date,
-): DaySeries {
+): DaySeries => {
   const solar = model.solar?.forecastSeries ?? [];
   const dayStart = new Date(
     current.getFullYear(),
@@ -111,15 +111,15 @@ function buildSeries(
     solarArea: solarLine ? `${solarLine}L960,210L40,210Z` : "",
     actualLine: pathFrom(actualPoints),
   };
-}
+};
 
-function sunLabel(
+const sunLabel = (
   id: string,
   name: string,
   date: Date,
   offset: number,
   language: Language,
-): ArcLabel {
+): ArcLabel => {
   return {
     id,
     name,
@@ -129,18 +129,18 @@ function sunLabel(
     sun: true,
     offset,
   };
-}
+};
 
 /**
  * Prayer labels win when prayers are configured. Otherwise the arc still
  * shows the sun's rising and setting, so homes without prayer times keep a
  * meaningful day rhythm.
  */
-function buildLabels(
+const buildLabels = (
   model: HomeModel,
   t: Translator,
   language: Language,
-): ArcLabel[] {
+): ArcLabel[] => {
   const prayerTimes = model.prayers?.times ?? [];
   const next = model.prayers?.next ?? null;
   const sunrise = model.prayers?.sunrise ?? null;
@@ -180,7 +180,7 @@ function buildLabels(
   }
 
   return labels;
-}
+};
 
 /**
  * The prayer/sun/price day arc.
@@ -189,7 +189,7 @@ function buildLabels(
  * the actual solar line appears or refreshes without the card re-patching the
  * SVG after a timer.
  */
-export function DayArc() {
+export const DayArc = () => {
   const model = useModel();
   const config = useConfig();
   const history = useHistory();
@@ -367,4 +367,4 @@ export function DayArc() {
       </div>
     </div>
   );
-}
+};

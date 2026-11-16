@@ -25,27 +25,33 @@ import {
   type SheetLanguage,
 } from "./ventilation/ventilation-view";
 
-function countText(value: number | null | undefined, fallback = "–"): string {
+const countText = (
+  value: number | null | undefined,
+  fallback = "–",
+): string => {
   return value === null || value === undefined
     ? fallback
     : String(Math.round(value));
-}
+};
 
-function temperatureText(
+const temperatureText = (
   value: number | null | undefined,
   language: SheetLanguage,
   unit: TemperatureUnit = "°C",
-): string {
+): string => {
   return value === null || value === undefined
     ? "–"
     : `${formatNumber(value, 1, language)}${unit === "°F" ? "°F" : "°"}`;
-}
+};
 
-function optionsFor(hass: ArcusHass, entityId: string | undefined): string[] {
+const optionsFor = (
+  hass: ArcusHass,
+  entityId: string | undefined,
+): string[] => {
   if (!entityId) return [];
   const options = hass.states[entityId]?.attributes?.options;
   return Array.isArray(options) ? options.map(String) : [];
-}
+};
 
 interface UserSelectProps {
   hass: ArcusHass;
@@ -55,13 +61,13 @@ interface UserSelectProps {
   onSelect: (option: string) => void;
 }
 
-function UserSelect({
+const UserSelect = ({
   hass,
   entityId,
   value,
   label,
   onSelect,
-}: UserSelectProps) {
+}: UserSelectProps) => {
   if (!entityId) return <span className={c("row-val")}>{value || "–"}</span>;
   const options = optionsFor(hass, entityId);
   const selected = value ?? hass.states[entityId]?.state ?? "";
@@ -84,7 +90,7 @@ function UserSelect({
       ))}
     </select>
   );
-}
+};
 
 interface AirflowProps {
   ventilation: VentilationModel;
@@ -96,14 +102,14 @@ interface AirflowProps {
 }
 
 /** The five-node Nilan airflow, kept as the same SVG as the legacy sheet. */
-function Airflow({
+const Airflow = ({
   ventilation,
   temperature,
   language,
   systemName,
   unit,
   t,
-}: AirflowProps) {
+}: AirflowProps) => {
   const pathLabel = systemName
     ? `${systemName.toUpperCase()} · ${t("ventilation.airPath").toUpperCase()}`
     : t("ventilation.nilanPath");
@@ -234,7 +240,7 @@ function Airflow({
       </div>
     </div>
   );
-}
+};
 
 interface SystemRowProps {
   icon: string;
@@ -242,7 +248,7 @@ interface SystemRowProps {
   value: string | null | undefined;
 }
 
-function SystemRow({ icon, label, value }: SystemRowProps) {
+const SystemRow = ({ icon, label, value }: SystemRowProps) => {
   return (
     <div className={c("row")}>
       <Icon name={icon} />
@@ -254,7 +260,7 @@ function SystemRow({ icon, label, value }: SystemRowProps) {
       </span>
     </div>
   );
-}
+};
 
 interface VentilationReadingsProps {
   temperature: number | null | undefined;
@@ -267,7 +273,7 @@ interface VentilationReadingsProps {
 }
 
 /** The four live readings at the top of the sheet. */
-function VentilationReadings({
+const VentilationReadings = ({
   temperature,
   humidity,
   step,
@@ -275,7 +281,7 @@ function VentilationReadings({
   language,
   unit,
   t,
-}: VentilationReadingsProps) {
+}: VentilationReadingsProps) => {
   return (
     <div className={c("readings")}>
       <Readout
@@ -300,7 +306,7 @@ function VentilationReadings({
       />
     </div>
   );
-}
+};
 
 interface ClimateControlsProps {
   climateId: string;
@@ -320,7 +326,7 @@ interface ClimateControlsProps {
 }
 
 /** The climate entity's setpoint, HVAC mode, and fan-step controls. */
-function ClimateControls({
+const ClimateControls = ({
   climateId,
   mode,
   modeLabel,
@@ -335,7 +341,7 @@ function ClimateControls({
   onMode,
   onFan,
   t,
-}: ClimateControlsProps) {
+}: ClimateControlsProps) => {
   return (
     <div className={c("block")}>
       <div className={c("block-head")}>
@@ -417,7 +423,7 @@ function ClimateControls({
       </div>
     </div>
   );
-}
+};
 
 interface FilterBlockProps {
   status: string;
@@ -432,7 +438,7 @@ interface FilterBlockProps {
 }
 
 /** Filter status, the filter counters, and the alarm reset control. */
-function FilterBlock({
+const FilterBlock = ({
   status,
   filterValue,
   resetId,
@@ -442,7 +448,7 @@ function FilterBlock({
   exhaustFan,
   onReset,
   t,
-}: FilterBlockProps) {
+}: FilterBlockProps) => {
   return (
     <div className={c("block")}>
       <div className={c("block-head")}>
@@ -490,7 +496,7 @@ function FilterBlock({
       </div>
     </div>
   );
-}
+};
 
 interface UserChoiceBlockProps {
   hass: ArcusHass;
@@ -505,7 +511,7 @@ interface UserChoiceBlockProps {
 }
 
 /** The user-function selects and their minute/speed readouts. */
-function UserChoiceBlock({
+const UserChoiceBlock = ({
   hass,
   userFunctionId,
   userFunction2Id,
@@ -515,7 +521,7 @@ function UserChoiceBlock({
   userSpeed,
   onSelect,
   t,
-}: UserChoiceBlockProps) {
+}: UserChoiceBlockProps) => {
   return (
     <div className={c("block")}>
       <div className={c("block-label")}>{t("ventilation.userChoice")}</div>
@@ -563,7 +569,7 @@ function UserChoiceBlock({
       </div>
     </div>
   );
-}
+};
 
 interface SystemBlockProps {
   aggregateType: string | null | undefined;
@@ -573,12 +579,12 @@ interface SystemBlockProps {
 }
 
 /** Static aggregate information: type, operation mode, and software. */
-function SystemBlock({
+const SystemBlock = ({
   aggregateType,
   operationMode,
   software,
   t,
-}: SystemBlockProps) {
+}: SystemBlockProps) => {
   return (
     <div className={c("block")}>
       <div className={c("block-label")}>{t("ventilation.system")}</div>
@@ -599,10 +605,10 @@ function SystemBlock({
       />
     </div>
   );
-}
+};
 
 /** Nilan ventilation: readings, the five-node airflow, and the live controls. */
-export function VentilationBody(_props: LayerBodyProps) {
+export const VentilationBody = (_props: LayerBodyProps) => {
   const hass = useHass();
   const model = useModel();
   const config = useConfig();
@@ -798,4 +804,4 @@ export function VentilationBody(_props: LayerBodyProps) {
       </div>
     </div>
   );
-}
+};

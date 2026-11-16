@@ -31,7 +31,7 @@ const CHART_HEIGHT = 150;
  * `data-g*` attributes land on the `.chart-box` shell so the card's existing
  * hover readout keeps working.
  */
-export function HistoryChart({
+export const HistoryChart = ({
   series,
   t,
   nowMs,
@@ -39,7 +39,7 @@ export function HistoryChart({
   unit,
   decimals,
   idPrefix,
-}: HistoryChartProps) {
+}: HistoryChartProps) => {
   const gradientId = `${idPrefix}-${useId().replaceAll(":", "")}`;
   const svgRef = useRef<SVGSVGElement>(null);
   const hasData = series.some((entry) =>
@@ -104,4 +104,4 @@ export function HistoryChart({
       </svg>
     </ChartBox>
   );
-}
+};

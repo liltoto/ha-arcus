@@ -7,7 +7,7 @@ import {
 import { makeHass } from "./fixtures/home";
 
 /** A home with no areas, devices, entities, or floors. */
-function emptyHome() {
+const emptyHome = () => {
   return makeHass({
     areas: {},
     devices: {},
@@ -15,7 +15,7 @@ function emptyHome() {
     states: {},
     floors: {},
   });
-}
+};
 
 describe("ArcusDashboardStrategy", () => {
   test("generates a one-view panel dashboard with the Arcus card", async () => {

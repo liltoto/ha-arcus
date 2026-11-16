@@ -22,7 +22,7 @@ const SHEET_STYLE = {
  * pulse is rendered from the history cache rather than left for the card to
  * fill in later.
  */
-export function TechBody(_props: LayerBodyProps) {
+export const TechBody = (_props: LayerBodyProps) => {
   const { model, config, history, t, now, actions } = useHistoryFrame();
 
   const language = model.language;
@@ -78,4 +78,4 @@ export function TechBody(_props: LayerBodyProps) {
       </div>
     </div>
   );
-}
+};

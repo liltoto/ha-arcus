@@ -14,13 +14,13 @@ export interface SheetTemplateProps {
  * The static sheet shell: scrim, grab handle, and the dialog frame. Behavior
  * (focus, escape, drag, scroll reset) lives in `SheetFrame`.
  */
-export function SheetTemplate({
+export const SheetTemplate = ({
   open,
   label,
   sheetRef,
   onScrimClick,
   children,
-}: SheetTemplateProps) {
+}: SheetTemplateProps) => {
   return (
     <>
       <div
@@ -48,4 +48,4 @@ export function SheetTemplate({
       </section>
     </>
   );
-}
+};

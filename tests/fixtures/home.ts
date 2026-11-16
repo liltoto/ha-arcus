@@ -93,7 +93,7 @@ const QUICK_ACTIONS: QuickActionConfig[] = [
   },
 ];
 
-function baseConfig(): ArcusConfig {
+const baseConfig = (): ArcusConfig => {
   return {
     type: "custom:arcus-card",
     title: "Hjem",
@@ -285,7 +285,7 @@ function baseConfig(): ArcusConfig {
     chapters: {},
     show_weather_forecast: true,
   };
-}
+};
 
 type DeepPartial<T> = {
   [K in keyof T]?: T[K] extends readonly (infer U)[]
@@ -295,14 +295,14 @@ type DeepPartial<T> = {
       : T[K];
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+};
 
-function mergeDeep(
+const mergeDeep = (
   base: Record<string, unknown>,
   overrides: Record<string, unknown>,
-): Record<string, unknown> {
+): Record<string, unknown> => {
   const out = { ...base };
   for (const [key, value] of Object.entries(overrides)) {
     if (isRecord(value) && isRecord(out[key])) {
@@ -312,7 +312,7 @@ function mergeDeep(
     }
   }
   return out;
-}
+};
 
 /**
  * Normalized config for the real home.
@@ -320,11 +320,11 @@ function mergeDeep(
  * Nested objects are merged, so `makeConfig({ areas: { include: ["stue"] } })`
  * keeps the rest of the area settings. Arrays replace their base value.
  */
-export function makeConfig(
+export const makeConfig = (
   overrides: DeepPartial<ArcusConfig> = {},
-): ArcusConfig {
+): ArcusConfig => {
   return mergeDeep(
     baseConfig() as unknown as Record<string, unknown>,
     overrides as Record<string, unknown>,
   ) as unknown as ArcusConfig;
-}
+};

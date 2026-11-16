@@ -18,12 +18,12 @@ export interface SystemCardProps {
  * Ventilation/outdoor tile. Mirrors legacy `systemCard()` markup, including
  * the `data-sys-dot` hook and a React-owned history sparkline.
  */
-export function SystemCard({
+export const SystemCard = ({
   card,
   onOpen,
   spark,
   sparkGraph = null,
-}: SystemCardProps) {
+}: SystemCardProps) => {
   const temp =
     card.temp === null ? "–" : formatNumber(card.temp, 1, card.language);
   const style = { "--room": card.tint } as CSSProperties;
@@ -69,4 +69,4 @@ export function SystemCard({
       <span className={c("room-open")}>{card.openLabel}</span>
     </button>
   );
-}
+};

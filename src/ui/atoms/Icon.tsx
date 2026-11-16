@@ -10,7 +10,7 @@ export interface IconProps {
  * Renders one of Arcus's static inline SVG icons. `icon()` resolves the name
  * against the internal map, so the injected markup never contains user input.
  */
-export function Icon({ name, className, title }: IconProps) {
+export const Icon = ({ name, className, title }: IconProps) => {
   return (
     <span
       style={{ display: "contents" }}
@@ -19,4 +19,4 @@ export function Icon({ name, className, title }: IconProps) {
       dangerouslySetInnerHTML={{ __html: icon(name, className) }}
     />
   );
-}
+};

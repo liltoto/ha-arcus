@@ -15,7 +15,7 @@ import type {
   Translator,
 } from "../../../../types";
 
-function nowOf(now: () => Date): Date {
+const nowOf = (now: () => Date): Date => {
   try {
     const value = now();
     if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
@@ -23,13 +23,13 @@ function nowOf(now: () => Date): Date {
     /* fall through to the wall clock */
   }
   return new Date();
-}
+};
 
-function hourLabel(hour: number): string {
+const hourLabel = (hour: number): string => {
   return String(Math.trunc(hour)).padStart(2, "0");
-}
+};
 
-function stateNumber(hass: ArcusHass, entityId: string): number | null {
+const stateNumber = (hass: ArcusHass, entityId: string): number | null => {
   const raw = hass.states?.[entityId]?.state;
   if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
   if (typeof raw === "string" && raw.trim()) {
@@ -37,19 +37,19 @@ function stateNumber(hass: ArcusHass, entityId: string): number | null {
     return Number.isFinite(value) ? value : null;
   }
   return null;
-}
+};
 
 /**
  * The legacy card exposed `_n()` to the string sheets. The React tree reads the
  * same live states from `hass`; the history cache is the last resort when a
  * configured price sensor has dropped out of the state machine.
  */
-export function liveNumber(
+export const liveNumber = (
   hass: ArcusHass,
   history: HistoryCache,
   entityId: string | undefined,
   fallback: number | null,
-): number | null {
+): number | null => {
   if (typeof fallback === "number" && Number.isFinite(fallback)) {
     return fallback;
   }
@@ -64,45 +64,45 @@ export function liveNumber(
     if (typeof value === "number" && Number.isFinite(value)) return value;
   }
   return null;
-}
+};
 
-export function liveOn(
+export const liveOn = (
   hass: ArcusHass,
   entityId: string | undefined,
   fallback: boolean | undefined,
-): boolean {
+): boolean => {
   if (typeof fallback === "boolean") return fallback;
   if (!entityId) return false;
   const state = hass.states?.[entityId]?.state;
   return state === "on" || state === "open";
-}
+};
 
-function priceSection(model: HomeModel): PriceModel | undefined {
+const priceSection = (model: HomeModel): PriceModel | undefined => {
   const price = model.price;
   const energy = model.energy;
   if (price && Array.isArray(price.values) && price.values.length) {
     return price;
   }
   return energy ?? price;
-}
+};
 
-function hasCurve(price: PriceModel | undefined): price is PriceModel {
+const hasCurve = (price: PriceModel | undefined): price is PriceModel => {
   return Boolean(price && Array.isArray(price.values) && price.values.length);
-}
+};
 
-function adjacentValue(values: number[], hour: number): number | null {
+const adjacentValue = (values: number[], hour: number): number | null => {
   if (hour < 0 || hour >= values.length) return null;
   return values[hour];
-}
+};
 
-function priceReading(
+const priceReading = (
   hass: ArcusHass,
   history: HistoryCache,
   entityId: string | undefined,
   fallback: number | null | undefined,
-): number | null {
+): number | null => {
   return liveNumber(hass, history, entityId, fallback ?? null);
-}
+};
 
 interface PriceReadings {
   buy: number;
@@ -115,13 +115,13 @@ interface PriceReadings {
   tomorrow: boolean;
 }
 
-function resolveReadings(
+const resolveReadings = (
   hass: ArcusHass,
   config: ArcusConfig,
   history: HistoryCache,
   price: PriceModel,
   nowHour: number,
-): PriceReadings {
+): PriceReadings => {
   const values = price.values;
   return {
     buy: price.buy ?? price.now,
@@ -153,22 +153,24 @@ function resolveReadings(
     ),
     tomorrow: liveOn(hass, config.price?.tomorrow, price.tomorrow),
   };
-}
+};
 
-function resolveCheapWindow(cheap: PriceModel["cheapest"]): {
+const resolveCheapWindow = (
+  cheap: PriceModel["cheapest"],
+): {
   start: string;
   end: string;
-} {
+} => {
   return {
     start: cheap ? hourLabel(cheap.start) : "–",
     end: cheap ? hourLabel(cheap.end) : "–",
   };
-}
+};
 
 /** Swap the Danish default tokens for the configured currency and unit. */
-function localize(text: string, token: string, replacement: string): string {
+const localize = (text: string, token: string, replacement: string): string => {
   return replacement === token ? text : text.replaceAll(token, replacement);
-}
+};
 
 interface EnergyCopyInput {
   t: Translator;
@@ -187,7 +189,7 @@ interface EnergyCopy {
   nowNote: string;
 }
 
-function resolveCopy({
+const resolveCopy = ({
   t,
   priceUnit,
   currency,
@@ -197,7 +199,7 @@ function resolveCopy({
   cheap,
   cheapStart,
   cheapEnd,
-}: EnergyCopyInput): EnergyCopy {
+}: EnergyCopyInput): EnergyCopy => {
   const summary = cheap
     ? localize(
         t("energy.summary", {
@@ -217,7 +219,7 @@ function resolveCopy({
       currency,
     ),
   };
-}
+};
 
 interface EnergyDevicesView {
   ev: EnergyEvConfig | undefined;
@@ -225,14 +227,14 @@ interface EnergyDevicesView {
   appliances: EnergyApplianceConfig[];
 }
 
-function resolveDevices(config: ArcusConfig): EnergyDevicesView {
+const resolveDevices = (config: ArcusConfig): EnergyDevicesView => {
   const energy = config.energy;
   return {
     ev: energy?.ev,
     standby: energy?.standby,
     appliances: energy?.appliances ?? [],
   };
-}
+};
 
 /** Everything the always-rendered price blocks need, resolved once. */
 export interface EnergyView {
@@ -265,14 +267,14 @@ export interface EnergyView {
  * null when the model has no usable curve, so the body can show its calm
  * empty state instead.
  */
-export function resolveEnergyView(
+export const resolveEnergyView = (
   hass: ArcusHass,
   model: HomeModel,
   config: ArcusConfig,
   history: HistoryCache,
   now: () => Date,
   t: Translator,
-): EnergyView | null {
+): EnergyView | null => {
   const price = priceSection(model);
   if (!hasCurve(price)) return null;
 
@@ -324,4 +326,4 @@ export function resolveEnergyView(
     standby: devices.standby,
     appliances: devices.appliances,
   };
-}
+};

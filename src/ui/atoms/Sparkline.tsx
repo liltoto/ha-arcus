@@ -21,7 +21,7 @@ export interface SparklineProps {
   graph?: GraphInput | null;
 }
 
-export function Sparkline({
+export const Sparkline = ({
   values,
   width = 100,
   height = 28,
@@ -32,7 +32,7 @@ export function Sparkline({
   style,
   strokeWidth = 1.1,
   graph = null,
-}: SparklineProps) {
+}: SparklineProps) => {
   const ref = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -64,4 +64,4 @@ export function Sparkline({
       />
     </svg>
   );
-}
+};

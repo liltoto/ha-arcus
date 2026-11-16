@@ -17,7 +17,7 @@ import { c } from "../styles/classes";
  * The eyebrow opens the prayer sheet when the home has prayer times (or a
  * prayer config); otherwise it becomes the "all layers" shortcut.
  */
-export function Hero() {
+export const Hero = () => {
   const actions = useActions();
   const bindings = useBindings();
   const model = useModel();
@@ -61,4 +61,4 @@ export function Hero() {
       <DayArc />
     </>
   );
-}
+};

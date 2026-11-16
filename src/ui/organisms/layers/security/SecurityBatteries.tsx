@@ -3,7 +3,7 @@ import { Icon } from "../../../atoms/Icon";
 import { BatteryRow } from "../../../molecules/BatteryRow";
 import { c } from "../../../styles/classes";
 
-function UnknownBatteryRow({ battery }: { battery: SecurityBatteryModel }) {
+const UnknownBatteryRow = ({ battery }: { battery: SecurityBatteryModel }) => {
   return (
     <div className={c("row")}>
       <Icon name="battery" />
@@ -17,7 +17,7 @@ function UnknownBatteryRow({ battery }: { battery: SecurityBatteryModel }) {
       <span className={c("row-val")}>–</span>
     </div>
   );
-}
+};
 
 export interface SecurityBatteriesProps {
   batteries: SecurityBatteryModel[];
@@ -25,7 +25,7 @@ export interface SecurityBatteriesProps {
 }
 
 /** Battery levels, lowest first; unknown levels keep a placeholder row. */
-export function SecurityBatteries({ batteries, t }: SecurityBatteriesProps) {
+export const SecurityBatteries = ({ batteries, t }: SecurityBatteriesProps) => {
   return (
     <div className={c("block")}>
       <div className={c("block-head")}>
@@ -53,4 +53,4 @@ export function SecurityBatteries({ batteries, t }: SecurityBatteriesProps) {
       </div>
     </div>
   );
-}
+};

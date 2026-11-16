@@ -15,14 +15,14 @@ export interface RoomLightsProps {
 }
 
 /** The room light groups, with member groups collapsed into `<details>`. */
-export function RoomLights({
+export const RoomLights = ({
   hass,
   lights,
   on,
   total,
   t,
   actions,
-}: RoomLightsProps) {
+}: RoomLightsProps) => {
   if (!lights.length) return null;
 
   const light = (entityId: string, name: string, showSlider: boolean) => {
@@ -72,4 +72,4 @@ export function RoomLights({
       </div>
     </div>
   );
-}
+};

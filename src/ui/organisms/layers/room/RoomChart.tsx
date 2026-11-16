@@ -30,13 +30,13 @@ interface RoomChartSvgProps {
 const GRID = [0.25, 0.5, 0.75];
 
 /** The chart lines and grid; the frame owns the state overlay. */
-function RoomChartSvg({
+const RoomChartSvg = ({
   height,
   gradientId,
   color,
   line,
   area,
-}: RoomChartSvgProps) {
+}: RoomChartSvgProps) => {
   return (
     <svg
       viewBox={`0 0 560 ${height}`}
@@ -71,60 +71,60 @@ function RoomChartSvg({
       />
     </svg>
   );
-}
+};
 
 /**
  * A history source may implement only the read surface (stories and test
  * harnesses do). Without status tracking the entity reads as idle, which the
  * chart maps to loading until rows arrive.
  */
-function statusFor(
+const statusFor = (
   history: HistoryCache,
   entityId: string | null | undefined,
-): HistoryStatus {
+): HistoryStatus => {
   if (!entityId) return "empty";
   if (typeof history.status !== "function") return "idle";
   return history.status(entityId);
-}
+};
 
-function roomChartState(
+const roomChartState = (
   hasData: boolean,
   unavailable: boolean,
   status: HistoryStatus,
-): ChartState {
+): ChartState => {
   if (hasData) return "ready";
   if (unavailable) return "unavailable";
   return status === "idle" || status === "loading" ? "loading" : "empty";
-}
+};
 
-function roomSeries(
+const roomSeries = (
   history: HistoryCache,
   entityId: string | null | undefined,
-): Array<number | null> {
+): Array<number | null> => {
   return entityId
     ? history.series(entityId, { buckets: 96, fill: "hold" })
     : [];
-}
+};
 
-function roomPaths(
+const roomPaths = (
   values: Array<number | null>,
   hasData: boolean,
   height: number,
-): { line: string; area: string } {
+): { line: string; area: string } => {
   if (!hasData) return { line: "", area: "" };
   return {
     line: sparkPath(values, 560, height, 2),
     area: areaPath(values, 560, height, 2),
   };
-}
+};
 
-function roomGraph(
+const roomGraph = (
   values: Array<number | null>,
   hasData: boolean,
   end: number,
   unit: string,
   decimals: number,
-): GraphInput | null {
+): GraphInput | null => {
   if (!hasData) return null;
   return {
     start: end - 86_400_000,
@@ -133,19 +133,19 @@ function roomGraph(
     decimals,
     series: [{ values }],
   };
-}
+};
 
-function ChartStateOverlay({ label }: { label: string | null }) {
+const ChartStateOverlay = ({ label }: { label: string | null }) => {
   if (!label) return null;
   return <span className={c("chart-empty")}>{label}</span>;
-}
+};
 
 /**
  * One 24-hour room chart. The legacy renderer wrote the graph hover metadata
  * straight onto `.chart-box`; keep the same attributes so the card's
  * `mountGraphTips` can still read them after a React render.
  */
-export function RoomChart({
+export const RoomChart = ({
   history,
   entityId,
   color,
@@ -157,7 +157,7 @@ export function RoomChart({
   unavailableLabel,
   unavailable = false,
   now,
-}: RoomChartProps) {
+}: RoomChartProps) => {
   const boxRef = useRef<HTMLDivElement>(null);
   const values = roomSeries(history, entityId);
   const hasData = values.some(
@@ -201,4 +201,4 @@ export function RoomChart({
       <ChartStateOverlay label={label} />
     </div>
   );
-}
+};

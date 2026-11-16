@@ -10,11 +10,11 @@ import { makeConfig, makeHass } from "./fixtures/home";
 
 const NOW = new Date("2026-11-13T21:00:00+01:00");
 
-function homeBindings() {
+const homeBindings = () => {
   const config = makeConfig();
   const model = buildModel(makeHass(), config, NOW);
   return buildBindings(model, config, createTranslator("da"));
-}
+};
 
 describe("buildBindings", () => {
   test("binds the vitals, room rows, system card, and chapter summaries", () => {

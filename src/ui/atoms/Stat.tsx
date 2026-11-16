@@ -10,10 +10,16 @@ export interface StatProps {
   tone?: "default" | "ok" | "warn";
 }
 
-export function Stat({ label, value, unit, sub, tone = "default" }: StatProps) {
+export const Stat = ({
+  label,
+  value,
+  unit,
+  sub,
+  tone = "default",
+}: StatProps) => {
   return (
     <div className={c("vital", tone === "default" ? "" : tone)}>
       <VitalText label={label} value={value} unit={unit} sub={sub} />
     </div>
   );
-}
+};

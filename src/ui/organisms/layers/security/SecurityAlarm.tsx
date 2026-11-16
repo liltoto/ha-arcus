@@ -28,12 +28,12 @@ export interface SecurityAlarmProps {
 }
 
 /** The alarm panel state plus arm-home, arm-away and disarm buttons. */
-export function SecurityAlarm({
+export const SecurityAlarm = ({
   alarmId,
   alarmState,
   t,
   onCall,
-}: SecurityAlarmProps) {
+}: SecurityAlarmProps) => {
   return (
     <div className={c("block")}>
       <div className={c("block-head")}>
@@ -58,4 +58,4 @@ export function SecurityAlarm({
       </div>
     </div>
   );
-}
+};

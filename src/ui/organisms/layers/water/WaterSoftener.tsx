@@ -10,7 +10,7 @@ interface WaterTodayProps {
 }
 
 /** The headline consumption and the monthly/total note. */
-export function WaterToday({ view, t }: WaterTodayProps) {
+export const WaterToday = ({ view, t }: WaterTodayProps) => {
   const { day, month, total, fmt } = view;
   return (
     <div className={c("block")}>
@@ -28,7 +28,7 @@ export function WaterToday({ view, t }: WaterTodayProps) {
       </div>
     </div>
   );
-}
+};
 
 interface WaterReadingsProps {
   view: WaterView;
@@ -36,7 +36,7 @@ interface WaterReadingsProps {
 }
 
 /** This month, total use, cost, and the current flow. */
-export function WaterReadings({ view, t }: WaterReadingsProps) {
+export const WaterReadings = ({ view, t }: WaterReadingsProps) => {
   const { month, total, cost, flow, currency, fmt } = view;
   return (
     <div className={c("readings")}>
@@ -50,7 +50,7 @@ export function WaterReadings({ view, t }: WaterReadingsProps) {
       <Readout label={t("water.flowNow")} value={fmt(flow, 2)} unit="m³/h" />
     </div>
   );
-}
+};
 
 interface WaterSoftenerProps {
   view: WaterView;
@@ -59,11 +59,11 @@ interface WaterSoftenerProps {
 }
 
 /** The BWT salt/capacity readings plus the holiday toggle. */
-export function WaterSoftener({
+export const WaterSoftener = ({
   view,
   onToggleHoliday,
   t,
-}: WaterSoftenerProps) {
+}: WaterSoftenerProps) => {
   const {
     softenerTitle,
     state,
@@ -107,4 +107,4 @@ export function WaterSoftener({
       ) : null}
     </div>
   );
-}
+};

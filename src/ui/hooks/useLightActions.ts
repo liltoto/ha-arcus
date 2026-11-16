@@ -10,7 +10,7 @@ export interface LightActions {
  * The light-service calls shared by the room and lights sheets. A zero
  * brightness is a turn-off so the slider cannot leave a lamp at 1 %.
  */
-export function useLightActions(): LightActions {
+export const useLightActions = (): LightActions => {
   const actions = useActions();
 
   return useMemo(
@@ -33,4 +33,4 @@ export function useLightActions(): LightActions {
     }),
     [actions],
   );
-}
+};

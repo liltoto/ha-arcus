@@ -40,7 +40,7 @@ interface RoomLightSliderProps {
 }
 
 /** The uncontrolled brightness slider under a light row. */
-function RoomLightSlider({
+const RoomLightSlider = ({
   sliderRef,
   entityId,
   name,
@@ -50,7 +50,7 @@ function RoomLightSlider({
   showPct,
   t,
   onInputPct,
-}: RoomLightSliderProps) {
+}: RoomLightSliderProps) => {
   return (
     <div className={c("slider-wrap")}>
       <div className={c("slider-line")}>
@@ -79,7 +79,7 @@ function RoomLightSlider({
       </div>
     </div>
   );
-}
+};
 
 /**
  * The shared light row for the room and lights sheets. The slider is
@@ -87,7 +87,7 @@ function RoomLightSlider({
  * mid-drag, and writing `value` back would fight the thumb. Sync the DOM
  * value only while it is not focused.
  */
-export function RoomLightRow({
+export const RoomLightRow = ({
   entityId,
   name,
   isOn,
@@ -97,7 +97,7 @@ export function RoomLightRow({
   t,
   onToggle,
   onBrightness,
-}: RoomLightRowProps) {
+}: RoomLightRowProps) => {
   const sliderRef = useRef<HTMLInputElement>(null);
   const pct = clampPercent(brightness);
   const [displayPct, setDisplayPct] = useState(pct);
@@ -158,4 +158,4 @@ export function RoomLightRow({
       ) : null}
     </div>
   );
-}
+};

@@ -4,6 +4,6 @@ export interface SheetGrabProps {
   className?: string;
 }
 
-export function SheetGrab({ className }: SheetGrabProps) {
+export const SheetGrab = ({ className }: SheetGrabProps) => {
   return <div className={c("sheet-grab", className)} data-sheet-grab />;
-}
+};

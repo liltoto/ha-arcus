@@ -21,7 +21,7 @@ export interface SecurityAutomationProps {
  * The window-alert automation, the live open-window count and the shortcut to
  * the full alert list. Turning the alert off asks for confirmation first.
  */
-export function SecurityAutomation({
+export const SecurityAutomation = ({
   alertId,
   alertOn,
   openWindowsLabel,
@@ -32,7 +32,7 @@ export function SecurityAutomation({
   onConfirmAlertOff,
   onCancelAlertOff,
   onOpenAlerts,
-}: SecurityAutomationProps) {
+}: SecurityAutomationProps) => {
   return (
     <div className={c("block")}>
       <div className={c("block-label")}>{t("security.automation")}</div>
@@ -94,4 +94,4 @@ export function SecurityAutomation({
       ) : null}
     </div>
   );
-}
+};

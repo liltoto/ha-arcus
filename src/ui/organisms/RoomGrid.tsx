@@ -20,9 +20,9 @@ import { SystemCard } from "./SystemCard";
 import { c } from "../styles/classes";
 
 /** Outdoor rooms come from the room kind discovered for the area. */
-function isOutdoorRoom(room: RoomModel): boolean {
+const isOutdoorRoom = (room: RoomModel): boolean => {
   return room.kind === "outdoor";
-}
+};
 
 interface FloorGroup {
   id: string;
@@ -36,7 +36,7 @@ interface FloorLayout {
   unfloored: RoomModel[];
 }
 
-function buildFloorGroups(rooms: RoomModel[]): FloorLayout {
+const buildFloorGroups = (rooms: RoomModel[]): FloorLayout => {
   const groups = new Map<string, FloorGroup>();
   const unfloored: RoomModel[] = [];
   for (const room of rooms) {
@@ -58,7 +58,7 @@ function buildFloorGroups(rooms: RoomModel[]): FloorLayout {
     groups: [...groups.values()].sort((a, b) => a.level - b.level),
     unfloored,
   };
-}
+};
 
 interface RoomTileProps {
   room: RoomModel;
@@ -67,7 +67,7 @@ interface RoomTileProps {
   outdoor?: boolean;
 }
 
-function RoomTile({ room, language, tempUnit, outdoor }: RoomTileProps) {
+const RoomTile = ({ room, language, tempUnit, outdoor }: RoomTileProps) => {
   const model = useModel();
   const t = useTranslator();
   const actions = useActions();
@@ -103,9 +103,9 @@ function RoomTile({ room, language, tempUnit, outdoor }: RoomTileProps) {
       onOpen={() => actions.navigate(`rum/${room.id}`)}
     />
   );
-}
+};
 
-function SystemTiles({ tempUnit }: { tempUnit: TemperatureUnit }) {
+const SystemTiles = ({ tempUnit }: { tempUnit: TemperatureUnit }) => {
   const model = useModel();
   const config = useConfig();
   const hass = useHass();
@@ -147,9 +147,9 @@ function SystemTiles({ tempUnit }: { tempUnit: TemperatureUnit }) {
       })}
     </>
   );
-}
+};
 
-function EmptyRooms() {
+const EmptyRooms = () => {
   const t = useTranslator();
   return (
     <div className={c("empty")}>
@@ -161,10 +161,10 @@ function EmptyRooms() {
       </div>
     </div>
   );
-}
+};
 
 /** Indoor tiles, system cards, then the outdoor rooms. */
-function RoomTiles({
+const RoomTiles = ({
   rooms,
   language,
   tempUnit,
@@ -172,7 +172,7 @@ function RoomTiles({
   rooms: RoomModel[];
   language: string;
   tempUnit: TemperatureUnit;
-}) {
+}) => {
   const model = useModel();
   const outdoorRooms = model.rooms.filter(isOutdoorRoom);
   return (
@@ -197,9 +197,9 @@ function RoomTiles({
       ))}
     </>
   );
-}
+};
 
-function FloorLayoutView({
+const FloorLayoutView = ({
   rooms,
   language,
   tempUnit,
@@ -207,7 +207,7 @@ function FloorLayoutView({
   rooms: RoomModel[];
   language: string;
   tempUnit: TemperatureUnit;
-}) {
+}) => {
   const layout = buildFloorGroups(rooms);
   return (
     <>
@@ -242,9 +242,9 @@ function FloorLayoutView({
       ) : null}
     </>
   );
-}
+};
 
-function OutdoorTiles({
+const OutdoorTiles = ({
   rooms,
   language,
   tempUnit,
@@ -252,7 +252,7 @@ function OutdoorTiles({
   rooms: RoomModel[];
   language: string;
   tempUnit: TemperatureUnit;
-}) {
+}) => {
   return (
     <>
       {rooms.map((room) => (
@@ -266,9 +266,9 @@ function OutdoorTiles({
       ))}
     </>
   );
-}
+};
 
-function RoomGridBody() {
+const RoomGridBody = () => {
   const model = useModel();
   const config = useConfig();
   const hass = useHass();
@@ -311,7 +311,7 @@ function RoomGridBody() {
       </div>
     </>
   );
-}
+};
 
 /**
  * The discovered room grid. Rooms come first in discovery order, then the
@@ -321,7 +321,7 @@ function RoomGridBody() {
  * floor (sorted by registry level). The flag is ignored when no room carries
  * floor metadata, which keeps the default single-grid markup.
  */
-export function RoomGrid() {
+export const RoomGrid = () => {
   const t = useTranslator();
   const bindings = useBindings();
   useHistoryVersion();
@@ -341,4 +341,4 @@ export function RoomGrid() {
       <RoomGridBody />
     </>
   );
-}
+};

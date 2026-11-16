@@ -9,13 +9,13 @@ export interface GaugeArcProps {
 const RADIUS = 16;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-export function GaugeArc({
+export const GaugeArc = ({
   value,
   max = 100,
   size = 40,
   stroke = 2.5,
   tone = "sage",
-}: GaugeArcProps) {
+}: GaugeArcProps) => {
   const ceiling = Number.isFinite(max) && max > 0 ? max : 100;
   const ratio = Number.isFinite(value)
     ? Math.min(Math.max(value / ceiling, 0), 1)
@@ -46,4 +46,4 @@ export function GaugeArc({
       />
     </svg>
   );
-}
+};

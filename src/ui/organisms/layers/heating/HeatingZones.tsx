@@ -24,7 +24,7 @@ export interface HeatingZonesProps {
 }
 
 /** The main zones block with the zone strip and the empty fallback. */
-export function HeatingZones({
+export const HeatingZones = ({
   zones,
   strip,
   hass,
@@ -33,7 +33,7 @@ export function HeatingZones({
   t,
   onSetpoint,
   onToggle,
-}: HeatingZonesProps) {
+}: HeatingZonesProps) => {
   return (
     <div className={c("block")}>
       <div className={c("block-head")}>
@@ -67,4 +67,4 @@ export function HeatingZones({
       </div>
     </div>
   );
-}
+};

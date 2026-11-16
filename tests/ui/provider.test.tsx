@@ -34,16 +34,16 @@ import type {
 import { makeConfig, makeHass } from "../fixtures/home";
 
 /** The sheet tests use the same minimal cache; the provider only forwards it. */
-function historyStub(): HistoryCache {
+const historyStub = (): HistoryCache => {
   return {
     ensure: async () => undefined,
     series: () => [],
     window: () => [],
     raw: () => [],
   } as unknown as HistoryCache;
-}
+};
 
-function actionsStub(): ArcusActions {
+const actionsStub = (): ArcusActions => {
   return {
     callService: vi.fn(),
     navigate: vi.fn(),
@@ -53,11 +53,11 @@ function actionsStub(): ArcusActions {
     toast: vi.fn(),
     setAtmo: vi.fn(),
   };
-}
+};
 
-function providerState(
+const providerState = (
   overrides: Partial<ArcusStoreState> = {},
-): ArcusStoreState {
+): ArcusStoreState => {
   const hass = overrides.hass ?? makeHass();
   const config = overrides.config ?? makeConfig();
   return {
@@ -75,7 +75,7 @@ function providerState(
     dark: true,
     ...overrides,
   };
-}
+};
 
 interface Snapshot {
   hass: ArcusHass;
@@ -94,7 +94,7 @@ interface ProbeProps {
   onRender?: (snapshot: Snapshot) => void;
 }
 
-function Probe({ label, onRender }: ProbeProps) {
+const Probe = ({ label, onRender }: ProbeProps) => {
   const snapshot: Snapshot = {
     hass: useHass(),
     model: useModel(),
@@ -125,7 +125,7 @@ function Probe({ label, onRender }: ProbeProps) {
       </button>
     </div>
   );
-}
+};
 
 afterEach(() => {
   document.body.innerHTML = "";
@@ -221,17 +221,17 @@ describe("ArcusProvider", () => {
     const hassRenders = vi.fn();
     const configRenders = vi.fn();
 
-    function HassProbe() {
+    const HassProbe = () => {
       useHass();
       hassRenders();
       return null;
-    }
+    };
 
-    function ConfigProbe() {
+    const ConfigProbe = () => {
       useConfig();
       configRenders();
       return null;
-    }
+    };
 
     render(
       <ArcusProvider store={store}>
@@ -265,10 +265,10 @@ describe("ArcusProvider", () => {
   test("exposes the store instance for advanced selectors", () => {
     const store = createArcusStore(providerState());
 
-    function StoreProbe() {
+    const StoreProbe = () => {
       expect(useArcusStore()).toBe(store);
       return null;
-    }
+    };
 
     render(
       <ArcusProvider store={store}>

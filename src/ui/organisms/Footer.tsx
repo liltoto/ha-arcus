@@ -10,7 +10,7 @@ export interface FooterProps {
  * The footer mark, clock, and Home Assistant version line. The surrounding
  * `<footer class="footer">` slot lives in `HomeTemplate`.
  */
-export function Footer({ className }: FooterProps = {}) {
+export const Footer = ({ className }: FooterProps = {}) => {
   const t = useTranslator();
   const bindings = useBindings();
 
@@ -24,4 +24,4 @@ export function Footer({ className }: FooterProps = {}) {
       </span>
     </>
   );
-}
+};

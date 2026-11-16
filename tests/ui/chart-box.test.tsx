@@ -2,12 +2,12 @@ import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ChartBox } from "../../src/ui/molecules/ChartBox";
 
-function renderChartBox(props: Parameters<typeof ChartBox>[0]) {
+const renderChartBox = (props: Parameters<typeof ChartBox>[0]) => {
   const result = render(<ChartBox {...props} />);
   const box = result.container.querySelector(".chart-box");
   expect(box).not.toBeNull();
   return { ...result, box: box as HTMLElement };
-}
+};
 
 describe("ChartBox", () => {
   it("defaults to the ready state without an overlay label", () => {

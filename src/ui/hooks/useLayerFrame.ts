@@ -37,7 +37,7 @@ export interface HistoryFrame extends LayerFrame {
  * `useHistoryFrame` so sheets without charts do not subscribe to history
  * version bumps just to read the other contexts.
  */
-function useLayerFrame(): LayerFrame {
+const useLayerFrame = (): LayerFrame => {
   const hass = useHass();
   const model = useModel();
   const config = useConfig();
@@ -46,13 +46,13 @@ function useLayerFrame(): LayerFrame {
   const actions = useActions();
 
   return { hass, model, config, t, now, actions };
-}
+};
 
 /** Use in chart-bearing sheets; re-renders when the history cache ingests. */
-export function useHistoryFrame(): HistoryFrame {
+export const useHistoryFrame = (): HistoryFrame => {
   const frame = useLayerFrame();
   const history = useHistory();
   useHistoryVersion();
 
   return { ...frame, history };
-}
+};

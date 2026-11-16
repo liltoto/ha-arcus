@@ -83,7 +83,7 @@ export interface ChapterGridProps {
  * HTML (`<b>`), so each tile is local markup matching the legacy `chapterCard`
  * rather than the text-only `ChapterCard` molecule.
  */
-export function ChapterGrid({ className }: ChapterGridProps = {}) {
+export const ChapterGrid = ({ className }: ChapterGridProps = {}) => {
   const model = useModel();
   const config = useConfig();
   const bindings = useBindings();
@@ -169,4 +169,4 @@ export function ChapterGrid({ className }: ChapterGridProps = {}) {
       </div>
     </>
   );
-}
+};

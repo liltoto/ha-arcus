@@ -40,13 +40,13 @@ const STARS = STAR_X.map((x, index) => ({
  * legacy `renderHome` markup so the card's sheet, toast, graph, and theme
  * helpers keep working while the organisms are ported.
  */
-export function HomeTemplate({
+export const HomeTemplate = ({
   atmo,
   dark,
   density,
   textScale,
   sheet,
-}: HomeTemplateProps) {
+}: HomeTemplateProps) => {
   return (
     <div
       className={c("app", !dark && "light")}
@@ -96,4 +96,4 @@ export function HomeTemplate({
       <div className={c("graph-cursor")} data-graph-cursor aria-hidden="true" />
     </div>
   );
-}
+};

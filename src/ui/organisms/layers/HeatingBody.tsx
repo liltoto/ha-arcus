@@ -21,7 +21,7 @@ import {
 } from "./heating/helpers";
 
 /** Underfloor heating: the discovered climate zones plus reserve channels. */
-export function HeatingBody(_props: LayerBodyProps) {
+export const HeatingBody = (_props: LayerBodyProps) => {
   const { hass, model, config, t, history, now, actions } = useHistoryFrame();
 
   const language = model.language;
@@ -149,4 +149,4 @@ export function HeatingBody(_props: LayerBodyProps) {
       </div>
     </div>
   );
-}
+};

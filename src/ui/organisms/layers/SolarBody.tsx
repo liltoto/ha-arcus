@@ -63,14 +63,14 @@ interface SolarPvActive {
 }
 
 /** A string is live when it is wired in config or the model reports a value. */
-function isPvActive(
+const isPvActive = (
   configured: string | undefined,
   value: number | null | undefined,
-): boolean {
+): boolean => {
   return Boolean(configured) || isFiniteNumber(value);
-}
+};
 
-function MiniStat({
+const MiniStat = ({
   label,
   value,
   unit,
@@ -80,7 +80,7 @@ function MiniStat({
   value: string;
   unit: string;
   sub: string;
-}) {
+}) => {
   return (
     <div className={c("mini-stat")}>
       <div className={c("k")}>{label}</div>
@@ -91,9 +91,13 @@ function MiniStat({
       {sub ? <div className={c("row-sub")}>{sub}</div> : null}
     </div>
   );
-}
+};
 
-function Legend({ items }: { items: Array<{ color: string; label: string }> }) {
+const Legend = ({
+  items,
+}: {
+  items: Array<{ color: string; label: string }>;
+}) => {
   return (
     <div className={c("legend")}>
       {items.map((item) => (
@@ -104,7 +108,7 @@ function Legend({ items }: { items: Array<{ color: string; label: string }> }) {
       ))}
     </div>
   );
-}
+};
 
 interface SolarReading {
   label: string;
@@ -113,7 +117,7 @@ interface SolarReading {
 }
 
 /** A four-cell `.readings` grid for the production totals. */
-function SolarTotals({ readings }: { readings: SolarReading[] }) {
+const SolarTotals = ({ readings }: { readings: SolarReading[] }) => {
   return (
     <div className={c("readings")}>
       {readings.map((reading) => (
@@ -126,10 +130,10 @@ function SolarTotals({ readings }: { readings: SolarReading[] }) {
       ))}
     </div>
   );
-}
+};
 
 /** MPPT power and voltage readings for every connected string. */
-function MpptReadings({
+const MpptReadings = ({
   solar,
   t,
   language,
@@ -139,7 +143,7 @@ function MpptReadings({
   t: Translator;
   language: Language;
   pv: SolarPvActive;
-}) {
+}) => {
   const show12 = pv.pv1 || pv.pv2;
   const show34 = !show12 || pv.pv3 || pv.pv4;
 
@@ -206,15 +210,15 @@ function MpptReadings({
       )}
     </>
   );
-}
+};
 
 /** The active string series for a chart, oldest MPPT pair first. */
-function stringChartSeries(
+const stringChartSeries = (
   config: ArcusConfig,
   pv: SolarPvActive,
   t: Translator,
   values: (entityId: string | undefined) => Array<number | null>,
-): SolarSeries[] {
+): SolarSeries[] => {
   const show12 = pv.pv1 || pv.pv2;
   const show34 = !show12 || pv.pv3 || pv.pv4;
   const series: SolarSeries[] = [];
@@ -254,23 +258,23 @@ function stringChartSeries(
   }
 
   return series;
-}
+};
 
-function seriesLegend(
+const seriesLegend = (
   series: SolarSeries[],
-): Array<{ color: string; label: string }> {
+): Array<{ color: string; label: string }> => {
   return series.map((item) => ({
     color: item.color,
     label: item.label ?? "",
   }));
-}
+};
 
-function entityBounds(
+const entityBounds = (
   hass: ArcusHass,
   entityId: string | undefined,
   fallbackMin: number,
   fallbackMax: number,
-): { min: number; max: number } {
+): { min: number; max: number } => {
   const attributes = entityId ? hass.states?.[entityId]?.attributes : undefined;
   const min = Number(attributes?.min);
   const max = Number(attributes?.max);
@@ -278,7 +282,7 @@ function entityBounds(
     min: Number.isFinite(min) ? min : fallbackMin,
     max: Number.isFinite(max) ? max : fallbackMax,
   };
-}
+};
 
 interface ControlRowProps {
   label: string;
@@ -293,7 +297,7 @@ interface ControlRowProps {
   onChange: (value: number) => void;
 }
 
-function ControlRow({
+const ControlRow = ({
   label,
   entityId,
   step,
@@ -304,7 +308,7 @@ function ControlRow({
   language,
   t,
   onChange,
-}: ControlRowProps) {
+}: ControlRowProps) => {
   if (!entityId || value === null) {
     return (
       <div className={c("row")}>
@@ -333,13 +337,13 @@ function ControlRow({
       />
     </div>
   );
-}
+};
 
-function gridSeriesFor(
+const gridSeriesFor = (
   config: ArcusConfig,
   history: HistoryCache,
   now: Date,
-): SolarSeries[] {
+): SolarSeries[] => {
   const onePhase =
     Boolean(config.solar?.gridL1) &&
     !config.solar?.gridL2 &&
@@ -368,7 +372,7 @@ function gridSeriesFor(
       label: "L3",
     },
   ];
-}
+};
 
 interface OverviewReadingsProps {
   solar: SolarModel;
@@ -376,7 +380,7 @@ interface OverviewReadingsProps {
   t: Translator;
 }
 
-function OverviewReadings({ solar, language, t }: OverviewReadingsProps) {
+const OverviewReadings = ({ solar, language, t }: OverviewReadingsProps) => {
   return (
     <div className={c("readings")}>
       <Readout
@@ -401,13 +405,13 @@ function OverviewReadings({ solar, language, t }: OverviewReadingsProps) {
       />
     </div>
   );
-}
+};
 
 interface OverviewPowerChartProps {
   ctx: SolarContext;
 }
 
-function OverviewPowerChart({ ctx }: OverviewPowerChartProps) {
+const OverviewPowerChart = ({ ctx }: OverviewPowerChartProps) => {
   const { solar, config, history, t, now } = ctx;
   const day = dayWindow(now);
   return (
@@ -460,9 +464,9 @@ function OverviewPowerChart({ ctx }: OverviewPowerChartProps) {
       />
     </div>
   );
-}
+};
 
-function OverviewGrid({ ctx }: { ctx: SolarContext }) {
+const OverviewGrid = ({ ctx }: { ctx: SolarContext }) => {
   const { solar, config, history, t, language, now } = ctx;
   const day = dayWindow(now);
   const grid = solar.grid;
@@ -495,9 +499,9 @@ function OverviewGrid({ ctx }: { ctx: SolarContext }) {
       />
     </div>
   );
-}
+};
 
-function OverviewButtons({ ctx }: { ctx: SolarContext }) {
+const OverviewButtons = ({ ctx }: { ctx: SolarContext }) => {
   const { t, actions } = ctx;
   return (
     <div className={c("btn-row")}>
@@ -535,9 +539,9 @@ function OverviewButtons({ ctx }: { ctx: SolarContext }) {
       </button>
     </div>
   );
-}
+};
 
-function SolarOverview({ ctx }: { ctx: SolarContext }) {
+const SolarOverview = ({ ctx }: { ctx: SolarContext }) => {
   const { solar, t, language } = ctx;
   return (
     <>
@@ -555,9 +559,9 @@ function SolarOverview({ ctx }: { ctx: SolarContext }) {
       <OverviewButtons ctx={ctx} />
     </>
   );
-}
+};
 
-function SolarProduction({ ctx }: { ctx: SolarContext }) {
+const SolarProduction = ({ ctx }: { ctx: SolarContext }) => {
   const { solar, config, history, t, language, now, pv } = ctx;
   const day = dayWindow(now);
   const days = dailyProductionDays(history, config.solar?.today, now, language);
@@ -684,9 +688,9 @@ function SolarProduction({ ctx }: { ctx: SolarContext }) {
       </div>
     </>
   );
-}
+};
 
-function SolarBattery({ ctx }: { ctx: SolarContext }) {
+const SolarBattery = ({ ctx }: { ctx: SolarContext }) => {
   const { solar, config, hass, history, t, language, now, actions } = ctx;
   const tempUnit = resolveTempUnit(hass, config);
   const minSoc = solarNumber(
@@ -850,9 +854,9 @@ function SolarBattery({ ctx }: { ctx: SolarContext }) {
       <div className={c("note")}>{t("solar.batteryFooter")}</div>
     </>
   );
-}
+};
 
-function SolarForecast({ ctx }: { ctx: SolarContext }) {
+const SolarForecast = ({ ctx }: { ctx: SolarContext }) => {
   const { solar, t, language, now } = ctx;
   const day = dayWindow(now);
   const diff =
@@ -963,9 +967,9 @@ function SolarForecast({ ctx }: { ctx: SolarContext }) {
       </div>
     </>
   );
-}
+};
 
-function SolarPayback({ ctx }: { ctx: SolarContext }) {
+const SolarPayback = ({ ctx }: { ctx: SolarContext }) => {
   const { solar, config, hass, history, t, language, now, actions } = ctx;
   const currency = resolveCurrency(hass, config, language);
   const withCurrency = (text: string): string =>
@@ -1165,53 +1169,53 @@ function SolarPayback({ ctx }: { ctx: SolarContext }) {
       <div className={c("note")}>{t("solar.paybackFooter")}</div>
     </>
   );
-}
+};
 
-function SolarTabBody({
+const SolarTabBody = ({
   active,
   ctx,
 }: {
   active: ReturnType<typeof normalizeSub>;
   ctx: SolarContext;
-}): ReactNode {
+}): ReactNode => {
   if (active === "produktion") return <SolarProduction ctx={ctx} />;
   if (active === "batteri") return <SolarBattery ctx={ctx} />;
   if (active === "prognose") return <SolarForecast ctx={ctx} />;
   if (active === "afkast") return <SolarPayback ctx={ctx} />;
   return <SolarOverview ctx={ctx} />;
-}
+};
 
-function activePv(
+const activePv = (
   config: ArcusConfig,
   solar: SolarModel | undefined,
-): SolarPvActive {
+): SolarPvActive => {
   return {
     pv1: isPvActive(config.solar?.pv1, solar?.pv1),
     pv2: isPvActive(config.solar?.pv2, solar?.pv2),
     pv3: isPvActive(config.solar?.pv3, solar?.pv3),
     pv4: isPvActive(config.solar?.pv4, solar?.pv4),
   };
-}
+};
 
-function hasSolarBattery(
+const hasSolarBattery = (
   config: ArcusConfig,
   solar: SolarModel | undefined,
-): boolean {
+): boolean => {
   if (!solar) return false;
   return (
     solar.batterySoc !== null ||
     solar.batteryPower !== null ||
     Boolean(config.solar?.batterySoc || config.solar?.batteryPower)
   );
-}
+};
 
-function solarHeaderSummary(
+const solarHeaderSummary = (
   solar: SolarModel | undefined,
   hasData: boolean,
   hasBattery: boolean,
   language: Language,
   t: Translator,
-): string {
+): string => {
   if (!hasData || !solar) return t("solar.empty");
   if (hasBattery) {
     return t("solar.summary", {
@@ -1227,7 +1231,7 @@ function solarHeaderSummary(
     0,
     language,
   )} W ${nowLabel}`;
-}
+};
 
 /**
  * The solar sheet, ported from `views/layers/solar.ts`.
@@ -1236,7 +1240,7 @@ function solarHeaderSummary(
  * `data-chart-line`, `data-graph`, `data-bars`) so the card's history redraw
  * and the hover readout keep working while the sheet runs on React.
  */
-export function SolarBody({ route }: LayerBodyProps) {
+export const SolarBody = ({ route }: LayerBodyProps) => {
   const {
     hass,
     model,
@@ -1327,4 +1331,4 @@ export function SolarBody({ route }: LayerBodyProps) {
       </div>
     </div>
   );
-}
+};

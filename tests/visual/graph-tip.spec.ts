@@ -5,12 +5,12 @@ import { expect, test, type Page } from "@playwright/test";
  * pointer is over a chart. These tests assert the value/time content and the
  * hide-on-leave behaviour on the three chart shapes (spark, bars, multi-line).
  */
-async function open(page: Page, hash = ""): Promise<void> {
+const open = async (page: Page, hash = ""): Promise<void> => {
   await page.setViewportSize({ width: 1440, height: 1200 });
   await page.goto(`/dev/index.html${hash}`);
   await page.waitForSelector("arcus-card");
   await page.waitForTimeout(900);
-}
+};
 
 test("vital spark shows its value and time on hover", async ({ page }) => {
   await open(page, "");

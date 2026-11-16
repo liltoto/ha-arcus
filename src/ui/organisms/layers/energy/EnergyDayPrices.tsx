@@ -9,7 +9,7 @@ import { c } from "../../../styles/classes";
  * template HTML. React needs individual props, so decode the small, fixed set
  * of `data-g*` attributes back into an object.
  */
-function graphProps(attrs: string): Record<string, string> {
+const graphProps = (attrs: string): Record<string, string> => {
   const props: Record<string, string> = {};
   for (const entry of attrs.match(/data-[a-z0-9-]+="[^"]*"/g) ?? []) {
     const equals = entry.indexOf("=");
@@ -22,7 +22,7 @@ function graphProps(attrs: string): Record<string, string> {
       .replaceAll("&amp;", "&");
   }
   return props;
-}
+};
 
 interface PriceBarsProps {
   price: PriceModel;
@@ -36,7 +36,7 @@ interface PriceBarsProps {
  * legacy sheet, and carry the same `data-graph` attributes so the card's
  * hover readout can parse the plotted values back out.
  */
-function PriceBars({ price, now, t, currency }: PriceBarsProps) {
+const PriceBars = ({ price, now, t, currency }: PriceBarsProps) => {
   const values = price.values ?? [];
 
   if (!values.length) {
@@ -93,7 +93,7 @@ function PriceBars({ price, now, t, currency }: PriceBarsProps) {
       </div>
     </>
   );
-}
+};
 
 interface EnergyDayPricesProps {
   price: PriceModel;
@@ -103,16 +103,16 @@ interface EnergyDayPricesProps {
 }
 
 /** The nested "day prices" block with its 24-hour bar chart. */
-export function EnergyDayPrices({
+export const EnergyDayPrices = ({
   price,
   now,
   t,
   currency,
-}: EnergyDayPricesProps) {
+}: EnergyDayPricesProps) => {
   return (
     <div className={c("block")} style={{ marginTop: 18 }}>
       <div className={c("block-label")}>{t("energy.dayPrices")}</div>
       <PriceBars price={price} now={now} t={t} currency={currency} />
     </div>
   );
-}
+};

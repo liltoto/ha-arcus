@@ -4,7 +4,9 @@ import { ArcusStrategyEditor } from "../src/strategy-editor";
 import { makeHass } from "./fixtures/home";
 
 /** Collect the config from every `config-changed` event on an element. */
-function trackConfigChanges(element: HTMLElement): Array<Record<string, any>> {
+const trackConfigChanges = (
+  element: HTMLElement,
+): Array<Record<string, any>> => {
   const changes: Array<Record<string, any>> = [];
   element.addEventListener("config-changed", (event) => {
     changes.push(
@@ -12,17 +14,17 @@ function trackConfigChanges(element: HTMLElement): Array<Record<string, any>> {
     );
   });
   return changes;
-}
+};
 
-function field<T extends HTMLElement>(root: ShadowRoot, name: string): T {
+const field = <T extends HTMLElement>(root: ShadowRoot, name: string): T => {
   const element = root.querySelector<T>(`[name="${name}"]`);
   if (!element) throw new Error(`Expected a field named ${name}`);
   return element;
-}
+};
 
-function change(element: HTMLElement): void {
+const change = (element: HTMLElement): void => {
   element.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
-}
+};
 
 afterEach(() => {
   document.body.innerHTML = "";

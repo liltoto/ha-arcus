@@ -15,7 +15,7 @@ export interface ChapterArtProps {
 }
 
 /** The history-aware illustration below a chapter title. */
-export function ChapterArt({ chKey }: ChapterArtProps) {
+export const ChapterArt = ({ chKey }: ChapterArtProps) => {
   const model = useModel();
   const config = useConfig();
   const t = useTranslator();
@@ -40,4 +40,4 @@ export function ChapterArt({ chKey }: ChapterArtProps) {
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
-}
+};

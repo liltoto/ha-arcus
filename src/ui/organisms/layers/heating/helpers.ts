@@ -18,40 +18,43 @@ import {
 export const DAY_MS = 24 * 60 * 60 * 1000;
 export const CHART_HEIGHT = 120;
 
-export function temperature(
+export const temperature = (
   value: number | null,
   language: Language,
   unit: TemperatureUnit = "°C",
-): string {
+): string => {
   return value === null
     ? "–"
     : `${formatNumber(value, 1, language)}${unit === "°F" ? "°F" : "°"}`;
-}
+};
 
-export function isOpeningOn(
+export const isOpeningOn = (
   hass: ArcusHass,
   opening: EntityRef | null,
-): boolean {
+): boolean => {
   if (!opening) return false;
   const state = liveState(hass, opening);
   return state === "on" || state === "open";
-}
+};
 
-export function refNumber(hass: ArcusHass, entity: EntityRef): number | null {
+export const refNumber = (
+  hass: ArcusHass,
+  entity: EntityRef,
+): number | null => {
   return (
     numberFrom(hass.states?.[entity.entityId]?.state) ??
     numberFrom(entity.state)
   );
-}
+};
 
 /** The zone subtitle's activity label. */
-export function activityFor(reading: HeatingReading, t: Translator): string {
+export const activityFor = (reading: HeatingReading, t: Translator): string => {
   if (reading.mode === "cool" || reading.hvacAction === "cooling") {
     return t("room.cooling");
   }
   if (reading.hvacAction === "heating") return t("room.heatingActive");
   return t("room.heatingHolding");
-}
+};
 
 interface ChartSource {
   entityId: string;
@@ -65,7 +68,7 @@ interface ChartSource {
  * sensor of the first zone (the same sensor the card already loads for the
  * home view).
  */
-export function chartSource(model: HomeModel): ChartSource | null {
+export const chartSource = (model: HomeModel): ChartSource | null => {
   for (const zone of model.heating) {
     const room = zone.areaId
       ? model.rooms.find(
@@ -87,7 +90,7 @@ export function chartSource(model: HomeModel): ChartSource | null {
     return { entityId: room.temp.entityId, roomId: room.id, label: room.name };
   }
   return null;
-}
+};
 
 export interface HeatingLimitsConfig {
   standard?: EntityRef;
@@ -95,28 +98,28 @@ export interface HeatingLimitsConfig {
 }
 
 /** Optional limit entities carried outside the shared `HomeModel` type. */
-export function heatingLimits(
+export const heatingLimits = (
   model: HomeModel,
-): HeatingLimitsConfig | undefined {
+): HeatingLimitsConfig | undefined => {
   return (model as HomeModel & { heatingLimits?: HeatingLimitsConfig })
     .heatingLimits;
-}
+};
 
 export interface HeatingStrip {
   values: number[];
   warns: boolean[];
 }
 
-function clamp(value: number, min: number, max: number): number {
+const clamp = (value: number, min: number, max: number): number => {
   return Math.max(min, Math.min(max, value));
-}
+};
 
 /** Zone-strip heights and warning flags for the zones and reserve channels. */
-export function heatingStrip(
+export const heatingStrip = (
   hass: ArcusHass,
   zones: HeatingModel[],
   reserve: HeatingReserveModel[],
-): HeatingStrip {
+): HeatingStrip => {
   const values: number[] = [];
   const warns: boolean[] = [];
   for (const zone of [...zones, ...reserve]) {
@@ -127,4 +130,4 @@ export function heatingStrip(
     warns.push(current !== null && target !== null && current < target - 0.5);
   }
   return { values, warns };
-}
+};

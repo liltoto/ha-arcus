@@ -46,31 +46,31 @@ const DEFAULT_VITALS: VitalPresetKey[] = [
 ];
 
 /** `skur` predates room kinds; the id is only a legacy fallback. */
-function isOutdoorRoom(room: RoomModel): boolean {
+const isOutdoorRoom = (room: RoomModel): boolean => {
   return room.kind === "outdoor" || (!room.kind && room.id === "skur");
-}
+};
 
-function average(values: Array<number | null>): number | null {
+const average = (values: Array<number | null>): number | null => {
   const valid = values.filter(
     (value): value is number => value !== null && Number.isFinite(value),
   );
   if (!valid.length) return null;
   return valid.reduce((total, value) => total + value, 0) / valid.length;
-}
+};
 
 /** The legacy battery gauge changes colour at the two comfort thresholds. */
-function ringStroke(soc: number): string {
+const ringStroke = (soc: number): string => {
   if (soc < 20) return "var(--coral)";
   if (soc > 80) return "var(--sage)";
   return "var(--brass)";
-}
+};
 
-function sparkGraph(
+const sparkGraph = (
   values: Array<number | null>,
   nowMs: number,
   unit: string,
   decimals: number,
-): GraphInput | null {
+): GraphInput | null => {
   if (!values.length) return null;
   return {
     mode: "line",
@@ -80,7 +80,7 @@ function sparkGraph(
     decimals,
     series: [{ values }],
   };
-}
+};
 
 /** One rendered tile, reduced from either a preset key or a custom object. */
 interface VitalView {
@@ -124,13 +124,13 @@ interface VitalsContext {
   co2: number | null;
 }
 
-function roomSeries(
+const roomSeries = (
   history: HistoryCache,
   entityId: string | undefined,
   fill: number | "hold",
-): Array<number | null> {
+): Array<number | null> => {
   return history.series(entityId ?? "", { buckets: 96, fill });
-}
+};
 
 interface RoomContext {
   indoorRooms: RoomModel[];
@@ -142,7 +142,7 @@ interface RoomContext {
   co2: number | null;
 }
 
-function roomContext(model: HomeModel, config: ArcusConfig): RoomContext {
+const roomContext = (model: HomeModel, config: ArcusConfig): RoomContext => {
   const indoorRooms = model.rooms.filter((room) => !isOutdoorRoom(room));
   const outdoorRoom = model.rooms.find(isOutdoorRoom);
   const displayRoom = indoorRooms[0];
@@ -160,7 +160,7 @@ function roomContext(model: HomeModel, config: ArcusConfig): RoomContext {
     ),
     co2: average(indoorRooms.map((room) => stats?.[room.id]?.co2 ?? null)),
   };
-}
+};
 
 interface SparkSeries {
   indoorSpark: Array<number | null>;
@@ -172,11 +172,11 @@ interface SparkSeries {
   waterSpark: Array<number | null>;
 }
 
-function sparkSeries(
+const sparkSeries = (
   history: HistoryCache,
   config: ArcusConfig,
   rooms: RoomContext,
-): SparkSeries {
+): SparkSeries => {
   return {
     indoorSpark: roomSeries(
       history,
@@ -194,9 +194,9 @@ function sparkSeries(
     powerSpark: roomSeries(history, config.solar?.load, "hold"),
     waterSpark: roomSeries(history, config.water?.day, "hold"),
   };
-}
+};
 
-function buildContext(input: {
+const buildContext = (input: {
   bindings: Record<string, string>;
   t: Translator;
   model: HomeModel;
@@ -204,7 +204,7 @@ function buildContext(input: {
   hass: ArcusHass;
   history: HistoryCache;
   nowMs: number;
-}): VitalsContext {
+}): VitalsContext => {
   const { bindings, t, model, config, hass, history, nowMs } = input;
   const language = resolveLanguage(hass.language, config);
   const rooms = roomContext(model, config);
@@ -231,9 +231,9 @@ function buildContext(input: {
     humidity: rooms.humidity,
     co2: rooms.co2,
   };
-}
+};
 
-function batteryRing(ctx: VitalsContext): ReactNode {
+const batteryRing = (ctx: VitalsContext): ReactNode => {
   return (
     <svg viewBox="0 0 40 40">
       <circle
@@ -259,7 +259,7 @@ function batteryRing(ctx: VitalsContext): ReactNode {
       />
     </svg>
   );
-}
+};
 
 type PresetBuilder = (ctx: VitalsContext) => VitalView;
 
@@ -383,7 +383,7 @@ const PRESET_VIEWS: Record<VitalPresetKey, PresetBuilder> = {
   lights: (ctx) => lightsView(ctx),
 };
 
-function securityView(ctx: VitalsContext): VitalView {
+const securityView = (ctx: VitalsContext): VitalView => {
   const open = ctx.model.security?.open ?? 0;
   const leak = Boolean(ctx.model.security?.leak);
   return {
@@ -403,9 +403,9 @@ function securityView(ctx: VitalsContext): VitalView {
     color: leak ? "var(--coral)" : "var(--sage)",
     route: "sikkerhed",
   };
-}
+};
 
-function lightsView(ctx: VitalsContext): VitalView {
+const lightsView = (ctx: VitalsContext): VitalView => {
   const on = ctx.model.lightStats?.on ?? 0;
   const total = ctx.model.lightStats?.total ?? 0;
   return {
@@ -419,17 +419,17 @@ function lightsView(ctx: VitalsContext): VitalView {
     color: "var(--amber)",
     route: "lys",
   };
-}
+};
 
-function presetView(key: VitalPresetKey, ctx: VitalsContext): VitalView {
+const presetView = (key: VitalPresetKey, ctx: VitalsContext): VitalView => {
   return PRESET_VIEWS[key](ctx);
-}
+};
 
-function customView(
+const customView = (
   vital: CustomVitalConfig,
   index: number,
   ctx: VitalsContext,
-): VitalView {
+): VitalView => {
   if (!vital.entity) {
     const preset = presetView(vital.key ?? "indoor", ctx);
     return {
@@ -468,17 +468,17 @@ function customView(
     color: vital.color ?? "var(--sky)",
     route: vital.route,
   };
-}
+};
 
-function viewFor(
+const viewFor = (
   item: VitalItemConfig,
   index: number,
   ctx: VitalsContext,
-): VitalView {
+): VitalView => {
   return typeof item === "string"
     ? presetView(item, ctx)
     : customView(item, index, ctx);
-}
+};
 
 /**
  * The hero statistics, the weather strip, and the first alert.
@@ -490,7 +490,7 @@ function viewFor(
  * custom entity tiles. When it is unset the default order, labels, units,
  * routes, and spark colours are unchanged.
  */
-export function Vitals() {
+export const Vitals = () => {
   const bindings = useBindings();
   const t = useTranslator();
   const model = useModel();
@@ -577,4 +577,4 @@ export function Vitals() {
       </div>
     </>
   );
-}
+};

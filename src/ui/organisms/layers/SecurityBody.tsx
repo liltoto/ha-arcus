@@ -28,7 +28,7 @@ import { resolveSecurityView } from "./security/security-view";
  * used as a deterministic fallback so the sheet never claims everything is
  * closed when the model says something is open.
  */
-export function SecurityBody(_props: LayerBodyProps) {
+export const SecurityBody = (_props: LayerBodyProps) => {
   const hass = useHass();
   const model = useModel();
   const config = useConfig();
@@ -151,4 +151,4 @@ export function SecurityBody(_props: LayerBodyProps) {
       </div>
     </div>
   );
-}
+};

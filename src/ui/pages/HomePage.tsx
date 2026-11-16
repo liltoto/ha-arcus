@@ -6,7 +6,7 @@ import { SheetFrame } from "./SheetFrame";
  * Context-aware home page. It resolves the values that come from the store
  * and hands the pure shell to `HomeTemplate`.
  */
-export function HomePage() {
+export const HomePage = () => {
   const config = useConfig();
   const atmo = useAtmo();
   const dark = useDark();
@@ -20,4 +20,4 @@ export function HomePage() {
       sheet={<SheetFrame />}
     />
   );
-}
+};

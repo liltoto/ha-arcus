@@ -28,7 +28,7 @@ export interface SystemCardView {
   language: string;
 }
 
-function statsFor(model: HomeModel, room: RoomModel): RoomStats {
+const statsFor = (model: HomeModel, room: RoomModel): RoomStats => {
   const stored = model.roomStats?.[room.id];
   if (stored) return stored;
 
@@ -44,9 +44,9 @@ function statsFor(model: HomeModel, room: RoomModel): RoomStats {
     open: 0,
     leak: room.leak?.state === "on" || room.leak?.state === "open",
   };
-}
+};
 
-function airLevel(stats: RoomStats): RoomView["air"] {
+const airLevel = (stats: RoomStats): RoomView["air"] => {
   if (stats.co2 !== null) {
     return stats.co2 > 1000 ? "warn" : stats.co2 > 850 ? "mid" : "ok";
   }
@@ -54,19 +54,19 @@ function airLevel(stats: RoomStats): RoomView["air"] {
     return stats.humidity > 65 ? "warn" : "ok";
   }
   return "off";
-}
+};
 
 /**
  * Build one home room tile from the discovered room and its live stats.
  * Mirrors legacy `roomCard()` copy, including the leak/closed priority.
  */
-export function roomView(
+export const roomView = (
   room: RoomModel,
   model: HomeModel,
   language: string,
   t: Translator,
   kind?: string,
-): RoomView {
+): RoomView => {
   const stats = statsFor(model, room);
   return {
     id: room.id,
@@ -96,17 +96,17 @@ export function roomView(
       : "",
     spark: [],
   };
-}
+};
 
 /**
  * Build the ventilation/outdoor card. The same markup serves both ids; only
  * the navigation route, kind line, and sub text change.
  */
-export function systemCardView(
+export const systemCardView = (
   card: SystemCardModel,
   language: string,
   t: Translator,
-): SystemCardView {
+): SystemCardView => {
   const humidity = numberFromState(card.humidity?.state);
   const step = numberFromState(card.step?.state);
   const sub =
@@ -137,4 +137,4 @@ export function systemCardView(
     openLabel: t("room.openShort"),
     language,
   };
-}
+};

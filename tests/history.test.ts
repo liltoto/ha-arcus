@@ -8,16 +8,16 @@ import {
 
 const FIXED = new Date("2026-11-13T10:00:00+01:00");
 
-function nonNull(values: Array<number | null>): number[] {
+const nonNull = (values: Array<number | null>): number[] => {
   return values.filter((value): value is number => value !== null);
-}
+};
 
-function makeHass(
+const makeHass = (
   callWS: HistoryHass["callWS"],
   callApi: HistoryHass["callApi"] = async () => [],
-): HistoryHass {
+): HistoryHass => {
   return { callWS, callApi };
-}
+};
 
 interface Deferred<T> {
   promise: Promise<T>;
@@ -25,18 +25,18 @@ interface Deferred<T> {
 }
 
 /** Promise plus its `resolve`, so a test can hold a request open. */
-function deferred<T>(): Deferred<T> {
+const deferred = <T>(): Deferred<T> => {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((done) => {
     resolve = done;
   });
   return { promise, resolve };
-}
+};
 
 /** Let promise continuations queued by a release run to completion. */
-async function flushMicrotasks(ticks = 16): Promise<void> {
+const flushMicrotasks = async (ticks = 16): Promise<void> => {
   for (let tick = 0; tick < ticks; tick += 1) await Promise.resolve();
-}
+};
 
 afterEach(() => {
   vi.useRealTimers();

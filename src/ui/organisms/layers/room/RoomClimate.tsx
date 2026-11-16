@@ -16,14 +16,14 @@ export interface RoomClimateProps {
 }
 
 /** The room thermostat: stepper, on/off toggle, and setpoint note. */
-export function RoomClimate({
+export const RoomClimate = ({
   climate,
   roomName,
   hass,
   t,
   language,
   actions,
-}: RoomClimateProps) {
+}: RoomClimateProps) => {
   if (!climate) return null;
 
   const { ref, entity, mode } = climate;
@@ -106,4 +106,4 @@ export function RoomClimate({
       </div>
     </div>
   );
-}
+};

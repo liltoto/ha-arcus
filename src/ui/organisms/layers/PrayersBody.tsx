@@ -13,7 +13,7 @@ import { c } from "../../styles/classes";
  * ported from `views/layers/prayers.ts`. The countdown helper wraps to the
  * next day, so the sheet stays correct around midnight.
  */
-export function PrayersBody(_props: LayerBodyProps) {
+export const PrayersBody = (_props: LayerBodyProps) => {
   const model = useModel();
   const t = useTranslator();
   const actions = useActions();
@@ -124,4 +124,4 @@ export function PrayersBody(_props: LayerBodyProps) {
       </div>
     </LayerShell>
   );
-}
+};

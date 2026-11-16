@@ -12,7 +12,7 @@ interface CoverRowProps {
   actions: ArcusActions;
 }
 
-function CoverRow({ cover, hass, t, actions }: CoverRowProps) {
+const CoverRow = ({ cover, hass, t, actions }: CoverRowProps) => {
   const entity = refEntity(hass, cover);
   const isOpen = entity?.state === "open" || entity?.state === "opening";
   const name = coverName(cover, hass);
@@ -43,7 +43,7 @@ function CoverRow({ cover, hass, t, actions }: CoverRowProps) {
       />
     </div>
   );
-}
+};
 
 export interface RoomCoversProps {
   covers: EntityRef[] | undefined;
@@ -53,7 +53,7 @@ export interface RoomCoversProps {
 }
 
 /** The room's covers, each with an open/close toggle. */
-export function RoomCovers({ covers, hass, t, actions }: RoomCoversProps) {
+export const RoomCovers = ({ covers, hass, t, actions }: RoomCoversProps) => {
   if (!covers?.length) return null;
 
   return (
@@ -74,7 +74,7 @@ export function RoomCovers({ covers, hass, t, actions }: RoomCoversProps) {
       </div>
     </div>
   );
-}
+};
 
 export interface RoomLockProps {
   lock: EntityRef | null | undefined;
@@ -84,7 +84,7 @@ export interface RoomLockProps {
 }
 
 /** The optional room lock, with a lock/unlock toggle. */
-export function RoomLock({ lock, hass, t, actions }: RoomLockProps) {
+export const RoomLock = ({ lock, hass, t, actions }: RoomLockProps) => {
   if (!lock) return null;
 
   const entity = refEntity(hass, lock);
@@ -122,4 +122,4 @@ export function RoomLock({ lock, hass, t, actions }: RoomLockProps) {
       </div>
     </div>
   );
-}
+};

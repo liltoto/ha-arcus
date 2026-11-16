@@ -18,7 +18,7 @@ import { resolveWaterView } from "./water/water-view";
  * chart. Everything except the controls comes from `model.water`; the live
  * states are only needed for the holiday switch and the leak sensors.
  */
-export function WaterBody(_props: LayerBodyProps) {
+export const WaterBody = (_props: LayerBodyProps) => {
   const { hass, model, config, t, history, now, actions } = useHistoryFrame();
   const water = model.water;
 
@@ -82,4 +82,4 @@ export function WaterBody(_props: LayerBodyProps) {
       </div>
     </LayerShell>
   );
-}
+};

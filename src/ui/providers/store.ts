@@ -8,6 +8,6 @@ import type { ArcusStore, ArcusStoreState } from "../types";
  * A factory instead of a module-level `create()` keeps tests, Storybook
  * stories, and several Arcus cards on one dashboard from sharing state.
  */
-export function createArcusStore(state: ArcusStoreState): ArcusStore {
+export const createArcusStore = (state: ArcusStoreState): ArcusStore => {
   return createStore<ArcusStoreState>()(() => state);
-}
+};

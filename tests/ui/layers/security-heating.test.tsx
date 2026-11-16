@@ -15,27 +15,27 @@ import { renderLayer } from "../layer-test-utils";
 const SECURITY_ROUTE: ArcusRoute = { base: "sikkerhed", sub: null };
 const HEATING_ROUTE: ArcusRoute = { base: "varme", sub: null };
 
-function hassWithStates(
+const hassWithStates = (
   base: ReturnType<typeof makeArcusProps>["hass"],
   overrides: Record<string, string>,
-): ArcusHass {
+): ArcusHass => {
   const states = { ...base.states };
   for (const [entityId, state] of Object.entries(overrides)) {
     states[entityId] = { ...states[entityId], state };
   }
   return { ...base, states };
-}
+};
 
-function defaultHass() {
+const defaultHass = () => {
   return makeArcusProps().hass;
-}
+};
 
-function hassWithEntity(
+const hassWithEntity = (
   base: ArcusHass,
   entityId: string,
   state: string,
   attributes: Record<string, unknown> = {},
-): ArcusHass {
+): ArcusHass => {
   return {
     ...base,
     states: {
@@ -49,13 +49,13 @@ function hassWithEntity(
       },
     },
   };
-}
+};
 
-function block(container: HTMLElement, label: string): HTMLElement {
+const block = (container: HTMLElement, label: string): HTMLElement => {
   return [...container.querySelectorAll<HTMLElement>(".block")].find(
     (entry) => entry.querySelector(".block-label")?.textContent === label,
   )!;
-}
+};
 
 describe("security sheet", () => {
   test("renders the header and summary and closes the sheet", async () => {

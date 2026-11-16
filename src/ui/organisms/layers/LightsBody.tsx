@@ -13,7 +13,7 @@ import { lightName, lightStateFor } from "./room/room-state";
  * Group rows toggle the Home Assistant light group; the disclosure list
  * exposes the individual spots without a slider, just like the legacy sheet.
  */
-export function LightsBody() {
+export const LightsBody = () => {
   const hass = useHass();
   const model = useModel();
   const t = useTranslator();
@@ -163,4 +163,4 @@ export function LightsBody() {
       </div>
     </div>
   );
-}
+};

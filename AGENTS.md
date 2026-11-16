@@ -55,6 +55,18 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
 - A new top-level `src/*.ts` file must be added to the `root` zone in
   `.fallowrc.jsonc` or `fallow:arch` fails boundary coverage.
 
+### Function style
+
+- Module-level helpers, React components, and test helpers use `const` arrows.
+  Arrows are not hoisted, so define a helper before any module-level
+  initializer that references it; `src/render/chapter-art.ts` keeps its
+  `CHAPTER_ART` registry below the renderers for that reason.
+- `fail()` in `src/config.ts` (`never`-return narrowing) and `validateConfig()`
+  (`asserts`, TS2775) intentionally stay `function` declarations. Do not turn
+  them into arrows; TypeScript stops narrowing and assertion signatures.
+- Class and object methods stay methods. They rely on `this` and prototype
+  semantics, which arrows would change.
+
 ## Architecture
 
 - `src/main.ts` is the bundle entrypoint and must import every element module

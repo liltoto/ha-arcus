@@ -3,17 +3,17 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { ArcusCard } from "../src/card";
 import { HOME_AREA_IDS, makeConfig, makeHass } from "./fixtures/home";
 
-async function mount(
+const mount = async (
   config = makeConfig(),
   hass = makeHass(),
-): Promise<ArcusCard> {
+): Promise<ArcusCard> => {
   const card = new ArcusCard();
   card.setConfig(config);
   card.hass = hass;
   document.body.appendChild(card);
   await card.updateComplete;
   return card;
-}
+};
 
 beforeEach(() => {
   document.body.innerHTML = "";

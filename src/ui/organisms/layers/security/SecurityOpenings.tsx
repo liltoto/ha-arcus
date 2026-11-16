@@ -11,12 +11,12 @@ export interface SecurityOpeningsProps {
 }
 
 /** Every door, window and leak, each row routing to its room sheet. */
-export function SecurityOpenings({
+export const SecurityOpenings = ({
   rows,
   openCount,
   t,
   onNavigate,
-}: SecurityOpeningsProps) {
+}: SecurityOpeningsProps) => {
   return (
     <div className={c("block")}>
       <div className={c("block-head")}>
@@ -52,4 +52,4 @@ export function SecurityOpenings({
       </div>
     </div>
   );
-}
+};

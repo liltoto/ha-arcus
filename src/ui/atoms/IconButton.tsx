@@ -10,14 +10,14 @@ export interface IconButtonProps {
   dataAct?: string;
 }
 
-export function IconButton({
+export const IconButton = ({
   icon,
   label,
   onClick,
   disabled,
   className,
   dataAct,
-}: IconButtonProps) {
+}: IconButtonProps) => {
   return (
     <button
       type="button"
@@ -31,4 +31,4 @@ export function IconButton({
       <Icon name={icon} />
     </button>
   );
-}
+};

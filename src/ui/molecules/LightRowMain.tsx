@@ -7,7 +7,7 @@ export interface LightRowMainProps {
 }
 
 /** The shared name/sub/value block used by both light-row widgets. */
-export function LightRowMain({ name, sub, value }: LightRowMainProps) {
+export const LightRowMain = ({ name, sub, value }: LightRowMainProps) => {
   return (
     <>
       <span className={c("row-main")}>
@@ -17,4 +17,4 @@ export function LightRowMain({ name, sub, value }: LightRowMainProps) {
       <span className={c("row-val")}>{value}</span>
     </>
   );
-}
+};

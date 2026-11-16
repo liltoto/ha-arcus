@@ -6,10 +6,10 @@ import { RoomGrid } from "../../src/ui/organisms/RoomGrid";
 import type { HomeModel, RoomStats } from "../../src/types";
 import { renderWithArcus } from "./home-test-utils";
 
-function statsOf(model: HomeModel, roomId: string): RoomStats {
+const statsOf = (model: HomeModel, roomId: string): RoomStats => {
   const stats = model.roomStats as Record<string, RoomStats>;
   return stats[roomId];
-}
+};
 
 describe("RoomGrid", () => {
   it("renders the section head, rooms, system card, and skur last", () => {

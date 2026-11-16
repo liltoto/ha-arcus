@@ -10,11 +10,11 @@ afterEach(() => {
   window.history.replaceState(null, "", "/");
 });
 
-function quickButtons(container: HTMLElement): HTMLButtonElement[] {
+const quickButtons = (container: HTMLElement): HTMLButtonElement[] => {
   return Array.from(
     container.querySelectorAll<HTMLButtonElement>(".quick-row .quick"),
   );
-}
+};
 
 describe("QuickActions", () => {
   it("renders only the generic shortcuts when none are configured", () => {

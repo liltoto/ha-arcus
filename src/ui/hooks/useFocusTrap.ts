@@ -14,28 +14,28 @@ const FOCUSABLE = [
  * reliable in happy-dom and shadow DOM, so hidden `<details>` content and
  * explicit `hidden`/`aria-hidden` regions are filtered by ancestry instead.
  */
-function focusables(root: HTMLElement): HTMLElement[] {
+const focusables = (root: HTMLElement): HTMLElement[] => {
   return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
     (element) =>
       !element.closest("[hidden]") &&
       element.closest("[aria-hidden='true']") === null &&
       !element.closest("details:not([open])"),
   );
-}
+};
 
-function focusElement(
+const focusElement = (
   element: HTMLElement | null | undefined,
   options?: FocusOptions,
-): void {
+): void => {
   try {
     element?.focus(options);
   } catch {
     /* happy-dom and older Safari can reject the options object. */
   }
-}
+};
 
 /** The active element inside the sheet's document or shadow root. */
-function activeElement(root: HTMLElement): HTMLElement | null {
+const activeElement = (root: HTMLElement): HTMLElement | null => {
   const scope = root.getRootNode?.() as Document | ShadowRoot | undefined;
   if (scope && "activeElement" in scope) {
     return (scope.activeElement as HTMLElement | null) ?? null;
@@ -43,7 +43,7 @@ function activeElement(root: HTMLElement): HTMLElement | null {
   return typeof document !== "undefined"
     ? (document.activeElement as HTMLElement | null)
     : null;
-}
+};
 
 /**
  * Traps focus inside the open sheet and restores the previous focus on close.
@@ -52,10 +52,10 @@ function activeElement(root: HTMLElement): HTMLElement | null {
  * started before focus jumps into the dialog. Reduced-motion users get the
  * focus immediately because there is no animation to wait for.
  */
-export function useFocusTrap(
+export const useFocusTrap = (
   ref: RefObject<HTMLElement | null>,
   active: boolean,
-): void {
+): void => {
   useEffect(() => {
     if (!active) return;
     const sheet = ref.current;
@@ -121,4 +121,4 @@ export function useFocusTrap(
       focusElement(previous, { preventScroll: true });
     };
   }, [active, ref]);
-}
+};

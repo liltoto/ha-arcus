@@ -10,10 +10,10 @@ export interface ArcusAppProps {
  * The single React root rendered inside `<arcus-card>`. The card owns the
  * store and publishes snapshots; this shell only injects it.
  */
-export function ArcusApp({ store }: ArcusAppProps) {
+export const ArcusApp = ({ store }: ArcusAppProps) => {
   return (
     <ArcusProvider store={store}>
       <HomePage />
     </ArcusProvider>
   );
-}
+};

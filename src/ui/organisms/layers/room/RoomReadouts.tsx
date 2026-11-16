@@ -22,13 +22,13 @@ export interface RoomReadoutsProps {
  * actually has get a tile; a sensor that exists but is temporarily
  * unavailable keeps its tile and shows a dash.
  */
-export function RoomReadouts({
+export const RoomReadouts = ({
   room,
   view,
   t,
   language,
   tempUnit,
-}: RoomReadoutsProps) {
+}: RoomReadoutsProps) => {
   const { temp, humidity, co2, pm25 } = view;
   return (
     <div className={c("readings")}>
@@ -60,4 +60,4 @@ export function RoomReadouts({
       ) : null}
     </div>
   );
-}
+};
