@@ -1,5 +1,6 @@
 import { HomePage } from "./pages/HomePage";
 import { ArcusProvider } from "./providers/ArcusProvider";
+import { AppBoundary } from "./pages/AppBoundary";
 import type { ArcusStore } from "./types";
 
 export interface ArcusAppProps {
@@ -13,7 +14,9 @@ export interface ArcusAppProps {
 export const ArcusApp = ({ store }: ArcusAppProps) => {
   return (
     <ArcusProvider store={store}>
-      <HomePage />
+      <AppBoundary>
+        <HomePage />
+      </AppBoundary>
     </ArcusProvider>
   );
 };

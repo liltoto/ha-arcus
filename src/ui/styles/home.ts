@@ -1166,4 +1166,70 @@ export const homeStyles: Record<string, string> = {
     "& .mark .ico": { width: "13px", height: "13px", opacity: 0.7 },
     _phone: { fontSize: "var(--arcus-fs-micro)", letterSpacing: "0.06em" },
   }),
+  /**
+   * Crash containment. Both the static model-failure panel and the React error
+   * boundary render this shell, so a broken card still looks like Arcus and
+   * never leaves an unstyled box inside the dashboard.
+   */
+  failure: css({
+    position: "absolute",
+    inset: 0,
+    display: "grid",
+    placeItems: "center",
+    padding: "clamp(20px, 5cqw, 48px)",
+    overflowY: "auto",
+    background:
+      "radial-gradient(90% 60% at 50% 0%, var(--glow), transparent 58%), var(--bg-0)",
+  }),
+  "failure-panel": css({
+    width: "min(420px, 100%)",
+    display: "grid",
+    justifyItems: "center",
+    gap: "10px",
+    padding: "clamp(22px, 5cqw, 32px)",
+    borderRadius: "18px",
+    border: "1px solid var(--line-strong)",
+    background: "var(--card-bg)",
+    boxShadow: "sheet",
+    textAlign: "center",
+  }),
+  "failure-kicker": css({
+    fontSize: "var(--arcus-fs-micro)",
+    letterSpacing: "0.2em",
+    textTransform: "uppercase",
+    color: "var(--accent-text)",
+  }),
+  "failure-title": css({
+    margin: 0,
+    fontFamily: "var(--serif)",
+    fontSize: "var(--arcus-fs-value)",
+    fontWeight: 400,
+    letterSpacing: "0.01em",
+    color: "var(--text)",
+  }),
+  "failure-body": css({
+    maxWidth: "36ch",
+    margin: 0,
+    fontSize: "var(--arcus-fs-body)",
+    lineHeight: 1.6,
+    color: "var(--muted)",
+  }),
+  "failure-retry": css({
+    marginTop: "6px",
+    height: "36px",
+    padding: "0 18px",
+    borderRadius: "99px",
+    border: "1px solid var(--line-strong)",
+    background: "var(--panel)",
+    fontSize: "var(--arcus-fs-label)",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "var(--text)",
+    transition: "border-color .18s ease, color .18s ease",
+    "&:hover": {
+      borderColor: "var(--accent)",
+      color: "var(--accent-text)",
+    },
+    _compact: { height: "32px", padding: "0 14px" },
+  }),
 };

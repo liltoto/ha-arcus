@@ -66,6 +66,9 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
   them into arrows; TypeScript stops narrowing and assertion signatures.
 - Class and object methods stay methods. They rely on `this` and prototype
   semantics, which arrows would change.
+- `AppBoundary` is the one class React component: only a class can implement
+  `getDerivedStateFromError`. Do not convert it to a function; React would stop
+  catching render errors and remove the whole card root.
 
 ## Architecture
 
@@ -75,6 +78,16 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
 - `src/card.ts` owns `arcus-card`: `hass`, config, `HomeModel`, routing,
   history, theme, clock, and the action bridge. It mounts exactly one React
   root inside the card shadow DOM and renders `src/ui/ArcusApp.tsx`.
+- Crash containment is deliberate. `_buildModel` catches a failed build, keeps
+  the last good model, and renders the static failure panel when no model has
+  ever built; `src/ui/pages/AppBoundary.tsx` contains render errors. Never let a
+  throw from `buildModel` reach Home Assistant's `hass` setter, and keep the
+  boundary inside `ArcusProvider` so its fallback can read the theme and
+  translator.
+- `HistoryCache` bounds every transport with `FETCH_TIMEOUT_MS`, retries the
+  WebSocket once, and reports `failed` when both transports error or hang.
+  `RoomChart` maps `failed` to the unavailable state; do not collapse it into
+  `empty`, which means "the recorder answered and had no rows".
 - `src/ui/` follows atomic design: `atoms/` (pure primitives), `molecules/`
   (domain-shaped, props-only), `organisms/` (sections and sheet bodies),
   `templates/` (layout shells), `pages/` (data-wired composition). Put a

@@ -36,6 +36,13 @@ const da: Record<string, string> = {
   "opening.open": "Åben",
   "opening.closed": "Lukket",
 
+  /* Failure containment */
+  "failure.kicker": "Arcus",
+  "failure.title": "Kunne ikke vise dashboardet",
+  "failure.body":
+    "Der skete en fejl, da kortet skulle tegnes. Prøv igen, eller vent på næste opdatering.",
+  "failure.retry": "Prøv igen",
+
   /* Brand and top bar */
   "brand.homeAria": "Gå til hjem",
   "brand.allLayers": "Alle lag",
@@ -664,6 +671,13 @@ const en: Record<string, string> = {
   "stepper.increase": "Increase {label}",
   "opening.open": "Open",
   "opening.closed": "Closed",
+
+  /* Failure containment */
+  "failure.kicker": "Arcus",
+  "failure.title": "Could not show the dashboard",
+  "failure.body":
+    "Something went wrong while drawing the card. Try again, or wait for the next update.",
+  "failure.retry": "Try again",
 
   /* Brand and top bar */
   "brand.homeAria": "Go to home",

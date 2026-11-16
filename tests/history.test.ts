@@ -91,25 +91,104 @@ test("reads array-of-arrays responses with ISO timestamps", async () => {
   });
 });
 
-test("falls back to REST when the WebSocket request rejects", async () => {
+test("retries the WebSocket once, then falls back to REST", async () => {
   const ws = vi.fn(async (_message: HistoryWsRequest) => {
     throw new Error("ws unavailable");
   });
   const api = vi.fn(async (_method: string, _path: string) => [
     [{ s: "4", lu: "2026-11-13T09:30:00+01:00" }],
   ]);
-  const cache = new HistoryCache(makeHass(ws, api), () => FIXED);
+  const cache = new HistoryCache(makeHass(ws, api), () => FIXED, {
+    retryDelayMs: 0,
+  });
   const start = new Date(FIXED.getTime() - 6 * 60 * 60 * 1000).toISOString();
 
   await cache.ensure(["sensor.c"], 6);
 
-  expect(ws).toHaveBeenCalledTimes(1);
+  expect(ws).toHaveBeenCalledTimes(2);
   expect(api).toHaveBeenCalledTimes(1);
   expect(api.mock.calls[0][0]).toBe("GET");
   expect(api.mock.calls[0][1]).toBe(
     `history/period/${encodeURIComponent(start)}?filter_entity_id=sensor.c&minimal_response&no_attributes`,
   );
   expect(nonNull(cache.series("sensor.c"))).toEqual([4]);
+  expect(cache.status("sensor.c")).toBe("ready");
+});
+
+test("times out a hung recorder and still resolves the request", async () => {
+  const ws = vi.fn(() => new Promise<unknown>(() => {}));
+  const api = vi.fn(() => new Promise<unknown>(() => {}));
+  const cache = new HistoryCache(makeHass(ws, api), () => FIXED, {
+    timeoutMs: 5,
+    retryDelayMs: 0,
+  });
+
+  // Before the timeout, one wedged socket kept the entity at `loading` and
+  // blocked every later refresh; the ensure call must now settle by itself.
+  await cache.ensure(["sensor.hung"], 24);
+
+  expect(ws).toHaveBeenCalledTimes(2);
+  expect(api).toHaveBeenCalledTimes(1);
+  expect(cache.status("sensor.hung")).toBe("failed");
+});
+
+test("times out a hung WebSocket but loads from REST", async () => {
+  const ws = vi.fn(() => new Promise<unknown>(() => {}));
+  const api = vi.fn(async (_method: string, _path: string) => [
+    { s: "21", lu: "2026-11-13T09:30:00+01:00" },
+  ]);
+  const cache = new HistoryCache(makeHass(ws, api), () => FIXED, {
+    timeoutMs: 5,
+    retryDelayMs: 0,
+  });
+
+  await cache.ensure(["sensor.slow"], 24);
+
+  expect(api).toHaveBeenCalledTimes(1);
+  expect(nonNull(cache.series("sensor.slow"))).toEqual([21]);
+  expect(cache.status("sensor.slow")).toBe("ready");
+});
+
+test("reports failed when every transport errors", async () => {
+  const ws = vi.fn(async (_message: HistoryWsRequest) => {
+    throw new Error("ws down");
+  });
+  const api = vi.fn(async (_method: string, _path: string) => {
+    throw new Error("rest down");
+  });
+  const cache = new HistoryCache(makeHass(ws, api), () => FIXED, {
+    retryDelayMs: 0,
+  });
+
+  await cache.ensure(["sensor.down"], 24);
+
+  expect(ws).toHaveBeenCalledTimes(2);
+  expect(api).toHaveBeenCalledTimes(1);
+  expect(cache.status("sensor.down")).toBe("failed");
+  expect(cache.raw("sensor.down")).toEqual([]);
+});
+
+test("a later successful refresh clears failed", async () => {
+  let recorderBack = false;
+  const ws = vi.fn(async (_message: HistoryWsRequest) => {
+    throw new Error("ws down");
+  });
+  const api = vi.fn(async (_method: string, _path: string) => {
+    if (!recorderBack) throw new Error("rest down");
+    return [{ s: "8", lu: "2026-11-13T09:30:00+01:00" }];
+  });
+  const cache = new HistoryCache(makeHass(ws, api), () => FIXED, {
+    retryDelayMs: 0,
+  });
+
+  await cache.ensure(["sensor.recover"], 24);
+  expect(cache.status("sensor.recover")).toBe("failed");
+
+  recorderBack = true;
+  await cache.ensure(["sensor.recover"], 24);
+
+  expect(cache.status("sensor.recover")).toBe("ready");
+  expect(nonNull(cache.series("sensor.recover"))).toEqual([8]);
 });
 
 test("reuses cached history for repeated ensure calls", async () => {

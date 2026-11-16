@@ -94,6 +94,8 @@ const roomChartState = (
 ): ChartState => {
   if (hasData) return "ready";
   if (unavailable) return "unavailable";
+  // A recorder that errored on every transport is unavailable, not empty.
+  if (status === "failed") return "unavailable";
   return status === "idle" || status === "loading" ? "loading" : "empty";
 };
 
