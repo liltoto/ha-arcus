@@ -74,11 +74,11 @@ export const ARCUS_CUSTOM_STRATEGY: CustomStrategyInfo = {
   documentationURL: "https://github.com/liltoto/ha-arcus",
 };
 
-function readText(value: unknown): string | undefined {
+const readText = (value: unknown): string | undefined => {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
   return trimmed ? trimmed : undefined;
-}
+};
 
 export class ArcusDashboardStrategy extends HTMLElement {
   /**

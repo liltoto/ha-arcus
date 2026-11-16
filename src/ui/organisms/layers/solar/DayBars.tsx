@@ -18,7 +18,7 @@ export interface DayBarsProps {
  * from the same day buckets on every history refresh. Rebuilding is skipped
  * while the rendered signature (`days`, `empty`, `language`) is unchanged.
  */
-export function DayBars({ days, empty, language }: DayBarsProps) {
+export const DayBars = ({ days, empty, language }: DayBarsProps) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const paintedRef = useRef<{ element: HTMLElement; sig: string } | null>(null);
 
@@ -75,4 +75,4 @@ export function DayBars({ days, empty, language }: DayBarsProps) {
       data-days={days.length}
     />
   );
-}
+};

@@ -13,7 +13,13 @@ export interface MiscTileProps {
  * The two-column `mini-stat` tile used by the All sheet for both rooms and
  * chapter links. It keeps the legacy inline sizing and `data-nav` hook.
  */
-export function MiscTile({ route, icon, title, sub, onOpen }: MiscTileProps) {
+export const MiscTile = ({
+  route,
+  icon,
+  title,
+  sub,
+  onOpen,
+}: MiscTileProps) => {
   return (
     <button
       type="button"
@@ -31,4 +37,4 @@ export function MiscTile({ route, icon, title, sub, onOpen }: MiscTileProps) {
       <div className={c("row-sub")}>{sub}</div>
     </button>
   );
-}
+};

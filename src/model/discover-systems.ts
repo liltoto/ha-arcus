@@ -48,19 +48,19 @@ const POWER_UNIT_RE = /^(W|kW)$/i;
 
 const ENERGY_UNIT_RE = /^(Wh|kWh|MWh)$/i;
 
-function domainOf(entityId: string): string {
+const domainOf = (entityId: string): string => {
   return entityId.includes(".") ? entityId.slice(0, entityId.indexOf(".")) : "";
-}
+};
 
-function isEligible(hass: ArcusHass, entityId: string): boolean {
+const isEligible = (hass: ArcusHass, entityId: string): boolean => {
   const state = hass.states?.[entityId];
   if (!state || !isEntityAvailable(state.state)) return false;
   const reg = hass.entities?.[entityId];
   if (reg?.hidden_by || reg?.disabled_by) return false;
   return true;
-}
+};
 
-function eligibleIds(hass: ArcusHass, domain: string): string[] {
+const eligibleIds = (hass: ArcusHass, domain: string): string[] => {
   const out: string[] = [];
   for (const entityId of Object.keys(hass.states ?? {})) {
     if (domainOf(entityId) !== domain) continue;
@@ -68,23 +68,23 @@ function eligibleIds(hass: ArcusHass, domain: string): string[] {
     out.push(entityId);
   }
   return out;
-}
+};
 
-function attrOf(hass: ArcusHass, entityId: string, key: string): unknown {
+const attrOf = (hass: ArcusHass, entityId: string, key: string): unknown => {
   return hass.states?.[entityId]?.attributes?.[key];
-}
+};
 
-function deviceClassOf(hass: ArcusHass, entityId: string): string {
+const deviceClassOf = (hass: ArcusHass, entityId: string): string => {
   const raw = attrOf(hass, entityId, "device_class");
   return typeof raw === "string" ? raw : "";
-}
+};
 
-function unitOf(hass: ArcusHass, entityId: string): string {
+const unitOf = (hass: ArcusHass, entityId: string): string => {
   const raw = attrOf(hass, entityId, "unit_of_measurement");
   return typeof raw === "string" ? raw : "";
-}
+};
 
-function friendlyNameOf(hass: ArcusHass, entityId: string): string {
+const friendlyNameOf = (hass: ArcusHass, entityId: string): string => {
   const state = hass.states?.[entityId];
   const reg = hass.entities?.[entityId];
   return (
@@ -93,36 +93,36 @@ function friendlyNameOf(hass: ArcusHass, entityId: string): string {
     String(reg?.original_name ?? "").trim() ||
     ""
   );
-}
+};
 
-function hasNonEmptyData(value: unknown): boolean {
+const hasNonEmptyData = (value: unknown): boolean => {
   if (Array.isArray(value)) return value.length > 0;
   if (typeof value === "object" && value !== null) {
     return Object.keys(value).length > 0;
   }
   return false;
-}
+};
 
-function findMatch(
+const findMatch = (
   hass: ArcusHass,
   ids: string[],
   pattern: RegExp,
   predicate?: (id: string) => boolean,
-): string | undefined {
+): string | undefined => {
   const pool = predicate ? ids.filter(predicate) : ids;
   const byId = pool.find((id) => pattern.test(id));
   if (byId) return byId;
   return pool.find((id) => pattern.test(friendlyNameOf(hass, id)));
-}
+};
 
-function findUnitMatch(
+const findUnitMatch = (
   hass: ArcusHass,
   sensors: string[],
   pattern: RegExp,
   deviceClass: string,
   unitPattern: RegExp,
   predicate?: (id: string) => boolean,
-): string | undefined {
+): string | undefined => {
   const strict = findMatch(
     hass,
     sensors,
@@ -141,16 +141,16 @@ function findUnitMatch(
       unitPattern.test(unitOf(hass, id)) &&
       (predicate ? predicate(id) : true),
   );
-}
+};
 
-function discoverWeather(hass: ArcusHass): string | undefined {
+const discoverWeather = (hass: ArcusHass): string | undefined => {
   for (const preferred of PREFERRED_WEATHER_IDS) {
     if (isEligible(hass, preferred)) return preferred;
   }
   return eligibleIds(hass, "weather")[0];
-}
+};
 
-function discoverPrice(hass: ArcusHass): PriceConfig | undefined {
+const discoverPrice = (hass: ArcusHass): PriceConfig | undefined => {
   const sensors = eligibleIds(hass, "sensor");
   const binarySensors = eligibleIds(hass, "binary_sensor");
 
@@ -233,18 +233,18 @@ function discoverPrice(hass: ArcusHass): PriceConfig | undefined {
   if (tomorrow) price.tomorrow = tomorrow;
 
   return price;
-}
+};
 
-function setIfDefined<T extends object>(
+const setIfDefined = <T extends object>(
   target: T,
   key: keyof T,
   value: unknown,
-): void {
+): void => {
   if (value === undefined || value === null) return;
   (target as Record<keyof T, unknown>)[key] = value;
-}
+};
 
-function isHomeBatterySensor(hass: ArcusHass, entityId: string): boolean {
+const isHomeBatterySensor = (hass: ArcusHass, entityId: string): boolean => {
   if (deviceClassOf(hass, entityId) !== "battery") return false;
   const text = `${entityId} ${friendlyNameOf(hass, entityId)}`;
   if (SENSOR_BATTERY_EXCLUDE_RE.test(text)) return false;
@@ -252,12 +252,12 @@ function isHomeBatterySensor(hass: ArcusHass, entityId: string): boolean {
     HOME_BATTERY_RE.test(entityId) ||
     HOME_BATTERY_RE.test(friendlyNameOf(hass, entityId))
   );
-}
+};
 
-function solarForecastToday(
+const solarForecastToday = (
   hass: ArcusHass,
   sensors: string[],
-): string | undefined {
+): string | undefined => {
   const series = sensors.find(
     (id) =>
       hasNonEmptyData(attrOf(hass, id, "watts")) &&
@@ -272,9 +272,9 @@ function solarForecastToday(
       (id) => !/remaining|tomorrow/i.test(id),
     )
   );
-}
+};
 
-function discoverSolar(hass: ArcusHass): SolarConfig | undefined {
+const discoverSolar = (hass: ArcusHass): SolarConfig | undefined => {
   const sensors = eligibleIds(hass, "sensor");
   const forecastToday = solarForecastToday(hass, sensors);
   const forecastTomorrow = findMatch(
@@ -351,9 +351,9 @@ function discoverSolar(hass: ArcusHass): SolarConfig | undefined {
   setIfDefined(solar, "pv3", pv3);
   setIfDefined(solar, "pv4", pv4);
   return solar;
-}
+};
 
-function discoverWater(hass: ArcusHass): WaterConfig | undefined {
+const discoverWater = (hass: ArcusHass): WaterConfig | undefined => {
   const sensors = eligibleIds(hass, "sensor").filter((id) => !/leak/i.test(id));
 
   const total =
@@ -393,9 +393,11 @@ function discoverWater(hass: ArcusHass): WaterConfig | undefined {
   if (saltDays) water.saltDays = saltDays;
 
   return Object.keys(water).length > 0 ? water : undefined;
-}
+};
 
-function discoverVentilation(hass: ArcusHass): VentilationConfig | undefined {
+const discoverVentilation = (
+  hass: ArcusHass,
+): VentilationConfig | undefined => {
   const unitId =
     findMatch(hass, eligibleIds(hass, "climate"), VENTILATION_UNIT_RE) ??
     findMatch(hass, eligibleIds(hass, "fan"), VENTILATION_UNIT_RE);
@@ -478,9 +480,9 @@ function discoverVentilation(hass: ArcusHass): VentilationConfig | undefined {
   if (efficiency) ventilation.efficiency = efficiency;
 
   return ventilation;
-}
+};
 
-function discoverPrayers(hass: ArcusHass): PrayersConfig | undefined {
+const discoverPrayers = (hass: ArcusHass): PrayersConfig | undefined => {
   const sensors = eligibleIds(hass, "sensor");
   const prayers: PrayersConfig = {};
 
@@ -492,13 +494,13 @@ function discoverPrayers(hass: ArcusHass): PrayersConfig | undefined {
   }
 
   return Object.keys(prayers).length >= 3 ? prayers : undefined;
-}
+};
 
-function hasOpeningContext(
+const hasOpeningContext = (
   hass: ArcusHass,
   config: ArcusConfig,
   binarySensors: string[],
-): boolean {
+): boolean => {
   const sensor = binarySensors.some((id) =>
     OPENING_DEVICE_CLASSES.has(deviceClassOf(hass, id)),
   );
@@ -509,73 +511,73 @@ function hasOpeningContext(
     (room) => (room.openings?.length ?? 0) > 0,
   );
   return sensor || configured || overridden;
-}
+};
 
-function hasRoomLeakContext(config: ArcusConfig): boolean {
+const hasRoomLeakContext = (config: ArcusConfig): boolean => {
   return Object.values(config.rooms ?? {}).some((room) =>
     Boolean(room.leak || room.lock),
   );
-}
+};
 
-function excludedBatteryIds(
+const excludedBatteryIds = (
   config: ArcusConfig,
   solarBatterySoc: string | undefined,
-): Set<string> {
+): Set<string> => {
   const ids = [
     solarBatterySoc,
     config.solar?.batterySoc,
     config.energy?.ev?.soc,
   ].filter((id): id is string => typeof id === "string" && id.length > 0);
   return new Set(ids);
-}
+};
 
-function isSecurityBattery(
+const isSecurityBattery = (
   hass: ArcusHass,
   id: string,
   excluded: Set<string>,
-): boolean {
+): boolean => {
   if (deviceClassOf(hass, id) !== "battery") return false;
   if (excluded.has(id)) return false;
   if (isHomeBatterySensor(hass, id)) return false;
   return !EV_BATTERY_RE.test(`${id} ${friendlyNameOf(hass, id)}`);
-}
+};
 
-function discoverSecurityBatteries(
+const discoverSecurityBatteries = (
   hass: ArcusHass,
   config: ArcusConfig,
   solarBatterySoc: string | undefined,
   hasContext: boolean,
-): string[] {
+): string[] => {
   if (!hasContext) return [];
   const excluded = excludedBatteryIds(config, solarBatterySoc);
   return eligibleIds(hass, "sensor").filter((id) =>
     isSecurityBattery(hass, id, excluded),
   );
-}
+};
 
-function assignSecurityField<T extends "leaks" | "locks" | "batteries">(
+const assignSecurityField = <T extends "leaks" | "locks" | "batteries">(
   security: SecurityConfig,
   key: T,
   current: string[] | undefined,
   discovered: string[],
-): void {
+): void => {
   if (current !== undefined || !discovered.length) return;
   security[key] = discovered;
-}
+};
 
-function hasAnySecurityField(security: SecurityConfig): boolean {
+const hasAnySecurityField = (security: SecurityConfig): boolean => {
   if (security.windowAlert || security.windows || security.alarm) return true;
   return Boolean(
     security.leaks?.length ||
     security.locks?.length ||
     security.batteries?.length,
   );
-}
+};
 
-function discoverSecurity(
+const discoverSecurity = (
   hass: ArcusHass,
   config: ArcusConfig,
-): SecurityConfig | undefined {
+): SecurityConfig | undefined => {
   const existing = config.security;
   const binarySensors = eligibleIds(hass, "binary_sensor");
   const leaks =
@@ -603,7 +605,7 @@ function discoverSecurity(
   if (!security.alarm && alarm) security.alarm = alarm;
 
   return hasAnySecurityField(security) ? security : undefined;
-}
+};
 
 /**
  * Auto-discover system sections (`weather`, `price`, `solar`, `water`,
@@ -612,46 +614,46 @@ function discoverSecurity(
  */
 type SystemFiller = (hass: ArcusHass, config: ArcusConfig) => ArcusConfig;
 
-function fillWeather(hass: ArcusHass, config: ArcusConfig): ArcusConfig {
+const fillWeather = (hass: ArcusHass, config: ArcusConfig): ArcusConfig => {
   if (config.weather) return config;
   const weather = discoverWeather(hass);
   return weather ? { ...config, weather } : config;
-}
+};
 
-function fillPrice(hass: ArcusHass, config: ArcusConfig): ArcusConfig {
+const fillPrice = (hass: ArcusHass, config: ArcusConfig): ArcusConfig => {
   if (config.price) return config;
   const price = discoverPrice(hass);
   return price ? { ...config, price } : config;
-}
+};
 
-function fillSolar(hass: ArcusHass, config: ArcusConfig): ArcusConfig {
+const fillSolar = (hass: ArcusHass, config: ArcusConfig): ArcusConfig => {
   if (config.solar) return config;
   const solar = discoverSolar(hass);
   return solar ? { ...config, solar } : config;
-}
+};
 
-function fillWater(hass: ArcusHass, config: ArcusConfig): ArcusConfig {
+const fillWater = (hass: ArcusHass, config: ArcusConfig): ArcusConfig => {
   if (config.water) return config;
   const water = discoverWater(hass);
   return water ? { ...config, water } : config;
-}
+};
 
-function fillVentilation(hass: ArcusHass, config: ArcusConfig): ArcusConfig {
+const fillVentilation = (hass: ArcusHass, config: ArcusConfig): ArcusConfig => {
   if (config.ventilation) return config;
   const ventilation = discoverVentilation(hass);
   return ventilation ? { ...config, ventilation } : config;
-}
+};
 
-function fillPrayers(hass: ArcusHass, config: ArcusConfig): ArcusConfig {
+const fillPrayers = (hass: ArcusHass, config: ArcusConfig): ArcusConfig => {
   if (config.prayers) return config;
   const prayers = discoverPrayers(hass);
   return prayers ? { ...config, prayers } : config;
-}
+};
 
-function fillSecurity(hass: ArcusHass, config: ArcusConfig): ArcusConfig {
+const fillSecurity = (hass: ArcusHass, config: ArcusConfig): ArcusConfig => {
   const security = discoverSecurity(hass, config);
   return security ? { ...config, security } : config;
-}
+};
 
 const FILLERS: SystemFiller[] = [
   fillWeather,
@@ -663,10 +665,10 @@ const FILLERS: SystemFiller[] = [
   fillSecurity,
 ];
 
-export function discoverSystems(
+export const discoverSystems = (
   hass: ArcusHass,
   config: ArcusConfig,
-): ArcusConfig {
+): ArcusConfig => {
   if (config.auto_discover === false) return config;
   return FILLERS.reduce((next, fill) => fill(hass, next), { ...config });
-}
+};

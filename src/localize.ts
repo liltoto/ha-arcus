@@ -1266,26 +1266,26 @@ export const DICTIONARIES: Record<Language, Record<string, string>> = {
   en,
 };
 
-function interpolate(
+const interpolate = (
   template: string,
   vars?: Record<string, string | number>,
-): string {
+): string => {
   if (!vars) return template;
   return template.replace(/\{(\w+)\}/g, (match, name: string) =>
     Object.prototype.hasOwnProperty.call(vars, name)
       ? String(vars[name])
       : match,
   );
-}
+};
 
 /**
  * Resolve the active language. `auto` follows Home Assistant's language and
  * falls back to English for every non-Danish locale.
  */
-export function resolveLanguage(
+export const resolveLanguage = (
   hassLanguage: string | null | undefined,
   config: { language?: LanguageSetting } = {},
-): Language {
+): Language => {
   if (config.language === "da" || config.language === "en") {
     return config.language;
   }
@@ -1294,16 +1294,16 @@ export function resolveLanguage(
     .startsWith("da")
     ? "da"
     : "en";
-}
+};
 
 /**
  * Create a translator for a resolved language. Lookup order is:
  * selected language → English → the key itself.
  */
-export function createTranslator(language: Language): Translator {
+export const createTranslator = (language: Language): Translator => {
   const primary = DICTIONARIES[language] ?? DICTIONARIES.en;
   return (key, vars) => {
     const template = primary[key] ?? DICTIONARIES.en[key] ?? key;
     return interpolate(template, vars);
   };
-}
+};

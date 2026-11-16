@@ -10,7 +10,7 @@ import { c } from "../../styles/classes";
  * Alerts: every model alert, most severe first, with a severity chip and a
  * route back to the layer that owns the problem.
  */
-export function AlertsBody(_props: LayerBodyProps) {
+export const AlertsBody = (_props: LayerBodyProps) => {
   const model = useModel();
   const t = useTranslator();
   const actions = useActions();
@@ -64,4 +64,4 @@ export function AlertsBody(_props: LayerBodyProps) {
       </div>
     </LayerShell>
   );
-}
+};

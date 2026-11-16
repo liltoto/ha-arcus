@@ -9,7 +9,7 @@ export interface SecurityLocksProps {
 }
 
 /** Every configured lock with its state chip and lock/unlock toggle. */
-export function SecurityLocks({ locks, t, onToggle }: SecurityLocksProps) {
+export const SecurityLocks = ({ locks, t, onToggle }: SecurityLocksProps) => {
   return (
     <div className={c("block")}>
       <div className={c("block-label")}>{t("security.locks")}</div>
@@ -40,4 +40,4 @@ export function SecurityLocks({ locks, t, onToggle }: SecurityLocksProps) {
       </div>
     </div>
   );
-}
+};

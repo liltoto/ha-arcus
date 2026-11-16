@@ -9,23 +9,23 @@ import { SheetHeader } from "../../molecules/SheetHeader";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { c } from "../../styles/classes";
 
-function windowOf(
+const windowOf = (
   history: HistoryCache,
   entityId: string | undefined,
   days: number,
-): Array<number | null> {
+): Array<number | null> => {
   if (!entityId) return [];
   return typeof history.window === "function"
     ? history.window(entityId, days, { fill: "hold" })
     : [];
-}
+};
 
 /**
  * Economy: the bond price, today's change, effective yield, duration and the
  * 30-day price chart from the history cache, ported from
  * `views/layers/economy.ts`.
  */
-export function EconomyBody(_props: LayerBodyProps) {
+export const EconomyBody = (_props: LayerBodyProps) => {
   const { model, config, history, t, now, actions } = useHistoryFrame();
 
   const language = model.language;
@@ -170,4 +170,4 @@ export function EconomyBody(_props: LayerBodyProps) {
       </div>
     </div>
   );
-}
+};

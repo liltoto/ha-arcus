@@ -13,7 +13,7 @@ const NOW = new Date("2026-11-13T01:19:00+01:00");
  * The card composes the hero copy in `_binds()`. Mirror just those keys here so
  * the organism can be rendered without mounting the whole card.
  */
-function heroBindings(): Record<string, string> {
+const heroBindings = (): Record<string, string> => {
   const hass = makeHass();
   const t = createTranslator("da");
   const userName = (hass.user?.name ?? "hjem").split(" ")[0];
@@ -29,7 +29,7 @@ function heroBindings(): Record<string, string> {
     weatherTemp: "2,2°",
     weatherSub: t("weather.partlycloudy"),
   };
-}
+};
 
 describe("Hero", () => {
   it("renders the greeting, prayer shortcut, date, weather, and day arc", () => {

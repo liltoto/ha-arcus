@@ -9,7 +9,7 @@ interface LeakRowProps {
   t: Translator;
 }
 
-function LeakRow({ name, on, t }: LeakRowProps) {
+const LeakRow = ({ name, on, t }: LeakRowProps) => {
   return (
     <div className={c("row")}>
       <Icon name="drop" />
@@ -25,7 +25,7 @@ function LeakRow({ name, on, t }: LeakRowProps) {
       </span>
     </div>
   );
-}
+};
 
 interface WaterLeaksProps {
   view: WaterView;
@@ -33,7 +33,7 @@ interface WaterLeaksProps {
 }
 
 /** The leak sensors and, when present, the leak sensor battery. */
-export function WaterLeaks({ view, t }: WaterLeaksProps) {
+export const WaterLeaks = ({ view, t }: WaterLeaksProps) => {
   const { leaks, leak, leakBattery, fmt } = view;
   return (
     <div className={c("block")}>
@@ -71,4 +71,4 @@ export function WaterLeaks({ view, t }: WaterLeaksProps) {
       ) : null}
     </div>
   );
-}
+};

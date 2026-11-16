@@ -7,10 +7,14 @@ export interface BadgeProps {
   className?: string;
 }
 
-export function Badge({ children, tone = "default", className }: BadgeProps) {
+export const Badge = ({
+  children,
+  tone = "default",
+  className,
+}: BadgeProps) => {
   return (
     <span className={c("pill", tone === "default" ? "" : tone, className)}>
       {children}
     </span>
   );
-}
+};

@@ -28,10 +28,10 @@ export {
  * Re-render a chart when the history cache ingests or refreshes a series.
  * The cache keeps its own version counter, so this is a cheap subscription.
  */
-export function useHistoryVersion(): number {
+export const useHistoryVersion = (): number => {
   const history = useHistory();
   // Test/story stubs may not implement the subscription yet.
   const subscribe = history.subscribe ?? (() => () => {});
   const getSnapshot = history.getVersion ?? (() => 0);
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-}
+};

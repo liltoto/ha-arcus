@@ -13,11 +13,11 @@ import { c } from "../styles/classes";
 /** The atmosphere cycle mirrors the card's `_cycleAtmo` order. */
 const ATMO_ORDER: AtmosphereSetting[] = ["auto", "night", "day"];
 
-function atmoIcon(mode: AtmosphereSetting): string {
+const atmoIcon = (mode: AtmosphereSetting): string => {
   if (mode === "night") return "moon";
   if (mode === "day") return "sun";
   return "spark";
-}
+};
 
 export interface TopBarProps {
   className?: string;
@@ -31,7 +31,7 @@ export interface TopBarProps {
  * `data-atmo-btn`: the card's legacy `_applyAtmo` rewrites that button's icon,
  * and React owns it now.
  */
-export function TopBar({ className }: TopBarProps = {}) {
+export const TopBar = ({ className }: TopBarProps = {}) => {
   const config = useConfig();
   const t = useTranslator();
   const bindings = useBindings();
@@ -120,4 +120,4 @@ export function TopBar({ className }: TopBarProps = {}) {
       </div>
     </div>
   );
-}
+};

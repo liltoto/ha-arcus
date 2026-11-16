@@ -30,43 +30,43 @@ const CHAPTER_KEYS: ChapterKey[] = [
   "alarmer",
 ];
 
-function escapeHtml(value: string): string {
+const escapeHtml = (value: string): string => {
   return value
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-}
+};
 
-function lower(value: string): string {
+const lower = (value: string): string => {
   return value.toLocaleLowerCase();
-}
+};
 
-function capitalizeFirst(value: string): string {
+const capitalizeFirst = (value: string): string => {
   if (!value) return value;
   return `${value[0].toLocaleUpperCase()}${value.slice(1)}`;
-}
+};
 
-function refNumber(ref: EntityRef | null | undefined): number | null {
+const refNumber = (ref: EntityRef | null | undefined): number | null => {
   if (!ref) return null;
   if (!ref.state || ref.state === "unavailable" || ref.state === "unknown") {
     return null;
   }
   return numberFrom(ref.state);
-}
+};
 
-function refIsOn(ref: EntityRef | null | undefined): boolean {
+const refIsOn = (ref: EntityRef | null | undefined): boolean => {
   return ref?.state === "on" || ref?.state === "open";
-}
+};
 
-function effectiveTemp(room: RoomModel): number | null {
+const effectiveTemp = (room: RoomModel): number | null => {
   const direct = refNumber(room.temp);
   if (direct !== null) return direct;
   return numberFrom(room.tempFallback?.attributes?.current_temperature);
-}
+};
 
-function roomStats(model: HomeModel, room: RoomModel): RoomStats {
+const roomStats = (model: HomeModel, room: RoomModel): RoomStats => {
   const stored = model.roomStats?.[room.id];
   if (stored) return stored;
 
@@ -89,14 +89,14 @@ function roomStats(model: HomeModel, room: RoomModel): RoomStats {
     open: 0,
     leak: refIsOn(room.leak),
   };
-}
+};
 
-export function airText(
+export const airText = (
   room: RoomModel,
   stats: RoomStats,
   language: string,
   t: Translator,
-): string {
+): string => {
   if (stats.co2 !== null) {
     return `${t("room.air")} ${formatUnit(
       stats.co2,
@@ -114,28 +114,32 @@ export function airText(
     )}`;
   }
   return `${t("room.air")} –`;
-}
+};
 
-function lightsFor(room: RoomModel, stats: RoomStats, t: Translator): string {
+const lightsFor = (
+  room: RoomModel,
+  stats: RoomStats,
+  t: Translator,
+): string => {
   if (!room.lights.length || stats.lightsTotal === 0) return "";
   return t("room.lightsCount", {
     on: stats.lightsOn,
     total: stats.lightsTotal,
   });
-}
+};
 
-function openFor(room: RoomModel, stats: RoomStats, t: Translator): string {
+const openFor = (room: RoomModel, stats: RoomStats, t: Translator): string => {
   if (stats.leak) return t("room.leak");
   if (!room.openings.length) return "";
   if (stats.open > 0) return t("room.openCount", { count: stats.open });
   return t("room.closed");
-}
+};
 
-function allStats(model: HomeModel): RoomStats[] {
+const allStats = (model: HomeModel): RoomStats[] => {
   return model.rooms.map((room) => roomStats(model, room));
-}
+};
 
-function lightsSummary(model: HomeModel): { on: number; total: number } {
+const lightsSummary = (model: HomeModel): { on: number; total: number } => {
   const stored = model.lightStats as
     | { on?: number; total?: number }
     | undefined;
@@ -151,22 +155,22 @@ function lightsSummary(model: HomeModel): { on: number; total: number } {
     on: stats.reduce((total, stat) => total + stat.lightsOn, 0),
     total: stats.reduce((total, stat) => total + stat.lightsTotal, 0),
   };
-}
+};
 
-function average(values: Array<number | null>): number | null {
+const average = (values: Array<number | null>): number | null => {
   const numbers = values.filter(
     (value): value is number =>
       typeof value === "number" && Number.isFinite(value),
   );
   if (!numbers.length) return null;
   return numbers.reduce((total, value) => total + value, 0) / numbers.length;
-}
+};
 
-function systemCardSub(
+const systemCardSub = (
   card: SystemCardModel,
   language: string,
   t: Translator,
-): string {
+): string => {
   const step = refNumber(card.step);
   const humidity = refNumber(card.humidity);
   if (card.id === "ventilation") {
@@ -178,14 +182,14 @@ function systemCardSub(
   return humidity !== null
     ? `${formatUnit(humidity, "%", language, 0)} ${t("room.humidityShort")}`
     : "–";
-}
+};
 
-function energySummary(
+const energySummary = (
   model: HomeModel,
   priceUnit: string,
   language: string,
   t: Translator,
-): string {
+): string => {
   const price = model.price;
   const priceNow =
     price?.now !== null && price?.now !== undefined
@@ -194,13 +198,13 @@ function energySummary(
   return `<b>${priceNow} ${priceUnit}</b> · ${lower(
     t("solar.load"),
   )} ${formatNumber(model.solar?.load, 0, language)} W`;
-}
+};
 
-function solarSummary(
+const solarSummary = (
   model: HomeModel,
   language: string,
   t: Translator,
-): string {
+): string => {
   return `<b>${formatNumber(
     model.solar?.batterySoc,
     0,
@@ -210,14 +214,14 @@ function solarSummary(
     1,
     language,
   )} ${t("energy.kwh")} ${lower(t("common.today"))}`;
-}
+};
 
-function waterSummary(
+const waterSummary = (
   model: HomeModel,
   config: ArcusConfig,
   language: string,
   t: Translator,
-): string {
+): string => {
   if (model.water?.state === null && model.water?.salt === null) {
     return `<b>${formatNumber(
       model.water?.day,
@@ -242,9 +246,9 @@ function waterSummary(
     0,
     language,
   )} %`;
-}
+};
 
-function securitySummary(model: HomeModel, t: Translator): string {
+const securitySummary = (model: HomeModel, t: Translator): string => {
   const security = model.security;
   if (security?.leak) {
     return `<b>${escapeHtml(capitalizeFirst(t("security.leakDetected")))}</b>`;
@@ -256,13 +260,13 @@ function securitySummary(model: HomeModel, t: Translator): string {
         : t("security.summaryClosed"),
     ),
   )}</b> · ${t("security.noLeak")}`;
-}
+};
 
-function ventilationSummary(
+const ventilationSummary = (
   model: HomeModel,
   language: string,
   t: Translator,
-): string {
+): string => {
   const filter = model.ventilation?.filter;
   return `<b>${formatNumber(
     model.ventilation?.temperature,
@@ -275,13 +279,13 @@ function ventilationSummary(
       ? t("ventilation.filterOk")
       : escapeHtml((filter ?? "").toLowerCase())
   }`;
-}
+};
 
-function techSummary(
+const techSummary = (
   model: HomeModel,
   language: string,
   t: Translator,
-): string {
+): string => {
   const tech = model.tech;
   return `<b>${
     tech?.router !== null && tech?.router !== undefined
@@ -292,13 +296,13 @@ function techSummary(
       ? `${formatNumber(tech.google, 1, language)} ms`
       : "–"
   } ${lower(t("tech.google"))}`;
-}
+};
 
-function economySummary(
+const economySummary = (
   model: HomeModel,
   language: string,
   t: Translator,
-): string {
+): string => {
   const economy = model.economy;
   const change =
     economy?.change !== null && economy?.change !== undefined
@@ -313,9 +317,9 @@ function economySummary(
     2,
     language,
   )}</b> · ${change} ${lower(t("common.today"))}`;
-}
+};
 
-function chapterLightsSummary(model: HomeModel, t: Translator): string {
+const chapterLightsSummary = (model: HomeModel, t: Translator): string => {
   const lightStats = lightsSummary(model);
   const lightCount = t("room.lightCountOf", {
     on: lightStats.on,
@@ -329,13 +333,13 @@ function chapterLightsSummary(model: HomeModel, t: Translator): string {
     ? lightSummary.slice(lightCount.length)
     : "";
   return `<b>${escapeHtml(lightCount)}</b>${escapeHtml(lightRest)}`;
-}
+};
 
-function heatingSummary(
+const heatingSummary = (
   model: HomeModel,
   language: string,
   t: Translator,
-): string {
+): string => {
   const currentTemps = model.heating
     .map((zone) => numberFrom(zone.entity.attributes?.current_temperature))
     .filter((value): value is number => value !== null);
@@ -349,9 +353,9 @@ function heatingSummary(
     1,
     language,
   )}° ${lower(t("heating.setpoint"))}`;
-}
+};
 
-function alertsSummary(model: HomeModel, t: Translator): string {
+const alertsSummary = (model: HomeModel, t: Translator): string => {
   if (!model.alerts.length) {
     return t("alerts.calmTitle");
   }
@@ -366,19 +370,19 @@ function alertsSummary(model: HomeModel, t: Translator): string {
         summary.slice(split + 3),
       )}`
     : `<b>${escapeHtml(summary)}</b>`;
-}
+};
 
-function defaultSummary(): string {
+const defaultSummary = (): string => {
   return "–";
-}
+};
 
-function chapterSummaries(
+const chapterSummaries = (
   model: HomeModel,
   config: ArcusConfig,
   priceUnit: string,
   language: string,
   t: Translator,
-): Record<string, string> {
+): Record<string, string> => {
   const out: Record<string, string> = {
     ch_energi_sum: energySummary(model, priceUnit, language, t),
     ch_sol_sum: solarSummary(model, language, t),
@@ -398,18 +402,18 @@ function chapterSummaries(
     if (!(`ch_${key}_sum` in out)) out[`ch_${key}_sum`] = defaultSummary();
   }
   return out;
-}
+};
 
 /**
  * Flatten the model into the string keys the home view binds to. Chapter
  * summaries are the only HTML values, matching the legacy `data-bind-html`
  * cards.
  */
-export function buildBindings(
+export const buildBindings = (
   model: HomeModel,
   config: ArcusConfig,
   t: Translator,
-): Record<string, string> {
+): Record<string, string> => {
   const language = model.language;
   const priceUnit = resolvePriceUnit(undefined, config, language);
   const stats = allStats(model);
@@ -485,4 +489,4 @@ export function buildBindings(
     chapterSummaries(model, config, priceUnit, language, t),
   );
   return bindings;
-}
+};

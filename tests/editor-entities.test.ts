@@ -6,19 +6,19 @@ import {
 } from "../src/editor-entities";
 import type { ArcusHass, HassEntity } from "../src/types";
 
-function state(
+const state = (
   value: string,
   attributes: Record<string, unknown> = {},
-): HassEntity {
+): HassEntity => {
   return {
     state: value,
     attributes,
     last_changed: "2026-11-13T00:00:00+00:00",
     last_updated: "2026-11-13T00:00:00+00:00",
   };
-}
+};
 
-function hassWith(states: Record<string, HassEntity>): ArcusHass {
+const hassWith = (states: Record<string, HassEntity>): ArcusHass => {
   return {
     states,
     areas: {},
@@ -28,7 +28,7 @@ function hassWith(states: Record<string, HassEntity>): ArcusHass {
     callApi: async () => ({}) as never,
     callService: async () => undefined,
   };
-}
+};
 
 const HOME = hassWith({
   "weather.home": state("sunny", { friendly_name: "Home weather" }),

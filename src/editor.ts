@@ -78,20 +78,20 @@ const EV_NAME =
   /(^|[._\s-])(ev|elbil|bil|car)([._\s-]|$)|tesla|wall_connector|charger|charging_station|ladestander/i;
 
 /** EV sensors that also mention the field marker. */
-function evName(marker: RegExp): RegExp {
+const evName = (marker: RegExp): RegExp => {
   return new RegExp(
     `(?=.*(?:${EV_NAME.source}))(?=.*(?:${marker.source}))`,
     "i",
   );
-}
+};
 
 /** Water sensors that also mention the field marker (order-independent). */
-function waterName(field: RegExp): RegExp {
+const waterName = (field: RegExp): RegExp => {
   return new RegExp(
     `(?=.*(?:water|vand|bwt|softener|salt))(?=.*(?:${field.source}))`,
     "i",
   );
-}
+};
 
 const ENTITY_GROUPS: EntityGroup[] = [
   {
@@ -732,16 +732,16 @@ export const EDITOR_STYLES = `
   }
 `;
 
-function getPath(source: unknown, path: string): unknown {
+const getPath = (source: unknown, path: string): unknown => {
   let node: unknown = source;
   for (const key of path.split(".")) {
     if (!isRecord(node)) return undefined;
     node = node[key];
   }
   return node;
-}
+};
 
-function setPath(target: ConfigRecord, path: string, value: unknown): void {
+const setPath = (target: ConfigRecord, path: string, value: unknown): void => {
   const keys = path.split(".");
   let node = target;
   for (const key of keys.slice(0, -1)) {
@@ -749,9 +749,9 @@ function setPath(target: ConfigRecord, path: string, value: unknown): void {
     node = node[key] as ConfigRecord;
   }
   node[keys[keys.length - 1]] = value;
-}
+};
 
-function deletePath(target: ConfigRecord, path: string): void {
+const deletePath = (target: ConfigRecord, path: string): void => {
   const keys = path.split(".");
   const parents: Array<[ConfigRecord, string]> = [];
   let node = target;
@@ -769,29 +769,29 @@ function deletePath(target: ConfigRecord, path: string): void {
     if (isRecord(child) && Object.keys(child).length === 0) delete parent[key];
     else break;
   }
-}
+};
 
-function errorMessage(error: unknown): string {
+const errorMessage = (error: unknown): string => {
   return error instanceof Error ? error.message : String(error);
-}
+};
 
 /** Stable signature of a raw config, safe for non-serialisable values. */
-function rawSignature(value: unknown): string {
+const rawSignature = (value: unknown): string => {
   try {
     return JSON.stringify(value ?? {});
   } catch {
     return "";
   }
-}
+};
 
 /** Stable signature of a normalized config; falls back to the raw value. */
-function normalizedSignature(value: unknown): string {
+const normalizedSignature = (value: unknown): string => {
   try {
     return JSON.stringify(normalizeConfig(value));
   } catch {
     return rawSignature(value);
   }
-}
+};
 
 interface FieldFocus {
   name: string;
@@ -804,7 +804,7 @@ interface EditorViewState {
   focus: FieldFocus | null;
 }
 
-function captureViewState(root: ShadowRoot): EditorViewState {
+const captureViewState = (root: ShadowRoot): EditorViewState => {
   const sections = Array.from(root.querySelectorAll("details"));
   const active = root.activeElement;
   let focus: FieldFocus | null = null;
@@ -829,9 +829,9 @@ function captureViewState(root: ShadowRoot): EditorViewState {
     openSections: sections.map((section) => section.open),
     focus,
   };
-}
+};
 
-function restoreViewState(root: ShadowRoot, state: EditorViewState): void {
+const restoreViewState = (root: ShadowRoot, state: EditorViewState): void => {
   if (state.openSections.length) {
     const sections = Array.from(root.querySelectorAll("details"));
     sections.forEach((section, index) => {
@@ -860,28 +860,28 @@ function restoreViewState(root: ShadowRoot, state: EditorViewState): void {
       /* Some input types reject selection ranges. */
     }
   }
-}
+};
 
-function areasSignature(hass?: ArcusHass): string {
+const areasSignature = (hass?: ArcusHass): string => {
   if (!hass?.areas) return "";
   return Object.values(hass.areas)
     .map((area) => `${area.area_id}:${area.name}:${area.icon ?? ""}`)
     .sort()
     .join("|");
-}
+};
 
-function sortedAreas(hass?: ArcusHass): AreaRegistryEntry[] {
+const sortedAreas = (hass?: ArcusHass): AreaRegistryEntry[] => {
   return Object.values(hass?.areas ?? {}).sort((left, right) =>
     left.name.localeCompare(right.name),
   );
-}
+};
 
-function selectMarkup(
+const selectMarkup = (
   name: string,
   label: string,
   options: readonly (readonly [string, string])[],
   selected: string,
-): string {
+): string => {
   const items = options
     .map(
       ([value, text]) =>
@@ -892,35 +892,35 @@ function selectMarkup(
     <span>${escapeHtml(label)}</span>
     <select name="${escapeHtml(name)}">${items}</select>
   </label>`;
-}
+};
 
-function textMarkup(
+const textMarkup = (
   name: string,
   label: string,
   value: string,
   placeholder = "",
   hint = "",
   listId?: string,
-): string {
+): string => {
   const list = listId ? ` list="${escapeHtml(listId)}"` : "";
   return `<label class="field">
     <span>${escapeHtml(label)}</span>
     <input type="text" name="${escapeHtml(name)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}"${list} spellcheck="false" autocomplete="off">
     ${hint ? `<small>${escapeHtml(hint)}</small>` : ""}
   </label>`;
-}
+};
 
-function checkMarkup(
+const checkMarkup = (
   name: string,
   label: string,
   checked: boolean,
   hint = "",
-): string {
+): string => {
   return `<label class="check">
     <input type="checkbox" name="${escapeHtml(name)}"${checked ? " checked" : ""}>
     <span>${escapeHtml(label)}${hint ? ` <small>${escapeHtml(hint)}</small>` : ""}</span>
   </label>`;
-}
+};
 
 /**
  * Visual editor for `custom:arcus-card`.

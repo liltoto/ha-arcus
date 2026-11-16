@@ -18,7 +18,7 @@ const HERO_COPY: Record<string, string> = {
   weatherSub: "delvist skyet",
 };
 
-function HeroFixture({ children }: { children: ReactNode }) {
+const HeroFixture = ({ children }: { children: ReactNode }) => {
   const store = useArcusStore();
   const bindings = useBindings();
   const heroStore = useMemo(
@@ -31,7 +31,7 @@ function HeroFixture({ children }: { children: ReactNode }) {
   );
 
   return <ArcusProvider store={heroStore}>{children}</ArcusProvider>;
-}
+};
 
 const withHeroCopy: Decorator = (Story) => (
   <HeroFixture>

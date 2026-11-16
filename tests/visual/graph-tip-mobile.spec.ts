@@ -10,11 +10,11 @@ test.use({
   isMobile: true,
 });
 
-async function open(page: import("@playwright/test").Page, hash = "") {
+const open = async (page: import("@playwright/test").Page, hash = "") => {
   await page.goto(`/dev/index.html${hash}`);
   await page.waitForSelector("arcus-card");
   await page.waitForTimeout(900);
-}
+};
 
 test("tapping a vital spark shows the readout without navigating", async ({
   page,

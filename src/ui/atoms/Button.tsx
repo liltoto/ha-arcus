@@ -10,14 +10,14 @@ export interface ButtonProps {
   className?: string;
 }
 
-export function Button({
+export const Button = ({
   children,
   tone = "default",
   size = "md",
   onClick,
   disabled,
   className,
-}: ButtonProps) {
+}: ButtonProps) => {
   return (
     <button
       type="button"
@@ -33,4 +33,4 @@ export function Button({
       {children}
     </button>
   );
-}
+};

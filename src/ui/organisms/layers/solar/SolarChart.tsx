@@ -39,7 +39,7 @@ const WIDTH = 560;
  * and gradient. `applyGraph` writes the dataset
  * after mount because the graph helpers own attribute encoding.
  */
-export function SolarChart({
+export const SolarChart = ({
   chart,
   series,
   height,
@@ -50,7 +50,7 @@ export function SolarChart({
   end,
   unit,
   decimals,
-}: SolarChartProps) {
+}: SolarChartProps) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const shared = sharedOption ?? series.length > 1;
   const valid = series.flatMap((item) => item.values).filter(isFiniteNumber);
@@ -128,4 +128,4 @@ export function SolarChart({
       <span className={c("chart-empty")}>{empty}</span>
     </div>
   );
-}
+};

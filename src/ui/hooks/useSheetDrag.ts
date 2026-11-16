@@ -7,10 +7,10 @@ import { useEffect, useRef, type RefObject } from "react";
  * The close callback is kept in a ref so a Home Assistant state push does not
  * tear down an in-flight drag listener.
  */
-export function useSheetDrag(
+export const useSheetDrag = (
   ref: RefObject<HTMLElement | null>,
   onClose: () => void,
-): void {
+): void => {
   const closeRef = useRef(onClose);
 
   useEffect(() => {
@@ -74,4 +74,4 @@ export function useSheetDrag(
       stopDrag?.();
     };
   }, [ref]);
-}
+};

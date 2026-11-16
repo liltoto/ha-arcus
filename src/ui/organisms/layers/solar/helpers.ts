@@ -78,50 +78,50 @@ const SOLAR_VALUE_KEYS = [
   "paybackPercent",
 ] as const;
 
-function localeFor(language: Language): string {
+const localeFor = (language: Language): string => {
   return language === "da" ? "da-DK" : "en-GB";
-}
+};
 
-export function isFiniteNumber(value: unknown): value is number {
+export const isFiniteNumber = (value: unknown): value is number => {
   return typeof value === "number" && Number.isFinite(value);
-}
+};
 
-export function fmt(
+export const fmt = (
   value: number | null | undefined,
   digits: number,
   language: Language,
-): string {
+): string => {
   return formatNumber(value, digits, language);
-}
+};
 
 /** Card chart keys for a rolling 24-hour window. */
-export function windowKey(entityId: string | undefined): string {
+export const windowKey = (entityId: string | undefined): string => {
   return `24:${entityId ?? ""}`;
-}
+};
 
 /** Card chart keys for the full cached history (7 days / 1 year). */
-export function entityKey(entityId: string | undefined): string {
+export const entityKey = (entityId: string | undefined): string => {
   return entityId ?? "";
-}
+};
 
-export function solarHasData(
+export const solarHasData = (
   solar: SolarModel | undefined,
-): solar is SolarModel {
+): solar is SolarModel => {
   if (!solar) return false;
   if (solar.forecastSeries?.length || solar.tomorrowSeries?.length) return true;
   return SOLAR_VALUE_KEYS.some((key) => isFiniteNumber(solar[key]));
-}
+};
 
-export function normalizeSub(sub: string | null | undefined): SolarTab {
+export const normalizeSub = (sub: string | null | undefined): SolarTab => {
   return SOLAR_TABS.includes(sub as SolarTab) ? (sub as SolarTab) : "overblik";
-}
+};
 
-export function solarNumber(
+export const solarNumber = (
   solar: SolarModel | undefined,
   hass: ArcusHass,
   key: string,
   entityId: string | undefined,
-): number | null {
+): number | null => {
   const value = solar?.[key];
   if (isFiniteNumber(value)) return value;
   if (!entityId) return null;
@@ -129,32 +129,35 @@ export function solarNumber(
   if (state === null || state === undefined || state === "") return null;
   const number = Number(state);
   return Number.isFinite(number) ? number : null;
-}
+};
 
-export function historySeries(
+export const historySeries = (
   history: HistoryCache,
   id: string | undefined,
   days: number,
   fill: number | "hold" | null = "hold",
-): Array<number | null> {
+): Array<number | null> => {
   if (!id) return [];
   try {
     return history.window(id, days, { buckets: 96, fill }) ?? [];
   } catch {
     return [];
   }
-}
+};
 
-function safeRaw(history: HistoryCache, id: string | undefined): HistoryRow[] {
+const safeRaw = (
+  history: HistoryCache,
+  id: string | undefined,
+): HistoryRow[] => {
   if (!id) return [];
   try {
     return history.raw(id) ?? [];
   } catch {
     return [];
   }
-}
+};
 
-function rowTime(row: HistoryRow): number {
+const rowTime = (row: HistoryRow): number => {
   const raw = row.lu ?? row.last_updated ?? row.lc ?? row.last_changed;
   if (typeof raw === "number") {
     return raw < 1e12 ? raw * 1000 : raw;
@@ -168,45 +171,45 @@ function rowTime(row: HistoryRow): number {
     return Number.isNaN(parsed) ? 0 : parsed;
   }
   return 0;
-}
+};
 
-function localDayKey(date: Date): string {
+const localDayKey = (date: Date): string => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
     2,
     "0",
   )}-${String(date.getDate()).padStart(2, "0")}`;
-}
+};
 
-export function pointDate(point: SolarPoint): Date | null {
+export const pointDate = (point: SolarPoint): Date | null => {
   const raw = point.t as unknown;
   const date = raw instanceof Date ? raw : new Date(raw as string | number);
   return Number.isNaN(date.getTime()) ? null : date;
-}
+};
 
-function sameLocalDay(a: Date, b: Date): boolean {
+const sameLocalDay = (a: Date, b: Date): boolean => {
   return (
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
   );
-}
+};
 
-export function pointsOnDate(
+export const pointsOnDate = (
   points: SolarPoint[] | undefined,
   date: Date,
-): SolarPoint[] {
+): SolarPoint[] => {
   if (!Array.isArray(points)) return [];
   return points.filter((point) => {
     const parsed = pointDate(point);
     return parsed !== null && sameLocalDay(parsed, date);
   });
-}
+};
 
-export function todayForecastValues(solar: SolarModel, now: Date): number[] {
+export const todayForecastValues = (solar: SolarModel, now: Date): number[] => {
   return pointsOnDate(solar.forecastSeries, now).map((point) => point.v);
-}
+};
 
-export function forecast48Values(solar: SolarModel, now: Date): number[] {
+export const forecast48Values = (solar: SolarModel, now: Date): number[] => {
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
   const points = [
@@ -222,7 +225,7 @@ export function forecast48Values(solar: SolarModel, now: Date): number[] {
   return [...byTime.entries()]
     .sort((a, b) => a[0] - b[0])
     .map(([, value]) => value);
-}
+};
 
 export interface DayBarDatum {
   key: string;
@@ -231,12 +234,12 @@ export interface DayBarDatum {
   today: boolean;
 }
 
-export function dailyProductionDays(
+export const dailyProductionDays = (
   history: HistoryCache,
   entityId: string | undefined,
   now: Date,
   language: Language,
-): DayBarDatum[] {
+): DayBarDatum[] => {
   const rows = safeRaw(history, entityId);
   const byDay = new Map<string, number>();
   for (const entry of rows) {
@@ -262,14 +265,14 @@ export function dailyProductionDays(
       today: key === todayKey,
     };
   });
-}
+};
 
-export function sumDelta(
+export const sumDelta = (
   history: HistoryCache,
   id: string | undefined,
   days: number,
   now: Date,
-): number | null {
+): number | null => {
   if (!id) return null;
   const rows = safeRaw(history, id);
   const cutoff =
@@ -286,14 +289,14 @@ export function sumDelta(
   if (points.length < 2) return null;
   points.sort((a, b) => a.time - b.time);
   return points[points.length - 1].value - points[0].value;
-}
+};
 
-export function installedAtValue(
+export const installedAtValue = (
   solar: SolarModel | undefined,
   hass: ArcusHass,
   config: ArcusConfig,
   language: Language,
-): string {
+): string => {
   const modelValue = solar?.installedAt;
   const entityId = config.solar?.installedAt;
   const stateValue = entityId ? hass.states?.[entityId]?.state : undefined;
@@ -307,13 +310,13 @@ export function installedAtValue(
     month: "long",
     year: "numeric",
   }).format(date);
-}
+};
 
-export function ensureHistory(
+export const ensureHistory = (
   history: HistoryCache,
   config: SolarConfig | undefined,
   sub: SolarTab,
-): void {
+): void => {
   if (!config) return;
 
   const request = (ids: string[], hours: number): void => {
@@ -356,29 +359,29 @@ export function ensureHistory(
   add(config.gridL2);
   add(config.gridL3);
   request([...ids], 24 * 7);
-}
+};
 
 /** Local calendar-day bounds for the day containing `now`. */
-export function dayWindow(now: Date): { start: number; end: number } {
+export const dayWindow = (now: Date): { start: number; end: number } => {
   const start = new Date(
     now.getFullYear(),
     now.getMonth(),
     now.getDate(),
   ).getTime();
   return { start, end: start + DAY_MS };
-}
+};
 
 /**
  * History series bucketed across the local calendar day. Buckets after `now`
  * are nulled so an actual line stops at the present instead of dropping to
  * zero across the rest of the day.
  */
-export function historyDaySeries(
+export const historyDaySeries = (
   history: HistoryCache,
   id: string | undefined,
   now: Date,
   fill: number | "hold" | null = "hold",
-): Array<number | null> {
+): Array<number | null> => {
   if (!id) return [];
   const { start, end } = dayWindow(now);
   try {
@@ -388,12 +391,12 @@ export function historyDaySeries(
   } catch {
     return [];
   }
-}
+};
 
 /** Fraction of the local day for an instant, 0 at midnight and 1 at 24:00. */
-export function dayFraction(date: Date): number {
+export const dayFraction = (date: Date): number => {
   return (
     (date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()) /
     86_400
   );
-}
+};

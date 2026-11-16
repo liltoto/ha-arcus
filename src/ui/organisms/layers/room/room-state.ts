@@ -12,63 +12,63 @@ import type { ArcusRoute } from "../../../types";
 
 const ON_STATES = new Set(["on", "open", "home", "playing"]);
 
-function liveEntity(
+const liveEntity = (
   hass: ArcusHass,
   entityId: string | null | undefined,
-): HassEntity | undefined {
+): HassEntity | undefined => {
   if (!entityId) return undefined;
   return hass.states?.[entityId];
-}
+};
 
 /** The live entity from hass, or the snapshot stored on the model ref. */
-export function refEntity(
+export const refEntity = (
   hass: ArcusHass,
   ref: EntityRef | null | undefined,
-): HassEntity | EntityRef | undefined {
+): HassEntity | EntityRef | undefined => {
   if (!ref) return undefined;
   return liveEntity(hass, ref.entityId) ?? ref;
-}
+};
 
-export function entityName(
+export const entityName = (
   entity: HassEntity | EntityRef | null | undefined,
   fallback: string,
-): string {
+): string => {
   return String(
     (entity as HassEntity | undefined)?.attributes?.friendly_name ??
       (entity as EntityRef | undefined)?.name ??
       fallback,
   );
-}
+};
 
-function isOnState(state: string | undefined): boolean {
+const isOnState = (state: string | undefined): boolean => {
   return typeof state === "string" && ON_STATES.has(state);
-}
+};
 
-export function isOn(
+export const isOn = (
   hass: ArcusHass,
   entityId: string | null | undefined,
   fallback?: EntityRef | null,
-): boolean {
+): boolean => {
   const live = liveEntity(hass, entityId);
   if (live) return isOnState(live.state);
   return fallback ? isOnState(fallback.state) : false;
-}
+};
 
 /** Prefer the live number, then the model snapshot. */
-export function numberOf(
+export const numberOf = (
   hass: ArcusHass,
   ref: EntityRef | null | undefined,
-): number | null {
+): number | null => {
   if (!ref) return null;
   const live = numberFrom(liveEntity(hass, ref.entityId)?.state);
   return live ?? numberFrom(ref.state);
-}
+};
 
-export function roomStatFor(
+export const roomStatFor = (
   hass: ArcusHass,
   model: HomeModel,
   room: RoomModel,
-): RoomStats {
+): RoomStats => {
   const stored = model.roomStats?.[room.id];
   const lightIds = lightIdsForRoom(room);
   const fallbackTemp = room.tempFallback
@@ -86,17 +86,17 @@ export function roomStatFor(
     open: room.openings.filter((opening) => isOn(hass, opening.id)).length,
     leak: room.leak ? isOn(hass, room.leak.entityId, room.leak) : false,
   };
-}
+};
 
 /**
  * `skur` is a top-level sheet route with no sub-segment, so it resolves the
  * skur room directly; every other room uses the route's sub. The prototype
  * fell back to the first discovered room, which is the first indoor room.
  */
-export function resolveRoom(
+export const resolveRoom = (
   model: HomeModel,
   route: ArcusRoute,
-): RoomModel | null {
+): RoomModel | null => {
   if (route.base === "skur") {
     return (
       model.rooms.find((room) => room.id === "skur") ??
@@ -110,33 +110,36 @@ export function resolveRoom(
     model.rooms.find((room) => room.id !== "skur") ??
     null
   );
-}
+};
 
 export interface LightState {
   isOn: boolean;
   pct: number;
 }
 
-export function lightStateFor(hass: ArcusHass, entityId: string): LightState {
+export const lightStateFor = (
+  hass: ArcusHass,
+  entityId: string,
+): LightState => {
   const entity = liveEntity(hass, entityId);
   const on = entity?.state === "on";
   const brightness = numberFrom(entity?.attributes?.brightness);
   const pct =
     on && brightness !== null ? Math.round((brightness / 255) * 100) : 0;
   return { isOn: on, pct };
-}
+};
 
-export function lightName(
+export const lightName = (
   hass: ArcusHass,
   entityId: string,
   fallback = entityId,
-): string {
+): string => {
   return entityName(liveEntity(hass, entityId), fallback);
-}
+};
 
-export function openingIcon(kind: string): string {
+export const openingIcon = (kind: string): string => {
   const normalized = kind.toLowerCase();
   if (/læk|laek|leak|vand|water/.test(normalized)) return "drop";
   if (/vind|window/.test(normalized)) return "wind";
   return "door";
-}
+};

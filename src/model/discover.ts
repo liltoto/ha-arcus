@@ -70,7 +70,7 @@ const AREA_ICON_KEYS: Record<string, string> = {
 
 const OPENING_CLASSES = new Set(["door", "window", "garage_door", "opening"]);
 
-function openingKind(deviceClass: string, t: Translator): string {
+const openingKind = (deviceClass: string, t: Translator): string => {
   switch (deviceClass) {
     case "door":
       return t("room.openingDoor");
@@ -83,13 +83,13 @@ function openingKind(deviceClass: string, t: Translator): string {
     default:
       return deviceClass || t("room.openingGeneric");
   }
-}
+};
 
-function inferRoomKind(
+const inferRoomKind = (
   areaId: string,
   roomName: string,
   overrideKind?: RoomKind,
-): RoomKind {
+): RoomKind => {
   if (overrideKind) return overrideKind;
   if (
     areaId === "skur" ||
@@ -106,9 +106,9 @@ function inferRoomKind(
     return "utility";
   }
   return "indoor";
-}
+};
 
-function uniqueStrings(values: unknown): string[] {
+const uniqueStrings = (values: unknown): string[] => {
   if (!Array.isArray(values)) return [];
   const out: string[] = [];
   for (const value of values) {
@@ -117,26 +117,26 @@ function uniqueStrings(values: unknown): string[] {
     if (!out.includes(id)) out.push(id);
   }
   return out;
-}
+};
 
-function domainOf(entityId: string): string {
+const domainOf = (entityId: string): string => {
   return entityId.includes(".") ? entityId.slice(0, entityId.indexOf(".")) : "";
-}
+};
 
-function attrOf(hass: ArcusHass, entityId: string, key: string): unknown {
+const attrOf = (hass: ArcusHass, entityId: string, key: string): unknown => {
   return hass.states[entityId]?.attributes?.[key];
-}
+};
 
-function isAvailable(state: string | undefined): boolean {
+const isAvailable = (state: string | undefined): boolean => {
   return (
     typeof state === "string" &&
     state !== "" &&
     state !== "unavailable" &&
     state !== "unknown"
   );
-}
+};
 
-function displayName(hass: ArcusHass, entityId: string): string {
+const displayName = (hass: ArcusHass, entityId: string): string => {
   const state = hass.states[entityId];
   const registry = hass.entities[entityId];
   return (
@@ -145,19 +145,19 @@ function displayName(hass: ArcusHass, entityId: string): string {
     String(registry?.original_name ?? "").trim() ||
     entityId
   );
-}
+};
 
-function areaIdForEntity(
+const areaIdForEntity = (
   hass: ArcusHass,
   entity: EntityRegistryEntry,
-): string | null {
+): string | null => {
   if (entity.area_id) return entity.area_id;
   if (entity.device_id) {
     const device = hass.devices[entity.device_id];
     if (device?.area_id) return device.area_id;
   }
   return null;
-}
+};
 
 /**
  * The registry entities that belong to an area.
@@ -167,10 +167,10 @@ function areaIdForEntity(
  * diagnostic/config entities, and registry entries without a live state are
  * not part of the dashboard.
  */
-export function entitiesForArea(
+export const entitiesForArea = (
   hass: ArcusHass,
   areaId: string,
-): EntityRegistryEntry[] {
+): EntityRegistryEntry[] => {
   const out: EntityRegistryEntry[] = [];
   for (const entity of Object.values(hass.entities ?? {})) {
     if (!entity?.entity_id) continue;
@@ -187,10 +187,10 @@ export function entitiesForArea(
     out.push(entity);
   }
   return out;
-}
+};
 
 /** Map an HA area icon (`mdi:sofa`) onto one of the prototype icon names. */
-function areaIconKey(icon: string | null | undefined): string {
+const areaIconKey = (icon: string | null | undefined): string => {
   if (!icon) return "home";
   const name = String(icon).trim().replace(/^mdi:/i, "").toLowerCase();
   if (AREA_ICON_KEYS[name]) return AREA_ICON_KEYS[name];
@@ -203,14 +203,14 @@ function areaIconKey(icon: string | null | undefined): string {
   if (/garage|shed/.test(name)) return "shed";
   if (/counter|kitchen|fridge|oven|stove/.test(name)) return "counter";
   return "home";
-}
+};
 
 /**
  * Name-based fallback for areas whose icon is unset. Home Assistant does not
  * require an area icon, and the current home has two icon-less areas (Entre
  * and Lille Gang) that should still read as a door and a staircase.
  */
-function areaNameIcon(name: string): string {
+const areaNameIcon = (name: string): string => {
   const value = String(name).toLowerCase();
   if (/køkken|kokken|kitchen/.test(value)) return "counter";
   if (/stue|living|sofa/.test(value)) return "sofa";
@@ -221,17 +221,17 @@ function areaNameIcon(name: string): string {
   if (/entre|entré|\bhall\b|entry/.test(value)) return "door";
   if (/skur|shed|garage|outdoor|ude/.test(value)) return "shed";
   return "home";
-}
+};
 
 /**
  * Resolve an entity ID into the small ref the views read. Explicit config
  * overrides may point at an entity that is temporarily missing; the ref is
  * still returned with its ID so the card can show the missing value as `–`.
  */
-export function resolveEntityRef(
+export const resolveEntityRef = (
   hass: ArcusHass,
   entityId: string | null | undefined,
-): EntityRef | null {
+): EntityRef | null => {
   if (!entityId) return null;
   const state = hass.states?.[entityId];
   const name = displayName(hass, entityId);
@@ -249,44 +249,44 @@ export function resolveEntityRef(
         : undefined,
     attributes: state?.attributes ? { ...state.attributes } : undefined,
   };
-}
+};
 
-function pickFirst(
+const pickFirst = (
   hass: ArcusHass,
   candidates: EntityRegistryEntry[],
   predicate: (entity: EntityRegistryEntry) => boolean = () => true,
-): EntityRegistryEntry | null {
+): EntityRegistryEntry | null => {
   const matching = candidates.filter(predicate);
   if (!matching.length) return null;
   const available = matching.filter((entity) =>
     isAvailable(hass.states[entity.entity_id]?.state),
   );
   return (available.length ? available : matching)[0] ?? null;
-}
+};
 
-function byName(
+const byName = (
   hass: ArcusHass,
   candidates: EntityRegistryEntry[],
   pattern: RegExp,
-): EntityRegistryEntry[] {
+): EntityRegistryEntry[] => {
   return candidates.filter((entity) =>
     pattern.test(`${entity.entity_id} ${displayName(hass, entity.entity_id)}`),
   );
-}
+};
 
-function refForEntity(
+const refForEntity = (
   hass: ArcusHass,
   entity: EntityRegistryEntry | null,
-): EntityRef | null {
+): EntityRef | null => {
   return entity ? resolveEntityRef(hass, entity.entity_id) : null;
-}
+};
 
-function buildOpenings(
+const buildOpenings = (
   hass: ArcusHass,
   entities: EntityRegistryEntry[],
   roomName: string,
   t: Translator,
-): OpeningModel[] {
+): OpeningModel[] => {
   return entities
     .filter((entity) => {
       if (domainOf(entity.entity_id) !== "binary_sensor") return false;
@@ -306,14 +306,14 @@ function buildOpenings(
         room: roomName,
       };
     });
-}
+};
 
-function overrideOpenings(
+const overrideOpenings = (
   hass: ArcusHass,
   overrides: NonNullable<ArcusConfig["rooms"][string]>["openings"],
   roomName: string,
   t: Translator,
-): OpeningModel[] {
+): OpeningModel[] => {
   if (!Array.isArray(overrides)) return [];
   const out: OpeningModel[] = [];
   const seen = new Set<string>();
@@ -329,27 +329,27 @@ function overrideOpenings(
     });
   }
   return out;
-}
+};
 
-function lightIcon(
+const lightIcon = (
   hass: ArcusHass,
   entityId: string,
   roomIcon: string,
-): string {
+): string => {
   const icon = attrOf(hass, entityId, "icon");
   if (typeof icon === "string" && icon.startsWith("mdi:")) {
     const key = areaIconKey(icon);
     if (key && key !== "home") return key;
   }
   return roomIcon;
-}
+};
 
-function buildLightGroups(
+const buildLightGroups = (
   hass: ArcusHass,
   entities: EntityRegistryEntry[],
   areaId: string,
   roomIcon: string,
-): LightGroupModel[] {
+): LightGroupModel[] => {
   const lights = entities.filter(
     (entity) => domainOf(entity.entity_id) === "light",
   );
@@ -398,14 +398,14 @@ function buildLightGroups(
     out[0].extra = uniqueStrings([...out[0].extra, ...extras]);
   }
   return out;
-}
+};
 
-function overrideLightGroups(
+const overrideLightGroups = (
   hass: ArcusHass,
   ids: string[],
   areaId: string,
   roomIcon: string,
-): LightGroupModel[] {
+): LightGroupModel[] => {
   const unique = uniqueStrings(ids);
   if (!unique.length) return [];
 
@@ -445,7 +445,7 @@ function overrideLightGroups(
     out[0].extra = uniqueStrings([...out[0].extra, ...extras]);
   }
   return out;
-}
+};
 
 interface SelectedArea {
   areaId: string;
@@ -453,7 +453,10 @@ interface SelectedArea {
   icon?: string | null;
 }
 
-function selectedAreas(hass: ArcusHass, config: ArcusConfig): SelectedArea[] {
+const selectedAreas = (
+  hass: ArcusHass,
+  config: ArcusConfig,
+): SelectedArea[] => {
   const registryOrder = Object.keys(hass.areas ?? {});
   const included = config.areas.include.length
     ? config.areas.include.filter((id) => registryOrder.includes(id))
@@ -482,38 +485,38 @@ function selectedAreas(hass: ArcusHass, config: ArcusConfig): SelectedArea[] {
         icon: area?.icon,
       };
     });
-}
+};
 
-function tempFallbackFor(climate: EntityRef | null): EntityRef | null {
+const tempFallbackFor = (climate: EntityRef | null): EntityRef | null => {
   const current = Number(climate?.attributes?.current_temperature);
   return Number.isFinite(current) ? climate : null;
-}
+};
 
-function pickClimate(
+const pickClimate = (
   hass: ArcusHass,
   climateEntities: EntityRegistryEntry[],
   override: string | undefined,
-): EntityRef | null {
+): EntityRef | null => {
   if (override) return resolveEntityRef(hass, override);
   return refForEntity(hass, pickFirst(hass, climateEntities));
-}
+};
 
-function isTemperatureCandidate(
+const isTemperatureCandidate = (
   hass: ArcusHass,
   entity: EntityRegistryEntry,
-): boolean {
+): boolean => {
   if (attrOf(hass, entity.entity_id, "device_class") !== "temperature") {
     return false;
   }
   return !/batteri|battery/i.test(
     `${entity.entity_id} ${displayName(hass, entity.entity_id)}`,
   );
-}
+};
 
-function siblingTemperature(
+const siblingTemperature = (
   hass: ArcusHass,
   fallback: EntityRef | null,
-): EntityRegistryEntry | null {
+): EntityRegistryEntry | null => {
   const deviceId = fallback?.entityId
     ? hass.entities?.[fallback.entityId]?.device_id
     : null;
@@ -526,19 +529,19 @@ function siblingTemperature(
       return isAvailable(hass.states[entity.entity_id]?.state);
     }) ?? null
   );
-}
+};
 
 /**
  * A temperature sensor wins over the climate fallback. Available sensors are
  * preferred, then a name that looks like a temperature reading, then a sensor
  * on the thermostat's own device.
  */
-function pickTemperatureSensor(
+const pickTemperatureSensor = (
   hass: ArcusHass,
   sensors: EntityRegistryEntry[],
   tempFallback: EntityRef | null,
   override: string | undefined,
-): EntityRef | null {
+): EntityRef | null => {
   if (override) return resolveEntityRef(hass, override);
   const candidates = sensors.filter((entity) =>
     isTemperatureCandidate(hass, entity),
@@ -551,13 +554,13 @@ function pickTemperatureSensor(
   const picked = refForEntity(hass, named[0] ?? pool[0] ?? null);
   if (picked) return picked;
   return refForEntity(hass, siblingTemperature(hass, tempFallback));
-}
+};
 
-function pickDeviceClass(
+const pickDeviceClass = (
   hass: ArcusHass,
   entities: EntityRegistryEntry[],
   deviceClass: string,
-): EntityRef | null {
+): EntityRef | null => {
   return refForEntity(
     hass,
     pickFirst(
@@ -567,12 +570,12 @@ function pickDeviceClass(
         attrOf(hass, entity.entity_id, "device_class") === deviceClass,
     ),
   );
-}
+};
 
-function pickBattery(
+const pickBattery = (
   hass: ArcusHass,
   sensors: EntityRegistryEntry[],
-): EntityRef | null {
+): EntityRef | null => {
   const batterySensors = sensors.filter((entity) => {
     const text = `${entity.entity_id} ${displayName(hass, entity.entity_id)}`;
     return (
@@ -584,35 +587,35 @@ function pickBattery(
     pickDeviceClass(hass, batterySensors, "battery") ??
     refForEntity(hass, pickFirst(hass, batterySensors))
   );
-}
+};
 
-function pickFilter(
+const pickFilter = (
   hass: ArcusHass,
   sensors: EntityRegistryEntry[],
-): EntityRef | null {
+): EntityRef | null => {
   const filters = sensors.filter((entity) => {
     const text = `${entity.entity_id} ${displayName(hass, entity.entity_id)}`;
     return /filter/i.test(text) && !/alarm|larm|rens/i.test(text);
   });
   return refForEntity(hass, pickFirst(hass, filters));
-}
+};
 
-function pickFilterAlarm(
+const pickFilterAlarm = (
   hass: ArcusHass,
   binarySensors: EntityRegistryEntry[],
-): EntityRef | null {
+): EntityRef | null => {
   const alarms = binarySensors.filter((entity) =>
     /filter|filtr/i.test(
       `${entity.entity_id} ${displayName(hass, entity.entity_id)}`,
     ),
   );
   return refForEntity(hass, pickFirst(hass, alarms));
-}
+};
 
-function pickPlug(
+const pickPlug = (
   hass: ArcusHass,
   entities: EntityRegistryEntry[],
-): EntityRef | null {
+): EntityRef | null => {
   const candidates = entities.filter((entity) => {
     if (!["sensor", "switch"].includes(domainOf(entity.entity_id))) {
       return false;
@@ -628,13 +631,13 @@ function pickPlug(
     hass,
     pickFirst(hass, sensors) ?? pickFirst(hass, candidates),
   );
-}
+};
 
-function refByDomain(
+const refByDomain = (
   hass: ArcusHass,
   entities: EntityRegistryEntry[],
   domain: string,
-): EntityRef | null {
+): EntityRef | null => {
   return refForEntity(
     hass,
     pickFirst(
@@ -643,7 +646,7 @@ function refByDomain(
       (entity) => domainOf(entity.entity_id) === domain,
     ),
   );
-}
+};
 
 interface RoomEnvironment {
   temp: EntityRef | null;
@@ -656,13 +659,13 @@ interface RoomEnvironment {
   illuminance: EntityRef | null;
 }
 
-function roomEnvironment(
+const roomEnvironment = (
   hass: ArcusHass,
   sensors: EntityRegistryEntry[],
   binarySensors: EntityRegistryEntry[],
   climate: EntityRef | null,
   overrides: RoomOverrideConfig,
-): RoomEnvironment {
+): RoomEnvironment => {
   const tempFallback = tempFallbackFor(climate);
   return {
     temp: pickTemperatureSensor(hass, sensors, tempFallback, overrides.temp),
@@ -682,37 +685,37 @@ function roomEnvironment(
     motion: pickDeviceClass(hass, binarySensors, "motion"),
     illuminance: pickDeviceClass(hass, sensors, "illuminance"),
   };
-}
+};
 
-function roomLights(
+const roomLights = (
   hass: ArcusHass,
   entities: EntityRegistryEntry[],
   overrides: RoomOverrideConfig,
   areaId: string,
   roomIcon: string,
-): LightGroupModel[] {
+): LightGroupModel[] => {
   return overrides.lights !== undefined
     ? overrideLightGroups(hass, overrides.lights, areaId, roomIcon)
     : buildLightGroups(hass, entities, areaId, roomIcon);
-}
+};
 
-function roomOpenings(
+const roomOpenings = (
   hass: ArcusHass,
   entities: EntityRegistryEntry[],
   overrides: RoomOverrideConfig,
   roomName: string,
   t: Translator,
-): OpeningModel[] {
+): OpeningModel[] => {
   return overrides.openings !== undefined
     ? overrideOpenings(hass, overrides.openings, roomName, t)
     : buildOpenings(hass, entities, roomName, t);
-}
+};
 
-function roomCovers(
+const roomCovers = (
   hass: ArcusHass,
   entities: EntityRegistryEntry[],
   override: string[] | undefined,
-): EntityRef[] {
+): EntityRef[] => {
   const ids =
     override !== undefined
       ? uniqueStrings(override)
@@ -722,25 +725,25 @@ function roomCovers(
   return ids
     .map((id) => resolveEntityRef(hass, id))
     .filter((ref): ref is EntityRef => ref !== null);
-}
+};
 
-function roomLock(
+const roomLock = (
   hass: ArcusHass,
   entities: EntityRegistryEntry[],
   override: string | undefined,
-): EntityRef | null {
+): EntityRef | null => {
   if (override) return resolveEntityRef(hass, override);
   return refByDomain(hass, entities, "lock");
-}
+};
 
-function roomFromArea(
+const roomFromArea = (
   hass: ArcusHass,
   config: ArcusConfig,
   area: SelectedArea,
   index: number,
   hasExplicitWide: boolean,
   t: Translator,
-): RoomModel {
+): RoomModel => {
   const entities = entitiesForArea(hass, area.areaId);
   const overrides = config.rooms[area.areaId] ?? {};
   const name = overrides.name ?? area.name;
@@ -821,7 +824,7 @@ function roomFromArea(
     illuminance: environment.illuminance,
     plug: pickPlug(hass, entities),
   };
-}
+};
 
 /**
  * Discover the configured rooms from the HA area/device/entity registries.
@@ -831,10 +834,10 @@ function roomFromArea(
  * are kept (the view renders `–`); hidden, disabled, diagnostic/config, and
  * registry-only entities are skipped.
  */
-export function discoverRooms(
+export const discoverRooms = (
   hass: ArcusHass,
   config: ArcusConfig,
-): RoomModel[] {
+): RoomModel[] => {
   const language = resolveLanguage(hass.language, config);
   const t = createTranslator(language);
   const hasExplicitWide = Object.values(config.rooms ?? {}).some(
@@ -844,6 +847,6 @@ export function discoverRooms(
   return selectedAreas(hass, config).map((area, index) =>
     roomFromArea(hass, config, area, index, hasExplicitWide, t),
   );
-}
+};
 
 export { isAvailable as isEntityAvailable };

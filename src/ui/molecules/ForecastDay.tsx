@@ -9,7 +9,7 @@ export interface ForecastDayProps {
 }
 
 /** One day in the compact weather strip. */
-export function ForecastDay({ name, icon, high, low }: ForecastDayProps) {
+export const ForecastDay = ({ name, icon, high, low }: ForecastDayProps) => {
   return (
     <span className={c("wday")}>
       <span className={c("wname")}>{name}</span>
@@ -22,4 +22,4 @@ export function ForecastDay({ name, icon, high, low }: ForecastDayProps) {
       </span>
     </span>
   );
-}
+};

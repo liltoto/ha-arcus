@@ -34,7 +34,7 @@ export interface ArcusRenderOptions {
   bindings?: Record<string, string>;
 }
 
-export function makeActions(): ArcusActions {
+export const makeActions = (): ArcusActions => {
   return {
     callService: vi.fn(),
     navigate: vi.fn(),
@@ -44,9 +44,9 @@ export function makeActions(): ArcusActions {
     toast: vi.fn(),
     setAtmo: vi.fn(),
   };
-}
+};
 
-function historyStub(): HistoryCache {
+const historyStub = (): HistoryCache => {
   return {
     ensure: async () => undefined,
     series: () => [],
@@ -54,14 +54,14 @@ function historyStub(): HistoryCache {
     raw: () => [],
     status: () => "empty",
   } as unknown as HistoryCache;
-}
+};
 
 /**
  * Mirror the card's `_personId`/`_personState` resolution so presence-dependent
  * organisms see the same `personHome` binding the card publishes. TopBar reads
  * the binding instead of scanning `hass.states` itself.
  */
-function personHomeBinding(hass: ArcusHass, config: ArcusConfig): string {
+const personHomeBinding = (hass: ArcusHass, config: ArcusConfig): string => {
   const states = hass.states ?? {};
   const configured = config.person?.trim();
   const ids = Object.keys(states).filter((id) => id.startsWith("person."));
@@ -70,9 +70,9 @@ function personHomeBinding(hass: ArcusHass, config: ArcusConfig): string {
       ? configured
       : (ids.find((entityId) => states[entityId]?.state === "home") ?? ids[0]);
   return id && states[id]?.state === "home" ? "1" : "0";
-}
+};
 
-export function makeArcusProps(options: ArcusRenderOptions = {}) {
+export const makeArcusProps = (options: ArcusRenderOptions = {}) => {
   const hass = options.hass ?? makeHass();
   const config = options.config ?? makeConfig();
   const now = options.now ?? (() => new Date("2026-11-13T01:19:00+01:00"));
@@ -98,20 +98,20 @@ export function makeArcusProps(options: ArcusRenderOptions = {}) {
     atmoMode: "auto" as const,
     dark: true,
   };
-}
+};
 
 /**
  * Render one home organism with the real fixture and a fresh action bridge.
  * Every Wave 3 test uses this instead of hand-building provider props.
  */
-export function renderWithArcus(
+export const renderWithArcus = (
   ui: ReactElement,
   options: ArcusRenderOptions = {},
   renderOptions: Omit<RenderOptions, "wrapper"> = {},
 ): RenderResult & {
   props: ReturnType<typeof makeArcusProps>;
   store: ArcusStore;
-} {
+} => {
   const props = makeArcusProps(options);
   const store = createArcusStore(props);
   const result = render(ui, {
@@ -121,4 +121,4 @@ export function renderWithArcus(
     ...renderOptions,
   });
   return { ...result, props, store };
-}
+};

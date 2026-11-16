@@ -14,7 +14,7 @@ interface EnergyPriceProps {
  * The always-rendered price section: the current buy price, the cheapest
  * window, the day curve, and the today readings.
  */
-export function EnergyPrice({ view, t }: EnergyPriceProps) {
+export const EnergyPrice = ({ view, t }: EnergyPriceProps) => {
   return (
     <>
       <div className={c("block")}>
@@ -114,4 +114,4 @@ export function EnergyPrice({ view, t }: EnergyPriceProps) {
       </div>
     </>
   );
-}
+};

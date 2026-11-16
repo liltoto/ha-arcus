@@ -19,14 +19,14 @@ export interface HeatingReserveRowProps {
 }
 
 /** One extra Wavin reserve channel with only a setpoint. */
-export function HeatingReserveRow({
+export const HeatingReserveRow = ({
   zone,
   reading,
   language,
   unit,
   t,
   onSetpoint,
-}: HeatingReserveRowProps) {
+}: HeatingReserveRowProps) => {
   const entityId = zone.entity.entityId;
 
   return (
@@ -53,4 +53,4 @@ export function HeatingReserveRow({
       />
     </div>
   );
-}
+};

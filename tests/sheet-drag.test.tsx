@@ -9,7 +9,7 @@ import { useSheetDrag } from "../src/ui/hooks/useSheetDrag";
  */
 const mediaQuery = { matches: false };
 
-function Harness({ onClose }: { onClose: () => void }) {
+const Harness = ({ onClose }: { onClose: () => void }) => {
   const ref = useRef<HTMLDivElement>(null);
   useSheetDrag(ref, onClose);
   return (
@@ -18,38 +18,38 @@ function Harness({ onClose }: { onClose: () => void }) {
       <div data-testid="content">content</div>
     </div>
   );
-}
+};
 
 /** A ref that never attaches exercises the hook's missing-element guard. */
-function Detached() {
+const Detached = () => {
   const ref = useRef<HTMLDivElement>(null);
   useSheetDrag(ref, () => undefined);
   return null;
-}
+};
 
 const grab = (): HTMLElement => screen.getByText("grab");
 const sheet = (): HTMLElement => screen.getByTestId("sheet");
 
-function down(clientY: number, init: PointerEventInit = {}): void {
+const down = (clientY: number, init: PointerEventInit = {}): void => {
   fireEvent.pointerDown(grab(), {
     button: 0,
     pointerType: "mouse",
     clientY,
     ...init,
   });
-}
+};
 
-function move(clientY: number, pointerType = "mouse"): void {
+const move = (clientY: number, pointerType = "mouse"): void => {
   fireEvent.pointerMove(window, { clientY, pointerType });
-}
+};
 
-function up(clientY: number, pointerType = "mouse"): void {
+const up = (clientY: number, pointerType = "mouse"): void => {
   fireEvent.pointerUp(window, { clientY, pointerType });
-}
+};
 
-function cancel(clientY: number, pointerType = "mouse"): void {
+const cancel = (clientY: number, pointerType = "mouse"): void => {
   fireEvent.pointerCancel(window, { clientY, pointerType });
-}
+};
 
 beforeEach(() => {
   mediaQuery.matches = false;

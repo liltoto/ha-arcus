@@ -12,25 +12,25 @@ export interface HeatingReading {
 }
 
 /** Live state from hass, falling back to the ref snapshot on the model. */
-export function liveState(
+export const liveState = (
   hass: ArcusHass,
   entity: EntityRef,
-): string | undefined {
+): string | undefined => {
   return hass.states?.[entity.entityId]?.state ?? entity.state;
-}
+};
 
-export function liveAttributes(
+export const liveAttributes = (
   hass: ArcusHass,
   entity: EntityRef,
-): Record<string, unknown> {
+): Record<string, unknown> => {
   return hass.states?.[entity.entityId]?.attributes ?? entity.attributes ?? {};
-}
+};
 
 /** Current/target/limits plus the mode flags shared by heating rows. */
-export function heatingReading(
+export const heatingReading = (
   hass: ArcusHass,
   entity: EntityRef,
-): HeatingReading {
+): HeatingReading => {
   const attributes = liveAttributes(hass, entity);
   const mode = liveState(hass, entity);
   return {
@@ -42,4 +42,4 @@ export function heatingReading(
     on: mode !== "off",
     hvacAction: attributes.hvac_action,
   };
-}
+};

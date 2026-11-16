@@ -34,7 +34,7 @@ interface ShadowHostProps {
   children: ReactNode;
 }
 
-function ShadowHost({ theme, density, children }: ShadowHostProps) {
+const ShadowHost = ({ theme, density, children }: ShadowHostProps) => {
   const hostRef = useRef<ArcStoryHost | null>(null);
   const [root, setRoot] = useState<ShadowRoot | null>(null);
 
@@ -71,7 +71,7 @@ function ShadowHost({ theme, density, children }: ShadowHostProps) {
         )
       : null,
   );
-}
+};
 
 export const withStoryFrame: Decorator = (Story, context) => {
   const theme =

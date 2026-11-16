@@ -12,24 +12,24 @@ export interface SecurityHouseMapProps {
   t: Translator;
 }
 
-function roomLabel(name: string): string {
+const roomLabel = (name: string): string => {
   const short = name.length > 12 ? `${name.slice(0, 11)}…` : name;
   return short.toLocaleUpperCase();
-}
+};
 
 /**
  * The house schematic, its legend and the leak/open/battery chips. Every room
  * cell is fixed: doors and openings are placed into the cell of their room,
  * with the opening index as the fallback when the room is unknown.
  */
-export function SecurityHouseMap({
+export const SecurityHouseMap = ({
   rooms,
   dots,
   leak,
   openCount,
   lowBattery,
   t,
-}: SecurityHouseMapProps) {
+}: SecurityHouseMapProps) => {
   const houseRooms = rooms.slice(0, HOUSE_CELLS.length);
 
   return (
@@ -117,4 +117,4 @@ export function SecurityHouseMap({
       </div>
     </div>
   );
-}
+};

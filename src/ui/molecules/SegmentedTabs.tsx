@@ -18,12 +18,12 @@ export interface SegmentedTabsProps {
  * are recomputed after mount, on scroll, on resize, and whenever the active
  * route changes.
  */
-export function SegmentedTabs({
+export const SegmentedTabs = ({
   tabs,
   active,
   onChange,
   label,
-}: SegmentedTabsProps) {
+}: SegmentedTabsProps) => {
   const stripRef = useRef<HTMLDivElement>(null);
 
   // Only the labels and order affect the layout work below; the caller may
@@ -96,4 +96,4 @@ export function SegmentedTabs({
       ))}
     </div>
   );
-}
+};

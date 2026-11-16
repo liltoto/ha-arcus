@@ -15,12 +15,12 @@ export interface BatteryRingProps {
  * progress arc; the big readout stays inside the same block the legacy sheet
  * used, so the battery tab keeps its hierarchy.
  */
-export function BatteryRing({
+export const BatteryRing = ({
   value,
   label,
   note,
   language,
-}: BatteryRingProps) {
+}: BatteryRingProps) => {
   return (
     <div className={c("block")} data-battery-ring>
       <div
@@ -63,4 +63,4 @@ export function BatteryRing({
       </div>
     </div>
   );
-}
+};

@@ -62,53 +62,56 @@ export interface SecurityView {
   summary: string;
 }
 
-export function alarmStateLabel(t: Translator, state: string | null): string {
+export const alarmStateLabel = (
+  t: Translator,
+  state: string | null,
+): string => {
   if (state === "armed_home") return t("security.armedHome");
   if (state === "armed_away") return t("security.armedAway");
   if (state === "disarmed") return t("security.disarmed");
   return state || "–";
-}
+};
 
-function liveOn(hass: ArcusHass, entityId: string): boolean | null {
+const liveOn = (hass: ArcusHass, entityId: string): boolean | null => {
   const state = hass.states?.[entityId]?.state;
   if (state === "on" || state === "open") return true;
   if (state === "off" || state === "closed") return false;
   return null;
-}
+};
 
-function entityName(
+const entityName = (
   hass: ArcusHass,
   entityId: string,
   fallback: string,
-): string {
+): string => {
   const friendly = hass.states?.[entityId]?.attributes?.friendly_name;
   return typeof friendly === "string" && friendly.trim() ? friendly : fallback;
-}
+};
 
-function openingIcon(opening: SecurityOpening): string {
+const openingIcon = (opening: SecurityOpening): string => {
   if (opening.isLeak) return "drop";
   if (/vindue|window/i.test(opening.kind)) return "wind";
   return "door";
-}
+};
 
-function roomForOpening(
+const roomForOpening = (
   model: HomeModel,
   opening: SecurityOpening,
-): HomeModel["rooms"][number] | null {
+): HomeModel["rooms"][number] | null => {
   if (!opening.room) return null;
   return (
     model.rooms.find(
       (room) => room.name === opening.room || room.id === opening.room,
     ) ?? null
   );
-}
+};
 
-function securityOpenings(
+const securityOpenings = (
   hass: ArcusHass,
   security: SecurityModel,
   config: ArcusConfig,
   t: Translator,
-): SecurityOpening[] {
+): SecurityOpening[] => {
   const leakIds = config.security?.leaks ?? [];
   const leakSet = new Set(leakIds);
   const openings: SecurityOpening[] = (security.openings ?? []).map(
@@ -138,17 +141,17 @@ function securityOpenings(
   }
 
   return openings;
-}
+};
 
 /**
  * Live open state per opening. Missing states fall back to the model's open
  * count, so a partial hass snapshot never claims everything is closed.
  */
-function openStatesFor(
+const openStatesFor = (
   hass: ArcusHass,
   security: SecurityModel,
   openings: SecurityOpening[],
-): Map<string, boolean> {
+): Map<string, boolean> => {
   const states = new Map<string, boolean>();
   let remainingOpen = security.open ?? 0;
 
@@ -168,26 +171,26 @@ function openStatesFor(
   }
 
   return states;
-}
+};
 
-function cellForOpening(
+const cellForOpening = (
   model: HomeModel,
   houseRooms: HomeModel["rooms"],
   opening: SecurityOpening,
   index: number,
-): number {
+): number => {
   const room = roomForOpening(model, opening);
   const roomIndex = room
     ? houseRooms.findIndex((candidate) => candidate.id === room.id)
     : -1;
   return roomIndex >= 0 ? roomIndex : index % HOUSE_CELLS.length;
-}
+};
 
-function houseDotsFor(
+const houseDotsFor = (
   model: HomeModel,
   openings: SecurityOpening[],
   openStates: Map<string, boolean>,
-): SecurityHouseDot[] {
+): SecurityHouseDot[] => {
   const houseRooms = model.rooms.slice(0, HOUSE_CELLS.length);
 
   return openings.map((opening, index) => {
@@ -211,14 +214,14 @@ function houseDotsFor(
       open: openStates.get(opening.id) === true,
     };
   });
-}
+};
 
-function openingRowsFor(
+const openingRowsFor = (
   model: HomeModel,
   openings: SecurityOpening[],
   openStates: Map<string, boolean>,
   t: Translator,
-): SecurityOpeningRow[] {
+): SecurityOpeningRow[] => {
   return openings.map((opening) => {
     const isOpen = openStates.get(opening.id) === true;
     const room = roomForOpening(model, opening);
@@ -241,24 +244,26 @@ function openingRowsFor(
       nav: opening.isLeak ? "vand" : room ? `rum/${room.id}` : "sikkerhed",
     };
   });
-}
+};
 
-function alarmFor(
+const alarmFor = (
   hass: ArcusHass,
   security: SecurityModel,
   config: ArcusConfig,
-): { id: string | null; state: string | null } {
+): { id: string | null; state: string | null } => {
   const id = security.alarm?.entityId ?? config.security?.alarm ?? null;
   const state = id
     ? (hass.states?.[id]?.state ?? security.alarm?.state ?? "unknown")
     : null;
   return { id, state };
-}
+};
 
-function batteriesFor(security: SecurityModel): {
+const batteriesFor = (
+  security: SecurityModel,
+): {
   batteries: SecurityBatteryModel[];
   lowBattery: number;
-} {
+} => {
   const batteries = [...(security.batteries ?? [])].sort(
     (a, b) => (a.level ?? 101) - (b.level ?? 101),
   );
@@ -266,35 +271,39 @@ function batteriesFor(security: SecurityModel): {
     (battery) => battery.level !== null && battery.level < 20,
   ).length;
   return { batteries, lowBattery };
-}
+};
 
-function alertFor(
+const alertFor = (
   hass: ArcusHass,
   security: SecurityModel,
   config: ArcusConfig,
-): { id: string | undefined; on: boolean } {
+): { id: string | undefined; on: boolean } => {
   const id = config.security?.windowAlert;
   const on = id
     ? (liveOn(hass, id) ?? Boolean(security.windowAlert))
     : Boolean(security.windowAlert);
   return { id, on };
-}
+};
 
-function summaryFor(openCount: number, leak: boolean, t: Translator): string {
+const summaryFor = (
+  openCount: number,
+  leak: boolean,
+  t: Translator,
+): string => {
   return `${
     openCount
       ? t("security.summaryOpen", { count: openCount })
       : t("security.summaryClosed")
   } · ${leak ? t("security.leakDetected") : t("security.noLeak")}`;
-}
+};
 
-export function resolveSecurityView(
+export const resolveSecurityView = (
   hass: ArcusHass,
   model: HomeModel,
   config: ArcusConfig,
   security: SecurityModel,
   t: Translator,
-): SecurityView {
+): SecurityView => {
   const language = model.language;
   const locks = security.locks ?? [];
   const alarm = alarmFor(hass, security, config);
@@ -333,4 +342,4 @@ export function resolveSecurityView(
     alertCount,
     summary: summaryFor(openCount, leak, t),
   };
-}
+};

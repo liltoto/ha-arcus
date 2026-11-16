@@ -15,11 +15,14 @@ const TODAY = "sensor.hjem_energy_production_today";
 const TOMORROW = "sensor.hjem_energy_production_tomorrow";
 
 /** Build the public solar model with `watts` on a forecast sensor. */
-function solarWithWatts(watts: unknown, entityId: string = TODAY): SolarModel {
+const solarWithWatts = (
+  watts: unknown,
+  entityId: string = TODAY,
+): SolarModel => {
   const hass = makeHass();
   hass.states[entityId].attributes.watts = watts;
   return buildModel(hass, makeConfig(), NOW).solar!;
-}
+};
 
 describe("solar forecast watts", () => {
   test("parses an array of { t, v } points", () => {

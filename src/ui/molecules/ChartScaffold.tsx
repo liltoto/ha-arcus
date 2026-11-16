@@ -10,12 +10,12 @@ export interface ChartScaffoldProps {
  * charts. Rendered inside an `<svg>`; the chart keeps ownership of its area
  * fill and series paths.
  */
-export function ChartScaffold({
+export const ChartScaffold = ({
   width,
   height,
   gradientId,
   color = "var(--accent)",
-}: ChartScaffoldProps) {
+}: ChartScaffoldProps) => {
   return (
     <>
       <defs>
@@ -38,4 +38,4 @@ export function ChartScaffold({
       ))}
     </>
   );
-}
+};

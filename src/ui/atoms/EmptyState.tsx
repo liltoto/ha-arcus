@@ -7,7 +7,7 @@ export interface EmptyStateProps {
   hint?: string;
 }
 
-export function EmptyState({ icon, title, hint }: EmptyStateProps) {
+export const EmptyState = ({ icon, title, hint }: EmptyStateProps) => {
   return (
     <div className={c("empty")}>
       {icon ? <Icon name={icon} /> : null}
@@ -22,4 +22,4 @@ export function EmptyState({ icon, title, hint }: EmptyStateProps) {
       </div>
     </div>
   );
-}
+};

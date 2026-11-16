@@ -10,15 +10,15 @@ interface ChartStateLabels {
 }
 
 /** The overlay label for a chart state, or `null` when the chart has data. */
-export function chartStateLabel(
+export const chartStateLabel = (
   state: ChartState,
   labels: ChartStateLabels,
-): string | null {
+): string | null => {
   if (state === "loading") return labels.loading;
   if (state === "empty") return labels.empty;
   if (state === "unavailable") return labels.unavailable;
   return null;
-}
+};
 
 export interface ChartBoxProps {
   title?: string;
@@ -36,7 +36,7 @@ export interface ChartBoxProps {
  * `data-state` carries the distinction; the legacy `.no-data` class stays for
  * existing chart styles and assertions.
  */
-export function ChartBox({
+export const ChartBox = ({
   title,
   caption,
   state = "ready",
@@ -44,7 +44,7 @@ export function ChartBox({
   loadingLabel = "Loading…",
   unavailableLabel = "Unavailable",
   children,
-}: ChartBoxProps) {
+}: ChartBoxProps) => {
   const label = chartStateLabel(state, {
     empty: emptyLabel,
     loading: loadingLabel,
@@ -69,4 +69,4 @@ export function ChartBox({
       ) : null}
     </div>
   );
-}
+};

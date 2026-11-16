@@ -4,7 +4,7 @@ import { ChartBox } from "../../../molecules/ChartBox";
 import { c } from "../../../styles/classes";
 import { CHART_HEIGHT } from "./helpers";
 
-function encodeValues(values: Array<number | null>): string {
+const encodeValues = (values: Array<number | null>): string => {
   return values
     .map((value) =>
       value === null || !Number.isFinite(value)
@@ -12,7 +12,7 @@ function encodeValues(values: Array<number | null>): string {
         : String(Math.round(value * 10000) / 10000),
     )
     .join(";");
-}
+};
 
 export interface HeatingChartProps {
   label: string;
@@ -28,7 +28,7 @@ export interface HeatingChartProps {
 }
 
 /** The 24-hour temperature chart, keeping the legacy graph attributes. */
-export function HeatingChart({
+export const HeatingChart = ({
   label,
   title,
   values,
@@ -39,7 +39,7 @@ export function HeatingChart({
   start,
   end,
   emptyLabel,
-}: HeatingChartProps) {
+}: HeatingChartProps) => {
   const gradientId = `heat-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   return (
@@ -91,4 +91,4 @@ export function HeatingChart({
       </ChartBox>
     </div>
   );
-}
+};

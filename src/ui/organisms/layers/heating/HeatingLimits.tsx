@@ -23,7 +23,7 @@ interface LimitRowProps {
 }
 
 /** One limit entity row, bounded by its own min/max attributes. */
-function LimitRow({
+const LimitRow = ({
   entity,
   label,
   sub,
@@ -32,7 +32,7 @@ function LimitRow({
   unit,
   t,
   onChange,
-}: LimitRowProps) {
+}: LimitRowProps) => {
   const attributes = liveAttributes(hass, entity);
   const value = refNumber(hass, entity);
   const min = numberFrom(attributes.min) ?? 5;
@@ -58,7 +58,7 @@ function LimitRow({
       />
     </div>
   );
-}
+};
 
 export interface HeatingLimitsProps {
   limits?: HeatingLimitsConfig;
@@ -70,14 +70,14 @@ export interface HeatingLimitsProps {
 }
 
 /** The standard/reduced setpoint limits configured outside the home model. */
-export function HeatingLimits({
+export const HeatingLimits = ({
   limits,
   hass,
   language,
   unit,
   t,
   onChange,
-}: HeatingLimitsProps) {
+}: HeatingLimitsProps) => {
   if (!limits || (!limits.standard && !limits.reduced)) return null;
 
   return (
@@ -111,4 +111,4 @@ export function HeatingLimits({
       </div>
     </div>
   );
-}
+};

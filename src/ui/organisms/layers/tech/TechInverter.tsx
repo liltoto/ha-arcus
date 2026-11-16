@@ -11,7 +11,7 @@ interface TechInverterProps {
 }
 
 /** Inverter and datalogger details from the solar install. */
-export function TechInverter({ tech, fmt, t, language }: TechInverterProps) {
+export const TechInverter = ({ tech, fmt, t, language }: TechInverterProps) => {
   return (
     <div className={c("block")}>
       <div className={c("block-label")}>{t("tech.inverter")}</div>
@@ -65,4 +65,4 @@ export function TechInverter({ tech, fmt, t, language }: TechInverterProps) {
       </div>
     </div>
   );
-}
+};

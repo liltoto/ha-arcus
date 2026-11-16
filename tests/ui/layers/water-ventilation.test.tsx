@@ -16,7 +16,7 @@ const WATER_ROUTE: ArcusRoute = { base: "vand", sub: null };
 const VENT_ROUTE: ArcusRoute = { base: "ventilation", sub: null };
 const LEAK_ID = "binary_sensor.klippbok_water_leak_sensor_water_leak";
 
-function readout(container: HTMLElement, label: string) {
+const readout = (container: HTMLElement, label: string) => {
   const cell = [...container.querySelectorAll<HTMLElement>(".reading")].find(
     (reading) => reading.querySelector(".l")?.textContent === label,
   );
@@ -24,13 +24,13 @@ function readout(container: HTMLElement, label: string) {
     value: cell?.querySelector(".v span")?.textContent ?? null,
     unit: cell?.querySelector(".v small")?.textContent ?? null,
   };
-}
+};
 
-function block(container: HTMLElement, label: string): HTMLElement {
+const block = (container: HTMLElement, label: string): HTMLElement => {
   return [...container.querySelectorAll<HTMLElement>(".block")].find(
     (entry) => entry.querySelector(".block-label")?.textContent === label,
   )!;
-}
+};
 
 describe("WaterBody", () => {
   test("renders the header, consumption and BWT readings", () => {

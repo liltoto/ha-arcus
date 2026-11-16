@@ -21,11 +21,11 @@ const ECONOMY_ROUTE: ArcusRoute = { base: "oekonomi", sub: null };
  * plotted values, so they mount the same fixture provider with a local cache
  * double instead of editing the shared test utility.
  */
-function renderWithHistory(
+const renderWithHistory = (
   Body: ComponentType<LayerBodyProps>,
   history: HistoryCache,
   route: ArcusRoute,
-) {
+) => {
   const props = makeArcusProps({ route });
   const result = render(
     <ArcusProvider store={createArcusStore({ ...props, history })}>
@@ -33,13 +33,13 @@ function renderWithHistory(
     </ArcusProvider>,
   );
   return { ...result, props };
-}
+};
 
-function signed(value: number | null | undefined): string {
+const signed = (value: number | null | undefined): string => {
   return value === null || value === undefined
     ? "–"
     : `${value >= 0 ? "+" : ""}${formatNumber(value, 2, "da")}`;
-}
+};
 
 describe("TechBody", () => {
   it("renders the header summary and closes the sheet", async () => {

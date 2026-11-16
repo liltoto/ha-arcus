@@ -76,34 +76,34 @@ const parsedCache = new WeakMap<
   { sig: string; value: ParsedGraph | null }
 >();
 
-function escapeAttr(value: string): string {
+const escapeAttr = (value: string): string => {
   return value
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
-}
+};
 
-function encodeValue(value: number | null | undefined): string {
+const encodeValue = (value: number | null | undefined): string => {
   if (value === null || value === undefined) return "";
   if (!Number.isFinite(value)) return "";
   return String(Math.round(value * 10000) / 10000);
-}
+};
 
-function encodeValues(values: Array<number | null>): string {
+const encodeValues = (values: Array<number | null>): string => {
   return values.map(encodeValue).join(";");
-}
+};
 
-function decodeValues(raw: string | null): Array<number | null> {
+const decodeValues = (raw: string | null): Array<number | null> => {
   if (!raw) return [];
   return raw.split(";").map((part) => {
     if (!part) return null;
     const value = Number(part);
     return Number.isFinite(value) ? value : null;
   });
-}
+};
 
-function decodePoints(raw: string | null): GraphPoint[] {
+const decodePoints = (raw: string | null): GraphPoint[] => {
   if (!raw) return [];
   const points: GraphPoint[] = [];
   for (const part of raw.split(";")) {
@@ -114,18 +114,21 @@ function decodePoints(raw: string | null): GraphPoint[] {
     points.push({ t, v: v !== null && Number.isFinite(v) ? v : null });
   }
   return points.sort((a, b) => a.t - b.t);
-}
+};
 
 /** Attributes for a chart element. */
-export function graphAttrs(input: GraphInput): string {
+export const graphAttrs = (input: GraphInput): string => {
   const dataset = graphDataset(input);
   return Object.entries(dataset)
     .map(([key, value]) => `data-${key}="${escapeAttr(value)}"`)
     .join(" ");
-}
+};
 
 /** Assign the attributes in place; used when the card redraws a spark. */
-export function applyGraph(element: Element, input: GraphInput | null): void {
+export const applyGraph = (
+  element: Element,
+  input: GraphInput | null,
+): void => {
   const dataset = input ? graphDataset(input) : null;
   for (const name of GRAPH_ATTRS) {
     const attr = `data-${name}`;
@@ -137,9 +140,9 @@ export function applyGraph(element: Element, input: GraphInput | null): void {
     }
     if (current !== next) element.setAttribute(attr, next);
   }
-}
+};
 
-function graphDataset(input: GraphInput): Record<string, string> {
+const graphDataset = (input: GraphInput): Record<string, string> => {
   const mode = input.mode ?? "line";
   const dataset: Record<string, string> = { graph: mode };
   const series = input.series ?? [];
@@ -184,9 +187,9 @@ function graphDataset(input: GraphInput): Record<string, string> {
     dataset.gt1 = String(Math.round(input.end as number));
   }
   return dataset;
-}
+};
 
-function graphSignature(element: Element): string {
+const graphSignature = (element: Element): string => {
   let sig = "";
   for (const name of RAW_GRAPH_ATTRS) {
     const raw = element.getAttribute(name);
@@ -195,21 +198,21 @@ function graphSignature(element: Element): string {
     sig += raw === null ? "-" : `${raw.length}:${raw};`;
   }
   return sig;
-}
+};
 
 /**
  * Read the attributes back when the pointer enters a chart.
  *
  * The returned object is shared with the cache: treat it as read-only.
  */
-export function parseGraph(element: Element): ParsedGraph | null {
+export const parseGraph = (element: Element): ParsedGraph | null => {
   const sig = graphSignature(element);
   const cached = parsedCache.get(element);
   if (cached && cached.sig === sig) return cached.value;
   const value = readGraph(element);
   parsedCache.set(element, { sig, value });
   return value;
-}
+};
 
 interface GraphMeta {
   unit: string;
@@ -218,12 +221,12 @@ interface GraphMeta {
   end: number;
 }
 
-function readGraphMode(element: Element): GraphMode | null {
+const readGraphMode = (element: Element): GraphMode | null => {
   const mode = element.getAttribute("data-graph");
   return mode === "line" || mode === "bars" || mode === "timed" ? mode : null;
-}
+};
 
-function readGraphMeta(element: Element): GraphMeta {
+const readGraphMeta = (element: Element): GraphMeta => {
   const decimals = Number(element.getAttribute("data-gd") ?? 0);
   const start = Number(element.getAttribute("data-gt0") ?? 0);
   const end = Number(element.getAttribute("data-gt1") ?? 0);
@@ -233,13 +236,13 @@ function readGraphMeta(element: Element): GraphMeta {
     start: Number.isFinite(start) ? start : 0,
     end: Number.isFinite(end) ? end : 0,
   };
-}
+};
 
-function readTimedGraph(
+const readTimedGraph = (
   element: Element,
   mode: GraphMode,
   meta: GraphMeta,
-): ParsedGraph | null {
+): ParsedGraph | null => {
   const points = decodePoints(element.getAttribute("data-gp"));
   if (!points.length) return null;
   return {
@@ -257,13 +260,13 @@ function readTimedGraph(
     start: meta.start,
     end: meta.end,
   };
-}
+};
 
-function readMultiSeriesGraph(
+const readMultiSeriesGraph = (
   rawSeries: string,
   mode: GraphMode,
   meta: GraphMeta,
-): ParsedGraph | null {
+): ParsedGraph | null => {
   try {
     const parsed = JSON.parse(rawSeries) as Array<{
       l?: string;
@@ -286,13 +289,13 @@ function readMultiSeriesGraph(
   } catch {
     return null;
   }
-}
+};
 
-function readSingleSeriesGraph(
+const readSingleSeriesGraph = (
   element: Element,
   mode: GraphMode,
   meta: GraphMeta,
-): ParsedGraph | null {
+): ParsedGraph | null => {
   const values = decodeValues(element.getAttribute("data-gv"));
   if (!values.length) return null;
   return {
@@ -310,9 +313,9 @@ function readSingleSeriesGraph(
     start: meta.start,
     end: meta.end,
   };
-}
+};
 
-function readGraph(element: Element): ParsedGraph | null {
+const readGraph = (element: Element): ParsedGraph | null => {
   const mode = readGraphMode(element);
   if (!mode) return null;
   const meta = readGraphMeta(element);
@@ -320,31 +323,31 @@ function readGraph(element: Element): ParsedGraph | null {
   const rawSeries = element.getAttribute("data-gs");
   if (rawSeries) return readMultiSeriesGraph(rawSeries, mode, meta);
   return readSingleSeriesGraph(element, mode, meta);
-}
+};
 
-function indexAt(fraction: number, length: number, mode: GraphMode): number {
+const indexAt = (fraction: number, length: number, mode: GraphMode): number => {
   if (length <= 0) return 0;
   if (mode === "bars") {
     return Math.min(length - 1, Math.max(0, Math.floor(fraction * length)));
   }
   return Math.min(length - 1, Math.max(0, Math.round(fraction * (length - 1))));
-}
+};
 
-function valueText(
+const valueText = (
   value: number | null,
   decimals: number,
   unit: string,
   language: Language | string,
-): string {
+): string => {
   const formatted = formatNumber(value, decimals, language);
   return unit ? `${formatted} ${unit}` : formatted;
-}
+};
 
-function graphTime(
+const graphTime = (
   timestamp: number,
   span: number,
   language: Language | string,
-): string {
+): string => {
   if (!Number.isFinite(timestamp)) return "";
   if (span <= 50 * 60 * 60 * 1000) return formatTime(timestamp, language);
   const locale = String(language ?? "da")
@@ -361,14 +364,14 @@ function graphTime(
   return new Intl.DateTimeFormat(locale, { day: "numeric", month: "short" })
     .format(date)
     .replace(/\.$/, "");
-}
+};
 
 interface TipElements {
   tip: HTMLElement;
   cursor: HTMLElement;
 }
 
-function tipElements(root: ShadowRoot): TipElements | null {
+const tipElements = (root: ShadowRoot): TipElements | null => {
   let tip = root.querySelector<HTMLElement>("[data-graph-tip]");
   let cursor = root.querySelector<HTMLElement>("[data-graph-cursor]");
   if (!tip) {
@@ -388,14 +391,14 @@ function tipElements(root: ShadowRoot): TipElements | null {
     app.appendChild(cursor);
   }
   return { tip, cursor };
-}
+};
 
 /** One labelled row in the multi-series tooltip. */
-function seriesTipRow(
+const seriesTipRow = (
   entry: ParsedSeries,
   index: number,
   language: Language | string,
-): HTMLElement {
+): HTMLElement => {
   const row = document.createElement("span");
   row.className = "gt-row";
   const dot = document.createElement("i");
@@ -418,13 +421,13 @@ function seriesTipRow(
   );
   row.append(value);
   return row;
-}
+};
 
-function singleTipValue(
+const singleTipValue = (
   entry: ParsedSeries | undefined,
   index: number,
   language: Language | string,
-): HTMLElement {
+): HTMLElement => {
   const value = document.createElement("b");
   value.textContent = valueText(
     entry?.values[index] ?? null,
@@ -433,16 +436,16 @@ function singleTipValue(
     language,
   );
   return value;
-}
+};
 
-function fillTip(
+const fillTip = (
   tip: HTMLElement,
   graph: ParsedGraph,
   index: number,
   fraction: number,
   timestamp: number,
   language: Language | string,
-): void {
+): void => {
   const fragment = document.createDocumentFragment();
   if (graph.series.length > 1) {
     // Bars floor the hovered bucket while lines round to the nearest point.
@@ -469,7 +472,7 @@ function fillTip(
   }
 
   tip.replaceChildren(fragment);
-}
+};
 
 export interface TipFrame {
   left: number;
@@ -498,12 +501,12 @@ export interface TipPlacement {
  * card instead of the viewport; every coordinate is therefore expressed
  * relative to the frame returned by `frameOf`.
  */
-export function placeTip(
+export const placeTip = (
   x: number,
   chart: ChartBoxRect,
   tip: { width: number; height: number },
   frame: TipFrame,
-): TipPlacement {
+): TipPlacement => {
   const localX = x - frame.left;
   let left = localX + 14;
   if (left + tip.width > frame.width - 8) left = localX - tip.width - 14;
@@ -522,9 +525,9 @@ export function placeTip(
     cursorTop: chart.top - frame.top,
     cursorHeight: chart.height,
   };
-}
+};
 
-function frameOf(tip: HTMLElement): TipFrame {
+const frameOf = (tip: HTMLElement): TipFrame => {
   const parent = tip.offsetParent as HTMLElement | null;
   const rect = parent?.getBoundingClientRect();
   if (!rect) {
@@ -541,13 +544,13 @@ function frameOf(tip: HTMLElement): TipFrame {
     width: rect.width,
     height: rect.height,
   };
-}
+};
 
 /** Bind one hover/touch readout for every chart inside `root`. */
-export function mountGraphTips(
+export const mountGraphTips = (
   root: ShadowRoot,
   language: () => Language | string,
-): { destroy(): void } {
+): { destroy(): void } => {
   let active = false;
   let touchChart: HTMLElement | null = null;
   let hideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -744,4 +747,4 @@ export function mountGraphTips(
       hideNow();
     },
   };
-}
+};

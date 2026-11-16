@@ -18,7 +18,7 @@ interface ChapterLink {
  * chapter list is static on purpose; the routes are the card's public
  * navigation surface, while the rooms come from the live model.
  */
-export function AllBody(_props: LayerBodyProps) {
+export const AllBody = (_props: LayerBodyProps) => {
   const model = useModel();
   const t = useTranslator();
   const actions = useActions();
@@ -122,4 +122,4 @@ export function AllBody(_props: LayerBodyProps) {
       </div>
     </LayerShell>
   );
-}
+};

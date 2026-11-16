@@ -44,45 +44,48 @@ export interface WaterView {
 
 const ON_STATES = new Set(["on", "open", "home", "playing", "heating", "heat"]);
 
-function entityState(hass: ArcusHass, entityId: string): string | null {
+const entityState = (hass: ArcusHass, entityId: string): string | null => {
   const state = hass.states[entityId]?.state;
   return typeof state === "string" ? state : null;
-}
+};
 
 /** The live on/off state, with a numeric fallback for sensors without "on". */
-function isOn(hass: ArcusHass, entityId: string, fallback = false): boolean {
+const isOn = (hass: ArcusHass, entityId: string, fallback = false): boolean => {
   const state = entityState(hass, entityId);
   if (state === null) return fallback;
   if (ON_STATES.has(state)) return true;
   const value = Number(state);
   return Number.isFinite(value) && value > 0;
-}
+};
 
-function friendlyNameOf(hass: ArcusHass, entityId: string): string | null {
+const friendlyNameOf = (hass: ArcusHass, entityId: string): string | null => {
   const friendly = hass.states[entityId]?.attributes?.friendly_name;
   return typeof friendly === "string" && friendly.trim() ? friendly : null;
-}
+};
 
-function entityAreaId(hass: ArcusHass, entityId: string): string | null {
+const entityAreaId = (hass: ArcusHass, entityId: string): string | null => {
   const entry = hass.entities?.[entityId];
   if (entry?.area_id) return entry.area_id;
   const deviceId = entry?.device_id;
   return deviceId ? (hass.devices?.[deviceId]?.area_id ?? null) : null;
-}
+};
 
-function areaNameForEntity(hass: ArcusHass, entityId: string): string | null {
+const areaNameForEntity = (
+  hass: ArcusHass,
+  entityId: string,
+): string | null => {
   const areaId = entityAreaId(hass, entityId);
   if (!areaId) return null;
   const name = hass.areas?.[areaId]?.name;
   return typeof name === "string" && name.trim() ? name : null;
-}
+};
 
-function entityName(
+const entityName = (
   hass: ArcusHass,
   entityId: string,
   index: number,
   t: Translator,
-): string {
+): string => {
   const friendly = friendlyNameOf(hass, entityId);
   if (friendly) return friendly;
   const registry = hass.entities?.[entityId]?.name;
@@ -92,11 +95,11 @@ function entityName(
   if (index === 0) return t("water.kitchen");
   if (index === 1) return t("water.utility");
   return `${t("water.leak")} ${index + 1}`;
-}
+};
 
-function waterFormat(language: Language): WaterFormat {
+const waterFormat = (language: Language): WaterFormat => {
   return (value, digits = 1) => formatNumber(value, digits, language);
-}
+};
 
 interface WaterNumbers {
   day: number | null;
@@ -109,7 +112,7 @@ interface WaterNumbers {
   capacity: number | null;
 }
 
-function waterNumbers(water: WaterModel): WaterNumbers {
+const waterNumbers = (water: WaterModel): WaterNumbers => {
   return {
     day: water.day ?? null,
     month: water.month ?? null,
@@ -120,14 +123,14 @@ function waterNumbers(water: WaterModel): WaterNumbers {
     saltDays: water.saltDays ?? null,
     capacity: water.capacity ?? null,
   };
-}
+};
 
-function hasSoftener(
+const hasSoftener = (
   water: WaterModel,
   numbers: WaterNumbers,
   holidayId: string | undefined,
   customName: string | null,
-): boolean {
+): boolean => {
   return Boolean(
     water.state ||
     numbers.salt !== null ||
@@ -136,35 +139,35 @@ function hasSoftener(
     holidayId ||
     customName,
   );
-}
+};
 
-function leakRows(
+const leakRows = (
   hass: ArcusHass,
   config: ArcusConfig,
   t: Translator,
   leak: boolean,
-): LeakRowView[] {
+): LeakRowView[] => {
   return (config.security?.leaks ?? []).map((entityId, index) => ({
     entityId,
     name: entityName(hass, entityId, index, t),
     on: isOn(hass, entityId, leak),
   }));
-}
+};
 
-function leakBatteryFor(model: HomeModel): SecurityBatteryModel | undefined {
+const leakBatteryFor = (model: HomeModel): SecurityBatteryModel | undefined => {
   return model.security?.batteries?.find((battery) =>
     /klippbok|water|leak/i.test(battery.entityId),
   );
-}
+};
 
-function waterSummary(
+const waterSummary = (
   t: Translator,
   fmt: WaterFormat,
   numbers: WaterNumbers,
   state: string,
   softener: boolean,
   customName: string | null,
-): string {
+): string => {
   if (!softener) {
     return t("water.meterSummary", {
       day: fmt(numbers.day, 1),
@@ -177,16 +180,16 @@ function waterSummary(
     salt: fmt(numbers.salt, 0),
   });
   return customName ? summary.replace("BWT", customName) : summary;
-}
+};
 
 /** Everything the water sheet renders, resolved once per render. */
-export function resolveWaterView(
+export const resolveWaterView = (
   hass: ArcusHass,
   model: HomeModel,
   config: ArcusConfig,
   water: WaterModel,
   t: Translator,
-): WaterView {
+): WaterView => {
   const language = model.language;
   const fmt = waterFormat(language);
   const numbers = waterNumbers(water);
@@ -212,4 +215,4 @@ export function resolveWaterView(
     fmt,
     summary: waterSummary(t, fmt, numbers, state, softener, customName),
   };
-}
+};

@@ -22,7 +22,7 @@ export interface VitalStatProps {
  * A hero statistic. The ring slot is for battery-style gauges; the sparkline
  * is drawn from the history cache by the page and only displayed here.
  */
-export function VitalStat({
+export const VitalStat = ({
   label,
   value,
   unit,
@@ -33,7 +33,7 @@ export function VitalStat({
   ring,
   onClick,
   sparkColor = "var(--sky)",
-}: VitalStatProps) {
+}: VitalStatProps) => {
   const body = (
     <>
       <VitalText label={label} value={value} unit={unit} sub={sub} />
@@ -61,4 +61,4 @@ export function VitalStat({
   }
 
   return <div className={c("vital")}>{body}</div>;
-}
+};

@@ -5,24 +5,24 @@ const LOCALES: Record<Language, string> = {
   en: "en-GB",
 };
 
-function localeFor(language: Language | string | undefined): string {
+const localeFor = (language: Language | string | undefined): string => {
   return String(language ?? "da")
     .toLowerCase()
     .startsWith("da")
     ? LOCALES.da
     : LOCALES.en;
-}
+};
 
 /**
  * Resolve the display currency label (e.g. `kr`, `DKK`, `EUR`, `USD`, `$`).
  * Defaults to `kr` in Danish and `DKK` in English when neither `config.units`
  * nor `hass.config.currency` is specified, preserving legacy output.
  */
-export function resolveCurrency(
+export const resolveCurrency = (
   hass?: { config?: { currency?: string } } | null,
   config?: { units?: { currency?: string } } | null,
   language: Language | string = "da",
-): string {
+): string => {
   const configured = config?.units?.currency?.trim();
   if (configured) return configured;
   const hassCurrency = hass?.config?.currency?.trim();
@@ -36,75 +36,77 @@ export function resolveCurrency(
     return hassCurrency;
   }
   return localeFor(language) === LOCALES.da ? "kr" : "DKK";
-}
+};
 
 /**
  * Resolve the electricity price unit (e.g. `kr/kWh`, `DKK/kWh`, `EUR/kWh`).
  */
-export function resolvePriceUnit(
+export const resolvePriceUnit = (
   hass?: { config?: { currency?: string } } | null,
   config?: { units?: { currency?: string; price_unit?: string } } | null,
   language: Language | string = "da",
-): string {
+): string => {
   const configured = config?.units?.price_unit?.trim();
   if (configured) return configured;
   return `${resolveCurrency(hass, config, language)}/kWh`;
-}
+};
 
 /**
  * Resolve the temperature unit (`°C` or `°F`) from config or HA's unit system.
  */
-export function resolveTempUnit(
+export const resolveTempUnit = (
   hass?: { config?: { unit_system?: { temperature?: string } } } | null,
   config?: { units?: { temperature?: TemperatureUnit } } | null,
-): TemperatureUnit {
+): TemperatureUnit => {
   if (config?.units?.temperature === "°F") return "°F";
   if (config?.units?.temperature === "°C") return "°C";
   if (hass?.config?.unit_system?.temperature === "°F") return "°F";
   return "°C";
-}
+};
 
-export function numberFrom(value: unknown): number | null {
+export const numberFrom = (value: unknown): number | null => {
   if (value === null || value === undefined || value === "") return null;
   const number = typeof value === "number" ? value : Number(value);
   return Number.isFinite(number) ? number : null;
-}
+};
 
 /**
  * Clamp a brightness or battery value to a whole 0-100 percentage. Missing or
  * non-finite input becomes 0 so an empty state renders an empty bar rather
  * than a `NaN` width.
  */
-export function clampPercent(value: number): number {
+export const clampPercent = (value: number): number => {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(100, Math.round(value)));
-}
+};
 
 /**
  * Parse a Home Assistant state value. The recorder's `"unavailable"` and
  * `"unknown"` strings count as missing values, like `numberFrom` does for
  * empty and non-numeric input.
  */
-export function numberFromState(value: unknown): number | null {
+export const numberFromState = (value: unknown): number | null => {
   if (value === "unavailable" || value === "unknown") return null;
   return numberFrom(value);
-}
+};
 
-function toDate(value: Date | string | number | null | undefined): Date | null {
+const toDate = (
+  value: Date | string | number | null | undefined,
+): Date | null => {
   if (value === null || value === undefined || value === "") return null;
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
-}
+};
 
 /**
  * Format a number with a fixed number of decimals. Missing or non-numeric
  * values become an en dash so rooms and chapters stay readable.
  */
-export function formatNumber(
+export const formatNumber = (
   value: number | string | null | undefined,
   digits = 1,
   language: Language | string = "da",
-): string {
+): string => {
   const number = numberFrom(value);
   if (number === null) return "–";
   const decimals =
@@ -113,25 +115,25 @@ export function formatNumber(
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(number);
-}
+};
 
 /** Prices use two decimals: `1,75` in Danish, `1.75` in English. */
-export function formatPrice(
+export const formatPrice = (
   value: number | string | null | undefined,
   language: Language | string = "da",
-): string {
+): string => {
   return formatNumber(value, 2, language);
-}
+};
 
 /**
  * Format the clock in 24-hour time. Intl da-DK uses a dot between hours and
  * minutes, so the parts are joined explicitly with a colon to match the
  * prototype and Home Assistant's own clock.
  */
-export function formatTime(
+export const formatTime = (
   date: Date | string | number | null | undefined,
   language: Language | string = "da",
-): string {
+): string => {
   const parsed = toDate(date);
   if (!parsed) return "–";
   const parts = new Intl.DateTimeFormat(localeFor(language), {
@@ -142,13 +144,13 @@ export function formatTime(
   const hour = parts.find((part) => part.type === "hour")?.value ?? "00";
   const minute = parts.find((part) => part.type === "minute")?.value ?? "00";
   return `${hour}:${minute}`;
-}
+};
 
 /** Long local date, e.g. `fredag 13. november` or `Friday 13 November`. */
-export function formatDateLong(
+export const formatDateLong = (
   date: Date | string | number | null | undefined,
   language: Language | string = "da",
-): string {
+): string => {
   const parsed = toDate(date);
   if (!parsed) return "–";
   return new Intl.DateTimeFormat(localeFor(language), {
@@ -156,13 +158,13 @@ export function formatDateLong(
     day: "numeric",
     month: "long",
   }).format(parsed);
-}
+};
 
 /** Time-of-day greeting, using Home Assistant's local clock. */
-export function greeting(
+export const greeting = (
   date: Date | string | number | null | undefined,
   language: Language | string = "da",
-): string {
+): string => {
   const parsed = toDate(date);
   if (!parsed) return localeFor(language) === LOCALES.da ? "Hej" : "Hello";
   const hour = parsed.getHours();
@@ -176,18 +178,18 @@ export function greeting(
     return localeFor(language) === LOCALES.da ? "Godaften" : "Good evening";
   }
   return localeFor(language) === LOCALES.da ? "Godnat" : "Good night";
-}
+};
 
 /**
  * Human-readable countdown. Targets in the past wrap to the next day, which
  * keeps the prayer countdown correct after midnight while still using the
  * same "next occurrence" behaviour as the prototype.
  */
-export function countdown(
+export const countdown = (
   target: Date | string | number | null | undefined,
   now: Date | string | number | null | undefined = new Date(),
   language: Language | string = "da",
-): string {
+): string => {
   const end = toDate(target);
   const start = toDate(now);
   if (!end || !start) return "–";
@@ -204,30 +206,30 @@ export function countdown(
     return rest ? `om ${hours} t ${rest} min` : `om ${hours} t`;
   }
   return rest ? `in ${hours} h ${rest} min` : `in ${hours} h`;
-}
+};
 
 /**
  * Format a value with its unit, e.g. `21,4 °C`. Missing values return an en
  * dash without a unit so empty rooms read cleanly.
  */
-export function formatUnit(
+export const formatUnit = (
   value: number | string | null | undefined,
   unit: string,
   language: Language | string = "da",
   digits = 0,
-): string {
+): string => {
   const number = numberFrom(value);
   if (number === null) return "–";
   const formatted = formatNumber(number, digits, language);
   return unit ? `${formatted} ${unit}` : formatted;
-}
+};
 
 /** Escape a value for text and double-quoted attribute contexts. */
-export function escapeHtml(value: unknown): string {
+export const escapeHtml = (value: unknown): string => {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
+};

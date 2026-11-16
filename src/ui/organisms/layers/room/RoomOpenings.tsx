@@ -13,13 +13,13 @@ export interface RoomOpeningsProps {
 }
 
 /** The room's doors, windows, and other contact sensors. */
-export function RoomOpenings({
+export const RoomOpenings = ({
   hass,
   openings,
   open,
   t,
   nowMs,
-}: RoomOpeningsProps) {
+}: RoomOpeningsProps) => {
   if (!openings.length) return null;
 
   return (
@@ -63,4 +63,4 @@ export function RoomOpenings({
       </div>
     </div>
   );
-}
+};

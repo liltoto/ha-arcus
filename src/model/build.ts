@@ -51,66 +51,66 @@ const PRAYER_DEFINITIONS = [
   { id: "isha", key: "prayers.isha" },
 ] as const;
 
-function isRecord(value: unknown): value is Record<string, any> {
+const isRecord = (value: unknown): value is Record<string, any> => {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+};
 
-function stateOf(hass: ArcusHass, entityId: string | undefined | null) {
+const stateOf = (hass: ArcusHass, entityId: string | undefined | null) => {
   return entityId ? hass.states?.[entityId] : undefined;
-}
+};
 
-function attributesOf(
+const attributesOf = (
   hass: ArcusHass,
   entityId: string | undefined | null,
-): Record<string, any> {
+): Record<string, any> => {
   return stateOf(hass, entityId)?.attributes ?? {};
-}
+};
 
-function numState(
+const numState = (
   hass: ArcusHass,
   entityId: string | undefined | null,
-): number | null {
+): number | null => {
   const state = stateOf(hass, entityId);
   if (!state || !isEntityAvailable(state.state)) return null;
   return numberFrom(state.state);
-}
+};
 
-function stringState(
+const stringState = (
   hass: ArcusHass,
   entityId: string | undefined | null,
-): string | null {
+): string | null => {
   const state = stateOf(hass, entityId);
   return state ? state.state : null;
-}
+};
 
-function isOnState(state: string | undefined | null): boolean {
+const isOnState = (state: string | undefined | null): boolean => {
   return state === "on" || state === "open";
-}
+};
 
-function refNumber(value: unknown): number | null {
+const refNumber = (value: unknown): number | null => {
   return numberFrom(value);
-}
+};
 
-function refStateIsOn(ref: EntityRef | null | undefined): boolean {
+const refStateIsOn = (ref: EntityRef | null | undefined): boolean => {
   return !!ref && isOnState(ref.state);
-}
+};
 
-function refIsAvailable(ref: EntityRef | null | undefined): boolean {
+const refIsAvailable = (ref: EntityRef | null | undefined): boolean => {
   return !!ref && isEntityAvailable(ref.state);
-}
+};
 
-function entityAreaId(hass: ArcusHass, entityId: string): string | null {
+const entityAreaId = (hass: ArcusHass, entityId: string): string | null => {
   const entry = hass.entities?.[entityId];
   if (!entry) return null;
   if (entry.area_id) return entry.area_id;
   if (entry.device_id) return hass.devices?.[entry.device_id]?.area_id ?? null;
   return null;
-}
+};
 
-function areaOrderMap(
+const areaOrderMap = (
   hass: ArcusHass,
   config: ArcusConfig,
-): Map<string, number> {
+): Map<string, number> => {
   const order = new Map<string, number>();
   let rank = 0;
   for (const areaId of config.areas.order) {
@@ -120,13 +120,13 @@ function areaOrderMap(
     if (!order.has(areaId)) order.set(areaId, rank++);
   }
   return order;
-}
+};
 
-function nameOf(
+const nameOf = (
   hass: ArcusHass,
   entityId: string,
   fallback?: string | null,
-): string {
+): string => {
   const state = hass.states?.[entityId];
   const registry = hass.entities?.[entityId];
   return (
@@ -136,17 +136,17 @@ function nameOf(
     fallback ||
     entityId
   );
-}
+};
 
-function lightStats(hass: ArcusHass, groups: LightGroupModel[]): LightStats {
+const lightStats = (hass: ArcusHass, groups: LightGroupModel[]): LightStats => {
   const ids = lightIdsForGroups(groups);
   return {
     on: ids.filter((id) => isOnState(hass.states?.[id]?.state)).length,
     total: ids.length,
   };
-}
+};
 
-function effectiveRoomTemp(room: RoomModel): number | null {
+const effectiveRoomTemp = (room: RoomModel): number | null => {
   if (refIsAvailable(room.temp)) {
     const value = refNumber(room.temp?.state);
     if (value !== null) return value;
@@ -155,9 +155,9 @@ function effectiveRoomTemp(room: RoomModel): number | null {
     room.tempFallback?.attributes?.current_temperature,
   );
   return fallback;
-}
+};
 
-function roomStats(hass: ArcusHass, room: RoomModel): RoomStats {
+const roomStats = (hass: ArcusHass, room: RoomModel): RoomStats => {
   const lights = lightStats(hass, room.lights);
   return {
     temp: effectiveRoomTemp(room),
@@ -172,7 +172,7 @@ function roomStats(hass: ArcusHass, room: RoomModel): RoomStats {
     ).length,
     leak: refStateIsOn(room.leak),
   };
-}
+};
 
 /* ------------------------------------------------------------------ */
 /* Price                                                              */
@@ -183,7 +183,7 @@ interface PriceRow {
   price: number;
 }
 
-function hourOf(value: unknown, fallback: number): number {
+const hourOf = (value: unknown, fallback: number): number => {
   if (typeof value === "number" && Number.isFinite(value)) {
     return Math.trunc(value);
   }
@@ -194,18 +194,18 @@ function hourOf(value: unknown, fallback: number): number {
     if (Number.isFinite(number)) return Math.trunc(number);
   }
   return fallback;
-}
+};
 
-function priceFrom(value: unknown): number | null {
+const priceFrom = (value: unknown): number | null => {
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
   if (typeof value === "string" && value.trim()) {
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
   }
   return null;
-}
+};
 
-function priceRows(value: unknown): PriceRow[] {
+const priceRows = (value: unknown): PriceRow[] => {
   if (!Array.isArray(value)) return [];
   const rows: PriceRow[] = [];
   value.forEach((item, index) => {
@@ -229,9 +229,12 @@ function priceRows(value: unknown): PriceRow[] {
   return rows
     .filter((row) => row.hour >= 0 && row.hour <= 23)
     .sort((a, b) => a.hour - b.hour);
-}
+};
 
-function curveFrom(hass: ArcusHass, entityId: string | undefined): PriceRow[] {
+const curveFrom = (
+  hass: ArcusHass,
+  entityId: string | undefined,
+): PriceRow[] => {
   if (!entityId) return [];
   const attributes = attributesOf(hass, entityId);
   for (const source of [
@@ -244,13 +247,13 @@ function curveFrom(hass: ArcusHass, entityId: string | undefined): PriceRow[] {
     if (rows.length) return rows;
   }
   return [];
-}
+};
 
-function cheapestWindow(
+const cheapestWindow = (
   values: number[],
   fromHour: number,
   count = MAX_CHEAP_HOURS,
-): PriceModel["cheapest"] {
+): PriceModel["cheapest"] => {
   if (values.length < count) return null;
   let best: { start: number; end: number; avg: number; sum: number } | null =
     null;
@@ -269,13 +272,13 @@ function cheapestWindow(
     best = { start: 0, end: count, sum, avg: sum / count };
   }
   return best;
-}
+};
 
-function buildPrice(
+const buildPrice = (
   hass: ArcusHass,
   config: ArcusConfig,
   now: Date,
-): PriceModel | undefined {
+): PriceModel | undefined => {
   const priceConfig = config.price;
   if (!priceConfig) return undefined;
 
@@ -337,13 +340,13 @@ function buildPrice(
     tomorrow: tomorrowAvailable,
     cheapest,
   };
-}
+};
 
 /* ------------------------------------------------------------------ */
 /* Weather, prayers, solar, water, security, tech, economy, ventilation */
 /* ------------------------------------------------------------------ */
 
-function weatherIcon(condition: string | undefined): string {
+const weatherIcon = (condition: string | undefined): string => {
   switch (condition) {
     case "sunny":
     case "clear":
@@ -362,15 +365,15 @@ function weatherIcon(condition: string | undefined): string {
     default:
       return "cloud";
   }
-}
+};
 
-function parseDate(value: unknown): Date | null {
+const parseDate = (value: unknown): Date | null => {
   if (typeof value !== "string" || !value.trim()) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
-}
+};
 
-function buildSun(hass: ArcusHass): SunModel | undefined {
+const buildSun = (hass: ArcusHass): SunModel | undefined => {
   const sunState = stateOf(hass, "sun.sun");
   if (!sunState) return undefined;
   const attrs = sunState.attributes ?? {};
@@ -382,12 +385,12 @@ function buildSun(hass: ArcusHass): SunModel | undefined {
     nextSetting: parseDate(attrs.next_setting),
     nextNoon: parseDate(attrs.next_noon),
   };
-}
+};
 
-function buildWeather(
+const buildWeather = (
   hass: ArcusHass,
   config: ArcusConfig,
-): WeatherModel | undefined {
+): WeatherModel | undefined => {
   const state = config.weather
     ? stateOf(hass, config.weather)
     : config.auto_discover !== false
@@ -409,18 +412,18 @@ function buildWeather(
     text: state.state,
     forecast,
   };
-}
+};
 
-function minutesOfDay(date: Date): number {
+const minutesOfDay = (date: Date): number => {
   return date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60;
-}
+};
 
-function buildPrayers(
+const buildPrayers = (
   hass: ArcusHass,
   config: ArcusConfig,
   now: Date,
   t: ReturnType<typeof createTranslator>,
-): PrayersModel | undefined {
+): PrayersModel | undefined => {
   const prayerConfig = config.prayers;
   if (!prayerConfig) return undefined;
 
@@ -461,9 +464,9 @@ function buildPrayers(
     next: next ?? null,
     sunrise: sunrise && !Number.isNaN(sunrise.getTime()) ? sunrise : null,
   };
-}
+};
 
-function parseWattsArray(watts: unknown): SolarPoint[] {
+const parseWattsArray = (watts: unknown): SolarPoint[] => {
   const points: SolarPoint[] = [];
   if (!Array.isArray(watts)) return points;
 
@@ -478,9 +481,9 @@ function parseWattsArray(watts: unknown): SolarPoint[] {
   }
 
   return points;
-}
+};
 
-function parseWattsRecord(watts: Record<string, unknown>): SolarPoint[] {
+const parseWattsRecord = (watts: Record<string, unknown>): SolarPoint[] => {
   const points: SolarPoint[] = [];
 
   for (const [rawTime, rawValue] of Object.entries(watts)) {
@@ -491,12 +494,12 @@ function parseWattsRecord(watts: Record<string, unknown>): SolarPoint[] {
   }
 
   return points;
-}
+};
 
-function parseWatts(
+const parseWatts = (
   hass: ArcusHass,
   entityId: string | undefined,
-): SolarPoint[] {
+): SolarPoint[] => {
   if (!entityId) return [];
   const watts = attributesOf(hass, entityId).watts;
   const points = Array.isArray(watts)
@@ -506,7 +509,7 @@ function parseWatts(
       : [];
 
   return points.sort((a, b) => a.t.getTime() - b.t.getTime());
-}
+};
 
 const SOLAR_NUMERIC_KEYS = [
   "power",
@@ -562,10 +565,10 @@ const SOLAR_NUMERIC_KEYS = [
   "paybackPercent",
 ] as const;
 
-function buildSolar(
+const buildSolar = (
   hass: ArcusHass,
   config: ArcusConfig,
-): SolarModel | undefined {
+): SolarModel | undefined => {
   const solarConfig = config.solar;
   if (!solarConfig) return undefined;
 
@@ -608,12 +611,12 @@ function buildSolar(
   if (tomorrowSeries.length) solar.tomorrowSeries = tomorrowSeries;
 
   return solar;
-}
+};
 
-function buildWater(
+const buildWater = (
   hass: ArcusHass,
   config: ArcusConfig,
-): WaterModel | undefined {
+): WaterModel | undefined => {
   const waterConfig = config.water;
   if (!waterConfig) return undefined;
   return {
@@ -632,14 +635,14 @@ function buildWater(
       ? isOnState(stringState(hass, waterConfig.holiday))
       : undefined,
   };
-}
+};
 
-function buildSecurity(
+const buildSecurity = (
   hass: ArcusHass,
   config: ArcusConfig,
   rooms: RoomModel[],
   stats: Record<string, RoomStats>,
-): SecurityModel | undefined {
+): SecurityModel | undefined => {
   const openings: OpeningModel[] = rooms.flatMap((room) => room.openings);
   const configuredLeaks = config.security?.leaks ?? [];
   const leak =
@@ -712,12 +715,12 @@ function buildSecurity(
       : false,
     windows: windows ?? open,
   };
-}
+};
 
-function buildTech(
+const buildTech = (
   hass: ArcusHass,
   config: ArcusConfig,
-): TechModel | undefined {
+): TechModel | undefined => {
   const network = config.network;
   if (!network) return undefined;
   const routerState = network.routerState
@@ -745,12 +748,12 @@ function buildTech(
       ? stringState(hass, network.dataloggerVersion)
       : null,
   };
-}
+};
 
-function buildEconomy(
+const buildEconomy = (
   hass: ArcusHass,
   config: ArcusConfig,
-): HomeModel["economy"] {
+): HomeModel["economy"] => {
   const economy = config.economy;
   if (!economy) return undefined;
   return {
@@ -759,12 +762,12 @@ function buildEconomy(
     yield: numState(hass, economy.yield),
     duration: numState(hass, economy.duration),
   };
-}
+};
 
-function buildVentilation(
+const buildVentilation = (
   hass: ArcusHass,
   config: ArcusConfig,
-): VentilationModel | undefined {
+): VentilationModel | undefined => {
   const ventilation = config.ventilation;
   if (!ventilation) return undefined;
 
@@ -812,17 +815,17 @@ function buildVentilation(
       ? stringState(hass, ventilation.resetButton)
       : null,
   };
-}
+};
 
 /* ------------------------------------------------------------------ */
 /* Heating                                                            */
 /* ------------------------------------------------------------------ */
 
-function climateOpening(
+const climateOpening = (
   hass: ArcusHass,
   climateId: string,
   areaId: string | null,
-): EntityRef | null {
+): EntityRef | null => {
   if (!areaId) return null;
   const entries = entitiesForArea(hass, areaId).filter((entity) =>
     entity.entity_id.startsWith("binary_sensor."),
@@ -841,13 +844,15 @@ function climateOpening(
   const match =
     sameDevice ?? entries.find((entity) => matches(entity.entity_id));
   return match ? resolveEntityRef(hass, match.entity_id) : null;
-}
+};
 
-function climateEntries(hass: ArcusHass): Array<{
+const climateEntries = (
+  hass: ArcusHass,
+): Array<{
   id: string;
   name: string;
   areaId: string | null;
-}> {
+}> => {
   return Object.keys(hass.states ?? {})
     .filter((id) => id.startsWith("climate."))
     .map((id) => ({
@@ -855,9 +860,9 @@ function climateEntries(hass: ArcusHass): Array<{
       name: nameOf(hass, id),
       areaId: entityAreaId(hass, id),
     }));
-}
+};
 
-function configuredReserveIds(config: ArcusConfig): string[] {
+const configuredReserveIds = (config: ArcusConfig): string[] => {
   const extra = config as unknown as {
     heating?: { reserve?: unknown };
     heatingReserve?: unknown;
@@ -867,7 +872,7 @@ function configuredReserveIds(config: ArcusConfig): string[] {
   return raw.filter(
     (item): item is string => typeof item === "string" && !!item.trim(),
   );
-}
+};
 
 interface RankedClimateEntry {
   id: string;
@@ -876,10 +881,10 @@ interface RankedClimateEntry {
   rank: number;
 }
 
-function rankedClimateEntries(
+const rankedClimateEntries = (
   hass: ArcusHass,
   config: ArcusConfig,
-): RankedClimateEntry[] {
+): RankedClimateEntry[] => {
   const order = areaOrderMap(hass, config);
   return climateEntries(hass)
     .map((entry) => ({
@@ -887,54 +892,54 @@ function rankedClimateEntries(
       rank: entry.areaId ? (order.get(entry.areaId) ?? 9999) : 10000,
     }))
     .sort((a, b) => a.rank - b.rank);
-}
+};
 
-function explicitlyIncluded(config: ArcusConfig, id: string): boolean {
+const explicitlyIncluded = (config: ArcusConfig, id: string): boolean => {
   return (config.heating?.include ?? []).includes(id);
-}
+};
 
-function skipHeatingEntry(
+const skipHeatingEntry = (
   entry: RankedClimateEntry,
   config: ArcusConfig,
   ventilationClimate: string | undefined,
-): boolean {
+): boolean => {
   if ((config.heating?.exclude ?? []).includes(entry.id)) return true;
   if (explicitlyIncluded(config, entry.id)) return false;
   if (entry.id === ventilationClimate) return true;
   return /nilan|tesla/i.test(`${entry.id} ${entry.name}`);
-}
+};
 
-function isReserveEntry(
+const isReserveEntry = (
   entry: RankedClimateEntry,
   config: ArcusConfig,
   configuredReserve: Set<string>,
-): boolean {
+): boolean => {
   if (config.heating?.reserve?.includes(entry.id)) return true;
   if (configuredReserve.has(entry.id)) return true;
   if (explicitlyIncluded(config, entry.id)) return false;
   return /kanal|reserve/i.test(`${entry.id} ${entry.name}`);
-}
+};
 
-function supportsClimateMode(hass: ArcusHass, entityId: string): boolean {
+const supportsClimateMode = (hass: ArcusHass, entityId: string): boolean => {
   const modes = attributesOf(hass, entityId).hvac_modes;
   if (!Array.isArray(modes)) return false;
   return modes
     .map(String)
     .some((mode) => ["heat", "heat_cool", "cool", "auto"].includes(mode));
-}
+};
 
-function inHeatingScope(
+const inHeatingScope = (
   entry: RankedClimateEntry,
   config: ArcusConfig,
-): boolean {
+): boolean => {
   const include = config.heating?.include ?? [];
   return include.length === 0 || include.includes(entry.id);
-}
+};
 
-function buildConfiguredReserve(
+const buildConfiguredReserve = (
   hass: ArcusHass,
   config: ArcusConfig,
-): HeatingReserveModel[] {
+): HeatingReserveModel[] => {
   const exclude = new Set(config.heating?.exclude ?? []);
   const reserve: HeatingReserveModel[] = [];
   for (const id of configuredReserveIds(config)) {
@@ -946,15 +951,15 @@ function buildConfiguredReserve(
     });
   }
   return reserve;
-}
+};
 
-function buildHeating(
+const buildHeating = (
   hass: ArcusHass,
   config: ArcusConfig,
 ): {
   heating: HeatingModel[];
   heatingReserve: HeatingReserveModel[];
-} {
+} => {
   const ventilationClimate = config.ventilation?.climate;
   const configuredReserve = configuredReserveIds(config);
   const configuredReserveSet = new Set(configuredReserve);
@@ -997,16 +1002,16 @@ function buildHeating(
     : scannedReserve;
 
   return { heating, heatingReserve: reserve };
-}
+};
 
 /* ------------------------------------------------------------------ */
 /* System cards, alerts, chapters                                      */
 /* ------------------------------------------------------------------ */
 
-function buildSystemCards(
+const buildSystemCards = (
   hass: ArcusHass,
   config: ArcusConfig,
-): SystemCardModel[] {
+): SystemCardModel[] => {
   if (!config.ventilation) return [];
   const ventilation = config.ventilation;
   return [
@@ -1023,13 +1028,13 @@ function buildSystemCards(
       climate: resolveEntityRef(hass, ventilation.climate),
     },
   ];
-}
+};
 
-function pushRoomLeakAlerts(
+const pushRoomLeakAlerts = (
   alerts: AlertModel[],
   rooms: RoomModel[],
   t: ReturnType<typeof createTranslator>,
-): void {
+): void => {
   for (const room of rooms) {
     if (!refStateIsOn(room.leak)) continue;
     alerts.push({
@@ -1040,15 +1045,15 @@ function pushRoomLeakAlerts(
       route: `rum/${room.id}`,
     });
   }
-}
+};
 
-function pushConfiguredLeakAlerts(
+const pushConfiguredLeakAlerts = (
   alerts: AlertModel[],
   hass: ArcusHass,
   config: ArcusConfig,
   rooms: RoomModel[],
   t: ReturnType<typeof createTranslator>,
-): void {
+): void => {
   // Configured leak sensors that are not part of a room still produce an alert.
   const roomLeakIds = new Set(
     rooms.map((room) => room.leak?.entityId).filter(Boolean),
@@ -1064,13 +1069,13 @@ function pushConfiguredLeakAlerts(
       route: "vand",
     });
   }
-}
+};
 
-function pushOpeningAlert(
+const pushOpeningAlert = (
   alerts: AlertModel[],
   security: SecurityModel | undefined,
   t: ReturnType<typeof createTranslator>,
-): void {
+): void => {
   const open = security?.open ?? 0;
   if (open > 0) {
     alerts.push({
@@ -1084,14 +1089,14 @@ function pushOpeningAlert(
       route: "sikkerhed",
     });
   }
-}
+};
 
-function pushFilterAlert(
+const pushFilterAlert = (
   alerts: AlertModel[],
   hass: ArcusHass,
   config: ArcusConfig,
   t: ReturnType<typeof createTranslator>,
-): void {
+): void => {
   const filterState = stringState(hass, config.ventilation?.filter);
   const filterAlarm = isOnState(
     stringState(hass, config.ventilation?.filterAlarm),
@@ -1110,13 +1115,13 @@ function pushFilterAlert(
       route: "ventilation",
     });
   }
-}
+};
 
-function pushSoftenerAlert(
+const pushSoftenerAlert = (
   alerts: AlertModel[],
   water: WaterModel,
   t: ReturnType<typeof createTranslator>,
-): void {
+): void => {
   const state = water.state;
   if (!state || state === "OK") return;
   const defaultTitle = t("alerts.bwtTitle", { state: state.toLowerCase() });
@@ -1131,13 +1136,13 @@ function pushSoftenerAlert(
     text: t("alerts.bwtText"),
     route: "vand",
   });
-}
+};
 
-function pushSaltAlert(
+const pushSaltAlert = (
   alerts: AlertModel[],
   water: WaterModel,
   t: ReturnType<typeof createTranslator>,
-): void {
+): void => {
   if (water.salt === null || water.salt === undefined || water.salt >= 15) {
     return;
   }
@@ -1148,23 +1153,23 @@ function pushSaltAlert(
     text: t("alerts.saltText", { percent: Math.round(water.salt) }),
     route: "vand",
   });
-}
+};
 
-function pushWaterAlerts(
+const pushWaterAlerts = (
   alerts: AlertModel[],
   water: WaterModel | undefined,
   t: ReturnType<typeof createTranslator>,
-): void {
+): void => {
   if (!water) return;
   pushSoftenerAlert(alerts, water, t);
   pushSaltAlert(alerts, water, t);
-}
+};
 
-function pushBatteryAlert(
+const pushBatteryAlert = (
   alerts: AlertModel[],
   solar: SolarModel | undefined,
   t: ReturnType<typeof createTranslator>,
-): void {
+): void => {
   if (
     solar?.batterySoc !== null &&
     solar?.batterySoc !== undefined &&
@@ -1178,13 +1183,13 @@ function pushBatteryAlert(
       route: "sol",
     });
   }
-}
+};
 
-function pushRouterAlert(
+const pushRouterAlert = (
   alerts: AlertModel[],
   tech: TechModel | undefined,
   t: ReturnType<typeof createTranslator>,
-): void {
+): void => {
   if (tech?.routerOnline === false) {
     alerts.push({
       sev: 2,
@@ -1194,14 +1199,14 @@ function pushRouterAlert(
       route: "teknik",
     });
   }
-}
+};
 
-function pushCloudflareAlert(
+const pushCloudflareAlert = (
   alerts: AlertModel[],
   hass: ArcusHass,
   config: ArcusConfig,
   t: ReturnType<typeof createTranslator>,
-): void {
+): void => {
   const cloudflareId = config.network?.cloudflare;
   const cloudflareState = stringState(hass, cloudflareId);
   if (
@@ -1218,9 +1223,9 @@ function pushCloudflareAlert(
       route: "teknik",
     });
   }
-}
+};
 
-function buildAlerts(
+const buildAlerts = (
   hass: ArcusHass,
   config: ArcusConfig,
   rooms: RoomModel[],
@@ -1229,7 +1234,7 @@ function buildAlerts(
   security: SecurityModel | undefined,
   tech: TechModel | undefined,
   t: ReturnType<typeof createTranslator>,
-): AlertModel[] {
+): AlertModel[] => {
   const alerts: AlertModel[] = [];
 
   pushRoomLeakAlerts(alerts, rooms, t);
@@ -1242,15 +1247,15 @@ function buildAlerts(
   pushCloudflareAlert(alerts, hass, config, t);
 
   return alerts.sort((a, b) => b.sev - a.sev);
-}
+};
 
-function hasAnyNumber(values: Array<number | null | undefined>): boolean {
+const hasAnyNumber = (values: Array<number | null | undefined>): boolean => {
   return values.some(
     (value) => typeof value === "number" && Number.isFinite(value),
   );
-}
+};
 
-function buildChapters(
+const buildChapters = (
   config: ArcusConfig,
   model: {
     lights: LightGroupModel[];
@@ -1266,7 +1271,7 @@ function buildChapters(
     ventilation?: VentilationModel;
     alerts: AlertModel[];
   },
-): Record<ChapterKey, boolean> {
+): Record<ChapterKey, boolean> => {
   const hasPrice = !!model.price && model.price.values.length > 0;
   const hasSolar =
     !!model.solar &&
@@ -1351,18 +1356,18 @@ function buildChapters(
     }
   }
   return chapters;
-}
+};
 
 /**
  * Build the complete home model from the HA registries and the normalized
  * config. `now` is injectable for tests and for the card's midnight refresh;
  * production callers can omit it.
  */
-export function buildModel(
+export const buildModel = (
   hass: ArcusHass,
   config: ArcusConfig,
   now: Date = new Date(),
-): HomeModel {
+): HomeModel => {
   const resolved = discoverSystems(hass, config);
   const language = resolveLanguage(hass.language, resolved);
   const t = createTranslator(language);
@@ -1448,4 +1453,4 @@ export function buildModel(
   };
 
   return model;
-}
+};

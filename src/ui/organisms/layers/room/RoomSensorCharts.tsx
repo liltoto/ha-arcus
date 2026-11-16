@@ -22,22 +22,22 @@ interface RoomSensorChartProps {
 }
 
 /** A sensor that exists but currently reports no usable reading. */
-function isUnavailable(
+const isUnavailable = (
   hass: ArcusHass,
   ref: EntityRef | null | undefined,
-): boolean {
+): boolean => {
   const state = refEntity(hass, ref)?.state;
   return state === "unavailable" || state === "unknown";
-}
+};
 
-export function RoomHumidityChart({
+export const RoomHumidityChart = ({
   room,
   view,
   history,
   hass,
   now,
   t,
-}: RoomSensorChartProps) {
+}: RoomSensorChartProps) => {
   if (!room.humidity) return null;
   return (
     <RoomChartBlock
@@ -56,16 +56,16 @@ export function RoomHumidityChart({
       unavailable={isUnavailable(hass, room.humidity)}
     />
   );
-}
+};
 
-export function RoomCo2Chart({
+export const RoomCo2Chart = ({
   room,
   view,
   history,
   hass,
   now,
   t,
-}: RoomSensorChartProps) {
+}: RoomSensorChartProps) => {
   if (!room.co2) return null;
   return (
     <RoomChartBlock
@@ -84,9 +84,9 @@ export function RoomCo2Chart({
       unavailable={isUnavailable(hass, room.co2)}
     />
   );
-}
+};
 
-export function RoomPm25Chart({
+export const RoomPm25Chart = ({
   room,
   view,
   history,
@@ -94,7 +94,7 @@ export function RoomPm25Chart({
   now,
   t,
   language,
-}: RoomSensorChartProps) {
+}: RoomSensorChartProps) => {
   if (!room.pm25) return null;
   return (
     <RoomChartBlock
@@ -113,4 +113,4 @@ export function RoomPm25Chart({
       unavailable={isUnavailable(hass, room.pm25)}
     />
   );
-}
+};

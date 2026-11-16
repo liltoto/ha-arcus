@@ -13,28 +13,34 @@ import type {
 
 export type SheetLanguage = "da" | "en";
 
-function filterLabel(t: Translator, filter: string | null | undefined): string {
+const filterLabel = (
+  t: Translator,
+  filter: string | null | undefined,
+): string => {
   if (!filter) return "–";
   return filterOk(filter) ? t("ventilation.filterOk") : filter;
-}
+};
 
 /** Live number from hass, falling back to the ref snapshot on the model. */
-function refNumber(
+const refNumber = (
   hass: ArcusHass,
   ref: EntityRef | null | undefined,
-): number | null {
+): number | null => {
   if (!ref) return null;
   const live = hass.states[ref.entityId]?.state;
   return numberFrom(live) ?? numberFrom(ref.state);
-}
+};
 
-function modeLabel(mode: string | null, t: Translator): string {
+const modeLabel = (mode: string | null, t: Translator): string => {
   if (mode === "heat") return t("ventilation.heating");
   if (mode === "cool") return t("ventilation.cooling");
   return t("ventilation.autoLower");
-}
+};
 
-function hasDucts(ventilation: VentilationModel, config: ArcusConfig): boolean {
+const hasDucts = (
+  ventilation: VentilationModel,
+  config: ArcusConfig,
+): boolean => {
   if (
     ventilation.outdoor != null ||
     ventilation.inlet != null ||
@@ -49,7 +55,7 @@ function hasDucts(ventilation: VentilationModel, config: ArcusConfig): boolean {
     config.ventilation?.exhaust ||
     config.ventilation?.outlet,
   );
-}
+};
 
 interface ClimateState {
   climateId: string | undefined;
@@ -61,12 +67,12 @@ interface ClimateState {
   maxTemp: number;
 }
 
-function climateState(
+const climateState = (
   hass: ArcusHass,
   config: ArcusConfig,
   ventilation: VentilationModel,
   fallback: HomeModel["systemCards"][number] | undefined,
-): ClimateState {
+): ClimateState => {
   const climateId = config.ventilation?.climate ?? fallback?.climate?.entityId;
   const climate = climateId ? hass.states[climateId] : undefined;
   return {
@@ -78,7 +84,7 @@ function climateState(
     minTemp: numberFrom(climate?.attributes?.min_temp) ?? 5,
     maxTemp: numberFrom(climate?.attributes?.max_temp) ?? 35,
   };
-}
+};
 
 /** Everything the ventilation sheet needs, resolved once per render. */
 export interface VentilationView extends ClimateState {
@@ -96,13 +102,13 @@ export interface VentilationView extends ClimateState {
   modeLabel: string;
 }
 
-export function resolveVentilationView(
+export const resolveVentilationView = (
   hass: ArcusHass,
   model: HomeModel,
   config: ArcusConfig,
   ventilation: VentilationModel,
   t: Translator,
-): VentilationView {
+): VentilationView => {
   const language: SheetLanguage = model.language;
   const tempUnit = resolveTempUnit(hass, config);
   const card = model.systemCards.find((entry) => entry.id === "ventilation");
@@ -124,4 +130,4 @@ export function resolveVentilationView(
     hasDucts: hasDucts(ventilation, config),
     modeLabel: modeLabel(climate.mode, t),
   };
-}
+};

@@ -18,7 +18,7 @@ export interface RoomCardProps {
 }
 
 /** The air/lights/openings status line under the room temperature. */
-function RoomStatus({ room }: { room: RoomView }) {
+const RoomStatus = ({ room }: { room: RoomView }) => {
   const airTone =
     room.air === "warn" ? "warn" : room.air === "off" ? "off" : "ok";
   return (
@@ -43,20 +43,20 @@ function RoomStatus({ room }: { room: RoomView }) {
       ) : null}
     </div>
   );
-}
+};
 
 /**
  * One room tile on the home view. Mirrors the legacy `roomCard()` markup:
  * the room tint is exposed as `--room` for the icon, dots, and sparkline.
  */
-export function RoomCard({
+export const RoomCard = ({
   room,
   onOpen,
   language = "da",
   openLabel = "Open room",
   spark,
   sparkGraph = null,
-}: RoomCardProps) {
+}: RoomCardProps) => {
   const temp = room.temp === null ? "–" : formatNumber(room.temp, 1, language);
   const style = { "--room": room.tint } as CSSProperties;
 
@@ -103,4 +103,4 @@ export function RoomCard({
       <span className={c("room-open")}>{openLabel}</span>
     </article>
   );
-}
+};

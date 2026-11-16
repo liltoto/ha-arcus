@@ -21,7 +21,7 @@ export interface LightRowProps {
  * its inline percentage readout. Brightness is always 0-100 here; the page
  * converts to HA's 0-255 scale.
  */
-export function LightRow({
+export const LightRow = ({
   name,
   isOn,
   brightness,
@@ -31,7 +31,7 @@ export function LightRow({
   entity,
   toggleLabel = `Toggle ${name}`,
   brightnessLabel = `Brightness ${name}`,
-}: LightRowProps) {
+}: LightRowProps) => {
   const pct = clampPercent(brightness);
   const sub = isOn ? `On · ${pct} %` : "Off";
   const sliderStyle = { "--p": `${pct}%` } as CSSProperties;
@@ -72,4 +72,4 @@ export function LightRow({
       </div>
     </div>
   );
-}
+};

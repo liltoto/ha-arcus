@@ -11,7 +11,7 @@ export interface ChapterCardProps {
  * One chapter tile. `art` is intentionally a ReactNode slot so pages can pass
  * the SVG/zone-strip illustration without the molecule knowing the model.
  */
-export function ChapterCard({ chapter, onOpen }: ChapterCardProps) {
+export const ChapterCard = ({ chapter, onOpen }: ChapterCardProps) => {
   return (
     <article
       className={c("chapter", chapter.large && "large")}
@@ -43,4 +43,4 @@ export function ChapterCard({ chapter, onOpen }: ChapterCardProps) {
       </div>
     </article>
   );
-}
+};

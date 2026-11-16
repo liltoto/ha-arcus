@@ -6,8 +6,8 @@ export interface SheetPageProps {
 }
 
 /** Resolves the active layer body from the route. */
-export function SheetPage({ route }: SheetPageProps) {
+export const SheetPage = ({ route }: SheetPageProps) => {
   if (route.base === "hjem") return null;
   const Body = layerRegistry[route.base];
   return Body ? <Body route={route} /> : null;
-}
+};

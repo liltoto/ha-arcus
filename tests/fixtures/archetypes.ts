@@ -16,41 +16,45 @@ import type {
   HassEntity,
 } from "../../src/types";
 
-function entity(
+const entity = (
   value: string,
   attributes: Record<string, unknown> = {},
-): HassEntity {
+): HassEntity => {
   return {
     state: value,
     attributes,
     last_changed: "2026-11-13T00:00:00+00:00",
     last_updated: "2026-11-13T00:00:00+00:00",
   };
-}
+};
 
-function area(
+const area = (
   areaId: string,
   name: string,
   extra: Partial<AreaRegistryEntry> = {},
-): AreaRegistryEntry {
+): AreaRegistryEntry => {
   return { area_id: areaId, name, ...extra };
-}
+};
 
-function device(id: string, areaId: string, name: string): DeviceRegistryEntry {
+const device = (
+  id: string,
+  areaId: string,
+  name: string,
+): DeviceRegistryEntry => {
   return { id, area_id: areaId, name, name_by_user: name };
-}
+};
 
-function registryEntity(
+const registryEntity = (
   entityId: string,
   areaId?: string,
   deviceId?: string,
-): EntityRegistryEntry {
+): EntityRegistryEntry => {
   return {
     entity_id: entityId,
     area_id: deviceId || !areaId ? null : areaId,
     device_id: deviceId ?? null,
   };
-}
+};
 
 interface HassParts {
   states: Record<string, HassEntity>;
@@ -62,7 +66,7 @@ interface HassParts {
   floors?: Record<string, any>;
 }
 
-function buildHass(parts: HassParts): ArcusHass {
+const buildHass = (parts: HassParts): ArcusHass => {
   const areas: Record<string, AreaRegistryEntry> = {};
   for (const entry of parts.areas) areas[entry.area_id] = entry;
   const devices: Record<string, DeviceRegistryEntry> = {};
@@ -84,7 +88,7 @@ function buildHass(parts: HassParts): ArcusHass {
     callApi: async () => ({}) as never,
     callService: async () => undefined,
   };
-}
+};
 
 /* ------------------------------------------------------------------ */
 /* 1. Urban apartment: EUR, radiators, no solar, no softener           */
@@ -92,7 +96,7 @@ function buildHass(parts: HassParts): ArcusHass {
 
 export const APARTMENT_ROOMS = ["living_room", "bedroom", "kitchen"] as const;
 
-export function makeApartmentHass(): ArcusHass {
+export const makeApartmentHass = (): ArcusHass => {
   const states: Record<string, HassEntity> = {
     "sun.sun": entity("below_horizon", {
       elevation: -12,
@@ -195,16 +199,16 @@ export function makeApartmentHass(): ArcusHass {
     },
     language: "en",
   });
-}
+};
 
-export function makeApartmentConfig(): ArcusConfig {
+export const makeApartmentConfig = (): ArcusConfig => {
   return normalizeConfig({
     type: "custom:arcus-card",
     title: "Apartment",
     subtitle: "Arc",
     language: "en",
   });
-}
+};
 
 /* ------------------------------------------------------------------ */
 /* 2. Suburban two-floor home: USD/°F, solar without battery, garage    */
@@ -217,7 +221,7 @@ export const SUBURBAN_ROOMS = [
   "garage",
 ] as const;
 
-export function makeSuburbanHass(): ArcusHass {
+export const makeSuburbanHass = (): ArcusHass => {
   const states: Record<string, HassEntity> = {
     "sun.sun": entity("above_horizon", {
       elevation: 21,
@@ -356,9 +360,9 @@ export function makeSuburbanHass(): ArcusHass {
     },
     language: "en",
   });
-}
+};
 
-export function makeSuburbanConfig(): ArcusConfig {
+export const makeSuburbanConfig = (): ArcusConfig => {
   return normalizeConfig({
     type: "custom:arcus-card",
     language: "en",
@@ -379,13 +383,13 @@ export function makeSuburbanConfig(): ArcusConfig {
       garage: { kind: "outdoor", wide: true },
     },
   });
-}
+};
 
 /* ------------------------------------------------------------------ */
 /* 3. Minimal home: no overrides at all, auto-discovery only            */
 /* ------------------------------------------------------------------ */
 
-export function makeMinimalHass(): ArcusHass {
+export const makeMinimalHass = (): ArcusHass => {
   const states: Record<string, HassEntity> = {
     "sun.sun": entity("above_horizon", { elevation: 33 }),
     "weather.home": entity("sunny", { temperature: 23.1 }),
@@ -426,8 +430,8 @@ export function makeMinimalHass(): ArcusHass {
     },
     language: "da",
   });
-}
+};
 
-export function makeMinimalConfig(): ArcusConfig {
+export const makeMinimalConfig = (): ArcusConfig => {
   return normalizeConfig({ type: "custom:arcus-card" });
-}
+};

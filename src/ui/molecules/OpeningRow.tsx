@@ -15,7 +15,7 @@ export interface OpeningRowProps {
 }
 
 /** A door/window/leak row with the open/closed status line. */
-export function OpeningRow({
+export const OpeningRow = ({
   name,
   kind,
   isOpen,
@@ -25,7 +25,7 @@ export function OpeningRow({
   status,
   openLabel = "Open",
   closedLabel = "Closed",
-}: OpeningRowProps) {
+}: OpeningRowProps) => {
   const interactive = Boolean(onClick);
   const sub = room ? `${kind} · ${room}` : kind;
   const activate = rowActivation(onClick);
@@ -50,4 +50,4 @@ export function OpeningRow({
       </span>
     </div>
   );
-}
+};

@@ -42,7 +42,7 @@ const FRAME_STYLES: Record<SheetFrameVariant, CSSProperties> = {
 };
 
 /** Give a sheet body the same frame it gets inside the card. */
-export function withSheet(variant: SheetFrameVariant = "fill"): Decorator {
+export const withSheet = (variant: SheetFrameVariant = "fill"): Decorator => {
   return (Story) => (
     <div style={FRAME_STYLES[variant]}>
       <div className={c("sheet open")} style={SHEET_STYLES[variant]}>
@@ -50,4 +50,4 @@ export function withSheet(variant: SheetFrameVariant = "fill"): Decorator {
       </div>
     </div>
   );
-}
+};

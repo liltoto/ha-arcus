@@ -14,7 +14,9 @@ const STYLE_MAP: Record<string, string> = {
  * tests and Playwright use them as stable hooks, while Panda owns the actual
  * declarations.
  */
-export function c(...names: Array<string | false | null | undefined>): string {
+export const c = (
+  ...names: Array<string | false | null | undefined>
+): string => {
   const classes: string[] = [];
   const seen = new Set<string>();
   const add = (name: string): void => {
@@ -30,4 +32,4 @@ export function c(...names: Array<string | false | null | undefined>): string {
     for (const name of value.split(/\s+/)) add(name);
   }
   return classes.join(" ");
-}
+};

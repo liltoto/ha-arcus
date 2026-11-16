@@ -14,7 +14,7 @@ export interface RoomFanProps {
 }
 
 /** The extraction hood with its filter runtime and reset button. */
-export function RoomFan({ fan, t, language, actions }: RoomFanProps) {
+export const RoomFan = ({ fan, t, language, actions }: RoomFanProps) => {
   if (!fan) return null;
 
   const { ref, entity } = fan;
@@ -78,4 +78,4 @@ export function RoomFan({ fan, t, language, actions }: RoomFanProps) {
       </div>
     </div>
   );
-}
+};

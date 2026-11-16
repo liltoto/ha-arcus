@@ -23,23 +23,23 @@ const BINDINGS = {
 const baseModel = buildModel(makeHass(), makeConfig(), NOW);
 
 /** Compare icon bodies after happy-dom serializes both sides the same way. */
-function iconBody(name: string): string {
+const iconBody = (name: string): string => {
   const host = document.createElement("div");
   host.innerHTML = icon(name);
   return host.querySelector("svg")?.innerHTML ?? "";
-}
+};
 
-function renderedIcon(button: HTMLElement): string {
+const renderedIcon = (button: HTMLElement): string => {
   return button.querySelector("svg")?.innerHTML ?? "";
-}
+};
 
-function renderTopBar(options: ArcusRenderOptions = {}) {
+const renderTopBar = (options: ArcusRenderOptions = {}) => {
   return renderWithArcus(<TopBar />, {
     now,
     bindings: BINDINGS,
     ...options,
   });
-}
+};
 
 describe("TopBar", () => {
   it("renders the brand from the config with HJEM and ARCUS fallbacks", () => {

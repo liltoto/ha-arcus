@@ -9,7 +9,7 @@ import {
   type GraphInput,
 } from "../src/render/graph";
 
-function elementWith(attrs: string): HTMLElement {
+const elementWith = (attrs: string): HTMLElement => {
   const element = document.createElement("div");
   for (const match of attrs.matchAll(/(data-[a-z0-9]+)="([^"]*)"/g)) {
     element.setAttribute(
@@ -18,7 +18,7 @@ function elementWith(attrs: string): HTMLElement {
     );
   }
   return element;
-}
+};
 
 const RECT: DOMRect = {
   left: 0,
@@ -46,10 +46,10 @@ interface MountedChart {
   dispose(): void;
 }
 
-function mountChart(
+const mountChart = (
   input: GraphInput,
   options: { app?: boolean } = {},
-): MountedChart {
+): MountedChart => {
   const host = document.createElement("div");
   document.body.append(host);
   const root = host.attachShadow({ mode: "open" });
@@ -67,13 +67,13 @@ function mountChart(
   };
   cleanups.push(dispose);
   return { root, chart, parent, dispose };
-}
+};
 
-function pointer(
+const pointer = (
   target: EventTarget,
   type: string,
   init: PointerEventInit = {},
-): PointerEvent {
+): PointerEvent => {
   const event = new PointerEvent(type, {
     bubbles: true,
     composed: true,
@@ -83,15 +83,15 @@ function pointer(
   });
   target.dispatchEvent(event);
   return event;
-}
+};
 
-function tipOf(root: ShadowRoot): HTMLElement {
+const tipOf = (root: ShadowRoot): HTMLElement => {
   return root.querySelector<HTMLElement>("[data-graph-tip]")!;
-}
+};
 
-function cursorOf(root: ShadowRoot): HTMLElement {
+const cursorOf = (root: ShadowRoot): HTMLElement => {
   return root.querySelector<HTMLElement>("[data-graph-cursor]")!;
-}
+};
 
 describe("graph attributes", () => {
   test("single series round-trips values, unit and window", () => {

@@ -5,11 +5,11 @@ import { c } from "../../../styles/classes";
 export type AlertSeverity = "crit" | "warn" | "info";
 
 /** 3 = critical, 2 = warning, everything else is informational. */
-export function severityClass(alert: AlertModel): AlertSeverity {
+export const severityClass = (alert: AlertModel): AlertSeverity => {
   if (alert.sev >= 3) return "crit";
   if (alert.sev === 2) return "warn";
   return "info";
-}
+};
 
 export interface AlertRowProps {
   alert: AlertModel;
@@ -22,7 +22,7 @@ export interface AlertRowProps {
  * One alert row. Keeps the legacy `.row.alert-row` markup, the severity dot
  * and chip, and the `data-nav` route to the layer that owns the problem.
  */
-export function AlertRow({ alert, label, see, onOpen }: AlertRowProps) {
+export const AlertRow = ({ alert, label, see, onOpen }: AlertRowProps) => {
   const cls = severityClass(alert);
 
   return (
@@ -43,4 +43,4 @@ export function AlertRow({ alert, label, see, onOpen }: AlertRowProps) {
       </span>
     </button>
   );
-}
+};

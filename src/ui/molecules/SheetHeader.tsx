@@ -11,13 +11,13 @@ export interface SheetHeaderProps {
 }
 
 /** The sticky header at the top of every sheet. */
-export function SheetHeader({
+export const SheetHeader = ({
   kicker,
   title,
   sum,
   onClose,
   closeLabel = "Close",
-}: SheetHeaderProps) {
+}: SheetHeaderProps) => {
   return (
     <div className={c("sheet-head")}>
       <div className={c("sheet-kicker")}>{kicker}</div>
@@ -32,4 +32,4 @@ export function SheetHeader({
       />
     </div>
   );
-}
+};

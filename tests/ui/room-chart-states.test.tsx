@@ -4,10 +4,10 @@ import { RoomBody } from "../../src/ui/organisms/layers/RoomBody";
 import { makeArcusProps } from "./home-test-utils";
 import { renderLayer } from "./layer-test-utils";
 
-function historyStub(
+const historyStub = (
   status: HistoryStatus = "empty",
   values: Array<number | null> = [],
-): HistoryCache {
+): HistoryCache => {
   return {
     ensure: async () => undefined,
     series: () => values,
@@ -15,17 +15,17 @@ function historyStub(
     raw: () => [],
     status: () => status,
   } as unknown as HistoryCache;
-}
+};
 
 /** A read-only history source without the `status` extension. */
-function partialHistoryStub(): HistoryCache {
+const partialHistoryStub = (): HistoryCache => {
   return {
     ensure: async () => undefined,
     series: () => [],
     window: () => [],
     raw: () => [],
   } as unknown as HistoryCache;
-}
+};
 
 describe("room chart states", () => {
   test("a present but unavailable sensor keeps its tile and marks the chart", () => {

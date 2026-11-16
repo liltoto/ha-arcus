@@ -20,13 +20,13 @@ interface EnergyReadingProps {
 }
 
 /** One optional EV block driven by `config.energy.ev`. */
-function EvBlock({
+const EvBlock = ({
   ev,
   hass,
   history,
   t,
   language,
-}: EnergyReadingProps & { ev: EnergyEvConfig }) {
+}: EnergyReadingProps & { ev: EnergyEvConfig }) => {
   const plugged = liveOn(hass, ev.plugged, undefined);
   const value = (entityId: string, digits: number): string =>
     formatNumber(liveNumber(hass, history, entityId, null), digits, language);
@@ -67,10 +67,10 @@ function EvBlock({
       </div>
     </div>
   );
-}
+};
 
 /** The optional standby and appliance list driven by `config.energy`. */
-function AppliancesBlock({
+const AppliancesBlock = ({
   standby,
   appliances,
   hass,
@@ -80,7 +80,7 @@ function AppliancesBlock({
 }: EnergyReadingProps & {
   standby: string | undefined;
   appliances: EnergyApplianceConfig[];
-}) {
+}) => {
   const standbyValue = liveNumber(hass, history, standby, null);
   const value = (entityId: string): string =>
     formatNumber(liveNumber(hass, history, entityId, null), 0, language);
@@ -112,7 +112,7 @@ function AppliancesBlock({
       </div>
     </div>
   );
-}
+};
 
 interface EnergyDevicesProps extends EnergyReadingProps {
   ev: EnergyEvConfig | undefined;
@@ -121,7 +121,7 @@ interface EnergyDevicesProps extends EnergyReadingProps {
 }
 
 /** The optional EV and appliance blocks below the price section. */
-export function EnergyDevices({
+export const EnergyDevices = ({
   ev,
   standby,
   appliances,
@@ -129,7 +129,7 @@ export function EnergyDevices({
   history,
   t,
   language,
-}: EnergyDevicesProps) {
+}: EnergyDevicesProps) => {
   return (
     <>
       {ev ? (
@@ -153,4 +153,4 @@ export function EnergyDevices({
       ) : null}
     </>
   );
-}
+};

@@ -7,12 +7,12 @@ export interface PrayerMarkerProps {
 }
 
 /** One prayer time; the next prayer is highlighted and machine-readable. */
-export function PrayerMarker({
+export const PrayerMarker = ({
   name,
   time,
   next = false,
   nextLabel = "Next",
-}: PrayerMarkerProps) {
+}: PrayerMarkerProps) => {
   return (
     <div
       className={c("row", next && "on next")}
@@ -25,4 +25,4 @@ export function PrayerMarker({
       {next ? <span className={c("chip warn")}>{nextLabel}</span> : null}
     </div>
   );
-}
+};

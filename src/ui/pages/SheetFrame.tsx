@@ -12,7 +12,7 @@ const EXIT_MS = 450;
  * Keeps the last non-home route mounted for the CSS slide-out. The sheet stays
  * in the tree permanently so opening and closing are pure class changes.
  */
-function useRetainedRoute(route: ArcusRoute): ArcusRoute | null {
+const useRetainedRoute = (route: ArcusRoute): ArcusRoute | null => {
   const [retained, setRetained] = useState<ArcusRoute | null>(() =>
     route.base === "hjem" ? null : route,
   );
@@ -29,13 +29,13 @@ function useRetainedRoute(route: ArcusRoute): ArcusRoute | null {
   }, [route, retained]);
 
   return route.base === "hjem" ? retained : route;
-}
+};
 
 /**
  * Owns the sheet frame behavior: open state, focus trap, Escape, scrim,
  * drag-to-dismiss, and scroll reset. The body comes from `SheetPage`.
  */
-export function SheetFrame() {
+export const SheetFrame = () => {
   const route = useRoute();
   const actions = useActions();
   const t = useTranslator();
@@ -86,4 +86,4 @@ export function SheetFrame() {
       {bodyRoute ? <SheetPage route={bodyRoute} /> : null}
     </SheetTemplate>
   );
-}
+};

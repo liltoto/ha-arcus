@@ -9,12 +9,12 @@ interface WaterControlsProps {
 }
 
 /** Holiday mode is the water sheet's only control. */
-export function WaterControls({
+export const WaterControls = ({
   entityId,
   isOn,
   onChange,
   t,
-}: WaterControlsProps) {
+}: WaterControlsProps) => {
   return (
     <ToggleRow
       label={t("water.holiday")}
@@ -25,4 +25,4 @@ export function WaterControls({
       dataEntity={entityId}
     />
   );
-}
+};

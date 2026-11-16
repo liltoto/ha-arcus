@@ -233,43 +233,52 @@ const ROOM_ENTITY_KEYS = [
   "lock",
 ] as const;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+};
 
+// Stays a declaration: TypeScript only applies never-return narrowing to
+// function declarations, not to arrow consts.
 function fail(message: string): never {
   throw new Error(`Arcus: ${message}`);
 }
 
-function readString(value: unknown, field: string, fallback: string): string {
+const readString = (
+  value: unknown,
+  field: string,
+  fallback: string,
+): string => {
   if (value === undefined || value === null) return fallback;
   if (typeof value !== "string") fail(`${field} must be a string.`);
   return value;
-}
+};
 
-function readBoolean(
+const readBoolean = (
   value: unknown,
   field: string,
   fallback: boolean,
-): boolean {
+): boolean => {
   if (value === undefined || value === null) return fallback;
   if (typeof value !== "boolean") fail(`${field} must be true or false.`);
   return value;
-}
+};
 
-function readOptionalString(value: unknown, field: string): string | undefined {
+const readOptionalString = (
+  value: unknown,
+  field: string,
+): string | undefined => {
   if (value === undefined || value === null) return undefined;
   if (typeof value !== "string") fail(`${field} must be a string.`);
   const trimmed = value.trim();
   return trimmed || undefined;
-}
+};
 
-function readEnum<T extends string>(
+const readEnum = <T extends string>(
   value: unknown,
   field: string,
   allowed: readonly T[],
   fallback: T,
-): T {
+): T => {
   if (value === undefined || value === null) return fallback;
   if (typeof value !== "string" || !allowed.includes(value as T)) {
     fail(
@@ -277,9 +286,9 @@ function readEnum<T extends string>(
     );
   }
   return value as T;
-}
+};
 
-function readStringArray(value: unknown, field: string): string[] {
+const readStringArray = (value: unknown, field: string): string[] => {
   if (!Array.isArray(value)) {
     fail(`${field} must be an array of strings.`);
   }
@@ -292,18 +301,21 @@ function readStringArray(value: unknown, field: string): string[] {
     if (!out.includes(trimmed)) out.push(trimmed);
   });
   return out;
-}
+};
 
-function readEntityList(value: unknown, field: string): string[] | undefined {
+const readEntityList = (
+  value: unknown,
+  field: string,
+): string[] | undefined => {
   if (value === undefined || value === null) return undefined;
   if (typeof value === "string") {
     const single = readOptionalString(value, field);
     return single ? [single] : [];
   }
   return readStringArray(value, field);
-}
+};
 
-function normalizeAreas(value: unknown): ArcusAreas {
+const normalizeAreas = (value: unknown): ArcusAreas => {
   if (value === undefined || value === null) {
     return { include: [], exclude: [], order: [] };
   }
@@ -324,13 +336,13 @@ function normalizeAreas(value: unknown): ArcusAreas {
     exclude: readStringArray(value.exclude ?? [], "areas.exclude"),
     order: readStringArray(value.order ?? [], "areas.order"),
   };
-}
+};
 
-function normalizeStringSection<T extends object>(
+const normalizeStringSection = <T extends object>(
   value: unknown,
   field: string,
   keys: readonly string[],
-): T | undefined {
+): T | undefined => {
   if (value === undefined || value === null) return undefined;
   if (!isRecord(value)) fail(`${field} must be an object.`);
   const out: Record<string, string> = {};
@@ -339,41 +351,43 @@ function normalizeStringSection<T extends object>(
     if (item !== undefined) out[key] = item;
   }
   return Object.keys(out).length ? (out as unknown as T) : undefined;
-}
+};
 
-function normalizePrice(value: unknown): PriceConfig | undefined {
+const normalizePrice = (value: unknown): PriceConfig | undefined => {
   return normalizeStringSection<PriceConfig>(value, "price", PRICE_KEYS);
-}
+};
 
-function normalizeSolar(value: unknown): SolarConfig | undefined {
+const normalizeSolar = (value: unknown): SolarConfig | undefined => {
   return normalizeStringSection<SolarConfig>(value, "solar", SOLAR_KEYS);
-}
+};
 
-function normalizePrayers(value: unknown): PrayersConfig | undefined {
+const normalizePrayers = (value: unknown): PrayersConfig | undefined => {
   return normalizeStringSection<PrayersConfig>(value, "prayers", PRAYERS_KEYS);
-}
+};
 
-function normalizeWater(value: unknown): WaterConfig | undefined {
+const normalizeWater = (value: unknown): WaterConfig | undefined => {
   return normalizeStringSection<WaterConfig>(value, "water", WATER_KEYS);
-}
+};
 
-function normalizeNetwork(value: unknown): NetworkConfig | undefined {
+const normalizeNetwork = (value: unknown): NetworkConfig | undefined => {
   return normalizeStringSection<NetworkConfig>(value, "network", NETWORK_KEYS);
-}
+};
 
-function normalizeEconomy(value: unknown): EconomyConfig | undefined {
+const normalizeEconomy = (value: unknown): EconomyConfig | undefined => {
   return normalizeStringSection<EconomyConfig>(value, "economy", ECONOMY_KEYS);
-}
+};
 
-function normalizeVentilation(value: unknown): VentilationConfig | undefined {
+const normalizeVentilation = (
+  value: unknown,
+): VentilationConfig | undefined => {
   return normalizeStringSection<VentilationConfig>(
     value,
     "ventilation",
     VENTILATION_KEYS,
   );
-}
+};
 
-function normalizeSecurity(value: unknown): SecurityConfig | undefined {
+const normalizeSecurity = (value: unknown): SecurityConfig | undefined => {
   if (value === undefined || value === null) return undefined;
   if (!isRecord(value)) fail("security must be an object.");
   const out: SecurityConfig = {};
@@ -396,9 +410,9 @@ function normalizeSecurity(value: unknown): SecurityConfig | undefined {
     out.locks = readStringArray(value.locks, "security.locks");
   }
   return Object.keys(out).length ? out : undefined;
-}
+};
 
-function normalizeHeating(value: unknown): HeatingConfig | undefined {
+const normalizeHeating = (value: unknown): HeatingConfig | undefined => {
   if (value === undefined || value === null) return undefined;
   if (!isRecord(value)) fail("heating must be an object.");
   const out: HeatingConfig = {};
@@ -412,7 +426,7 @@ function normalizeHeating(value: unknown): HeatingConfig | undefined {
     out.reserve = readStringArray(value.reserve, "heating.reserve");
   }
   return Object.keys(out).length ? out : undefined;
-}
+};
 
 const ENERGY_EV_KEYS = [
   "name",
@@ -423,16 +437,16 @@ const ENERGY_EV_KEYS = [
   "soc",
 ] as const;
 
-function assignIfDefined<T extends object>(
+const assignIfDefined = <T extends object>(
   target: T,
   key: keyof T,
   value: unknown,
-): void {
+): void => {
   if (value === undefined || value === null) return;
   (target as Record<keyof T, unknown>)[key] = value;
-}
+};
 
-function normalizeEv(value: unknown): EnergyEvConfig | undefined {
+const normalizeEv = (value: unknown): EnergyEvConfig | undefined => {
   if (!isRecord(value)) fail("energy.ev must be an object.");
   const ev: EnergyEvConfig = {};
   for (const key of ENERGY_EV_KEYS) {
@@ -443,12 +457,12 @@ function normalizeEv(value: unknown): EnergyEvConfig | undefined {
     );
   }
   return Object.keys(ev).length ? ev : undefined;
-}
+};
 
-function normalizeAppliance(
+const normalizeAppliance = (
   item: unknown,
   index: number,
-): EnergyApplianceConfig {
+): EnergyApplianceConfig => {
   const field = `energy.appliances[${index}]`;
   if (!isRecord(item)) fail(`${field} must be an object.`);
   const name = readOptionalString(item.name, `${field}.name`);
@@ -462,17 +476,17 @@ function normalizeAppliance(
     readOptionalString(item.icon, `${field}.icon`),
   );
   return appliance;
-}
+};
 
-function normalizeAppliances(
+const normalizeAppliances = (
   value: unknown,
-): EnergyApplianceConfig[] | undefined {
+): EnergyApplianceConfig[] | undefined => {
   if (!Array.isArray(value)) fail("energy.appliances must be an array.");
   const appliances = value.map(normalizeAppliance);
   return appliances.length ? appliances : undefined;
-}
+};
 
-function normalizeEnergy(value: unknown): EnergyConfig | undefined {
+const normalizeEnergy = (value: unknown): EnergyConfig | undefined => {
   if (value === undefined || value === null) return undefined;
   if (!isRecord(value)) fail("energy must be an object.");
   const out: EnergyConfig = {};
@@ -488,9 +502,9 @@ function normalizeEnergy(value: unknown): EnergyConfig | undefined {
     out.appliances = normalizeAppliances(value.appliances);
   }
   return Object.keys(out).length ? out : undefined;
-}
+};
 
-function normalizeUnits(value: unknown): UnitsConfig | undefined {
+const normalizeUnits = (value: unknown): UnitsConfig | undefined => {
   if (value === undefined || value === null) return undefined;
   if (!isRecord(value)) fail("units must be an object.");
   const out: UnitsConfig = {};
@@ -509,7 +523,7 @@ function normalizeUnits(value: unknown): UnitsConfig | undefined {
     );
   }
   return Object.keys(out).length ? out : undefined;
-}
+};
 
 const VITAL_STRING_KEYS = [
   "label",
@@ -519,18 +533,18 @@ const VITAL_STRING_KEYS = [
   "color",
 ] as const;
 
-function normalizeVitalDecimals(
+const normalizeVitalDecimals = (
   value: unknown,
   field: string,
-): number | undefined {
+): number | undefined => {
   if (value === undefined || value === null) return undefined;
   if (typeof value !== "number" || !Number.isFinite(value)) {
     fail(`${field}.decimals must be a number.`);
   }
   return Math.max(0, Math.trunc(value));
-}
+};
 
-function normalizeVital(item: unknown, index: number): VitalItemConfig {
+const normalizeVital = (item: unknown, index: number): VitalItemConfig => {
   const field = `vitals[${index}]`;
   if (typeof item === "string") {
     return readEnum<VitalPresetKey>(item, field, VITAL_PRESET_KEYS, "indoor");
@@ -565,15 +579,15 @@ function normalizeVital(item: unknown, index: number): VitalItemConfig {
     fail(`${field} requires either a preset key or an entity.`);
   }
   return vital;
-}
+};
 
-function normalizeVitals(value: unknown): VitalItemConfig[] | undefined {
+const normalizeVitals = (value: unknown): VitalItemConfig[] | undefined => {
   if (value === undefined || value === null) return undefined;
   if (!Array.isArray(value)) fail("vitals must be an array.");
   return value.map(normalizeVital);
-}
+};
 
-function normalizeChapterOrder(value: unknown): ChapterKey[] | undefined {
+const normalizeChapterOrder = (value: unknown): ChapterKey[] | undefined => {
   if (value === undefined || value === null) return undefined;
   if (!Array.isArray(value)) fail("chapter_order must be an array.");
   const out: ChapterKey[] = [];
@@ -587,9 +601,9 @@ function normalizeChapterOrder(value: unknown): ChapterKey[] | undefined {
     if (!out.includes(key)) out.push(key);
   });
   return out;
-}
+};
 
-function normalizeQuickActions(value: unknown): QuickActionConfig[] {
+const normalizeQuickActions = (value: unknown): QuickActionConfig[] => {
   if (value === undefined || value === null) return [];
   if (!Array.isArray(value)) fail("quick_actions must be an array.");
   return value.map((item, index) => {
@@ -612,12 +626,12 @@ function normalizeQuickActions(value: unknown): QuickActionConfig[] {
     if (entity !== undefined) out.entity = entity;
     return out;
   });
-}
+};
 
-function normalizeOpenings(
+const normalizeOpenings = (
   value: unknown,
   field: string,
-): OpeningOverrideConfig[] {
+): OpeningOverrideConfig[] => {
   if (!Array.isArray(value)) {
     fail(`${field} must be an array of entity IDs or opening objects.`);
   }
@@ -639,13 +653,13 @@ function normalizeOpenings(
     if (kind !== undefined) opening.kind = kind;
     return opening;
   });
-}
+};
 
-function assignRoomEntities(
+const assignRoomEntities = (
   room: RoomOverrideConfig,
   rawRoom: Record<string, unknown>,
   field: string,
-): void {
+): void => {
   for (const key of ROOM_ENTITY_KEYS) {
     assignIfDefined(
       room,
@@ -653,13 +667,13 @@ function assignRoomEntities(
       readOptionalString(rawRoom[key], `${field}.${key}`),
     );
   }
-}
+};
 
-function assignRoomIdentity(
+const assignRoomIdentity = (
   room: RoomOverrideConfig,
   rawRoom: Record<string, unknown>,
   field: string,
-): void {
+): void => {
   assignIfDefined(
     room,
     "name",
@@ -686,13 +700,13 @@ function assignRoomIdentity(
   if (rawRoom.wide !== undefined && rawRoom.wide !== null) {
     room.wide = readBoolean(rawRoom.wide, `${field}.wide`, false);
   }
-}
+};
 
-function assignRoomLists(
+const assignRoomLists = (
   room: RoomOverrideConfig,
   rawRoom: Record<string, unknown>,
   field: string,
-): void {
+): void => {
   if (rawRoom.lights !== undefined && rawRoom.lights !== null) {
     room.lights = readEntityList(rawRoom.lights, `${field}.lights`) ?? [];
   }
@@ -702,20 +716,20 @@ function assignRoomLists(
   if (rawRoom.openings !== undefined && rawRoom.openings !== null) {
     room.openings = normalizeOpenings(rawRoom.openings, `${field}.openings`);
   }
-}
+};
 
-function normalizeRoomOverride(
+const normalizeRoomOverride = (
   rawRoom: Record<string, unknown>,
   field: string,
-): RoomOverrideConfig {
+): RoomOverrideConfig => {
   const room: RoomOverrideConfig = {};
   assignRoomEntities(room, rawRoom, field);
   assignRoomIdentity(room, rawRoom, field);
   assignRoomLists(room, rawRoom, field);
   return room;
-}
+};
 
-function normalizeRooms(value: unknown): RoomsConfig {
+const normalizeRooms = (value: unknown): RoomsConfig => {
   if (value === undefined || value === null) return {};
   if (!isRecord(value)) fail("rooms must be an object keyed by area ID.");
   const out: RoomsConfig = {};
@@ -726,9 +740,9 @@ function normalizeRooms(value: unknown): RoomsConfig {
     out[areaId] = normalizeRoomOverride(rawRoom, field);
   }
   return out;
-}
+};
 
-function normalizeChapters(value: unknown): ChaptersConfig {
+const normalizeChapters = (value: unknown): ChaptersConfig => {
   if (value === undefined || value === null) return {};
   if (!isRecord(value))
     fail("chapters must be an object keyed by chapter name.");
@@ -745,7 +759,7 @@ function normalizeChapters(value: unknown): ChaptersConfig {
     out[key as ChapterKey] = enabled;
   }
   return out;
-}
+};
 
 /**
  * Validate and normalize a YAML/card config.
@@ -754,7 +768,7 @@ function normalizeChapters(value: unknown): ChaptersConfig {
  * wrong shape. Unknown top-level keys are ignored so the config can grow
  * without breaking older builds.
  */
-export function normalizeConfig(input: unknown): ArcusConfig {
+export const normalizeConfig = (input: unknown): ArcusConfig => {
   const raw: unknown = input === undefined || input === null ? {} : input;
   if (!isRecord(raw)) fail("configuration must be an object.");
 
@@ -870,16 +884,20 @@ export function normalizeConfig(input: unknown): ArcusConfig {
   }
 
   return config;
-}
+};
 
-/** Assert that a value is a structurally valid Arcus config. */
+/**
+ * Assert that a value is a structurally valid Arcus config. Stays a
+ * declaration: assertion signatures cannot be attached to arrow functions
+ * (TS2775).
+ */
 export function validateConfig(
   input: unknown,
 ): asserts input is ArcusConfigInput {
   normalizeConfig(input);
 }
 
-function stableValue(value: unknown): unknown {
+const stableValue = (value: unknown): unknown => {
   if (Array.isArray(value)) return value.map(stableValue);
   if (isRecord(value)) {
     const out: Record<string, unknown> = {};
@@ -889,12 +907,12 @@ function stableValue(value: unknown): unknown {
     return out;
   }
   return value;
-}
+};
 
 /**
  * A deterministic signature of the normalized config. Used by the card to
  * decide whether a `hass` update requires a full rebuild.
  */
-export function configSignature(config: ArcusConfig): string {
+export const configSignature = (config: ArcusConfig): string => {
   return JSON.stringify(stableValue(config));
-}
+};

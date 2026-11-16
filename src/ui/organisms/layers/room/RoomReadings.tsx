@@ -33,7 +33,7 @@ export interface RoomReadingsProps {
  * Each optional sensor keeps its own chart block, exactly as the legacy
  * renderer emitted it.
  */
-export function RoomReadings({
+export const RoomReadings = ({
   room,
   view,
   history,
@@ -42,7 +42,7 @@ export function RoomReadings({
   t,
   language,
   tempUnit,
-}: RoomReadingsProps) {
+}: RoomReadingsProps) => {
   return (
     <>
       <RoomReadouts
@@ -99,4 +99,4 @@ export function RoomReadings({
       />
     </>
   );
-}
+};

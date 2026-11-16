@@ -10,12 +10,12 @@ export interface RoomStepperProps {
 }
 
 /** The thermostat stepper, with the legacy data hooks intact. */
-export function RoomStepper({
+export const RoomStepper = ({
   entityId,
   value,
   language,
   onStep,
-}: RoomStepperProps) {
+}: RoomStepperProps) => {
   const down = language === "da" ? "Ned" : "Down";
   const up = language === "da" ? "Op" : "Up";
 
@@ -46,4 +46,4 @@ export function RoomStepper({
       </button>
     </div>
   );
-}
+};

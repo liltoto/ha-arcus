@@ -53,14 +53,14 @@ const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, value));
 
 /** Keep the previous bindings object when every rendered string is equal. */
-function sameBindings(
+const sameBindings = (
   previous: Record<string, string>,
   next: Record<string, string>,
-): boolean {
+): boolean => {
   const keys = Object.keys(previous);
   if (keys.length !== Object.keys(next).length) return false;
   return keys.every((key) => previous[key] === next[key]);
-}
+};
 
 const WEATHER_ICON = (condition: string | undefined): string => {
   const value = String(condition ?? "").toLowerCase();
@@ -75,17 +75,17 @@ const WEATHER_ICON = (condition: string | undefined): string => {
   return "cloud";
 };
 
-function parseDate(value: unknown): Date | null {
+const parseDate = (value: unknown): Date | null => {
   if (!value) return null;
   const date = value instanceof Date ? value : new Date(String(value));
   return Number.isNaN(date.getTime()) ? null : date;
-}
+};
 
-function dayFraction(date: Date): number {
+const dayFraction = (date: Date): number => {
   return (
     (date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60) / 1440
   );
-}
+};
 
 /**
  * The Arcus custom card. It owns the shadow root, the dynamic home model,

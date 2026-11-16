@@ -17,10 +17,10 @@ const NOW = new Date("2026-11-13T21:00:00+01:00");
  * `[area_id, icon, name]`; the name defaults to the area ID. All areas are
  * included, so specs and expectations line up index by index.
  */
-function discoverAreaSpecs(
+const discoverAreaSpecs = (
   specs: Array<[string, string | null | undefined, string?]>,
   rooms?: ArcusConfig["rooms"],
-): RoomModel[] {
+): RoomModel[] => {
   const areas: Record<string, AreaRegistryEntry> = {};
   for (const [areaId, icon, name] of specs) {
     areas[areaId] = { area_id: areaId, name: name ?? areaId, icon };
@@ -31,7 +31,7 @@ function discoverAreaSpecs(
     ...(rooms ? { rooms } : {}),
   });
   return discoverRooms({ ...makeHass(), areas }, config);
-}
+};
 
 describe("discoverRooms", () => {
   test("selects included areas in configured order and appends the rest", () => {

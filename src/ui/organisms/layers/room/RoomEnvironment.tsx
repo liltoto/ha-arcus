@@ -16,7 +16,7 @@ export interface RoomMotionBlockProps {
 }
 
 /** Motion and illuminance for a room with a motion sensor. */
-export function RoomMotionBlock({ view, t }: RoomMotionBlockProps) {
+export const RoomMotionBlock = ({ view, t }: RoomMotionBlockProps) => {
   if (!view) return null;
 
   return (
@@ -37,7 +37,7 @@ export function RoomMotionBlock({ view, t }: RoomMotionBlockProps) {
       </div>
     </div>
   );
-}
+};
 
 export interface RoomBatteryBlockProps {
   view: RoomBatteryView | null;
@@ -46,7 +46,11 @@ export interface RoomBatteryBlockProps {
 }
 
 /** The room's battery-powered sensor. */
-export function RoomBatteryBlock({ view, roomName, t }: RoomBatteryBlockProps) {
+export const RoomBatteryBlock = ({
+  view,
+  roomName,
+  t,
+}: RoomBatteryBlockProps) => {
   if (!view) return null;
 
   return (
@@ -69,7 +73,7 @@ export function RoomBatteryBlock({ view, roomName, t }: RoomBatteryBlockProps) {
       </div>
     </div>
   );
-}
+};
 
 export interface RoomMediaBlockProps {
   view: RoomMediaView | null;
@@ -79,12 +83,12 @@ export interface RoomMediaBlockProps {
 }
 
 /** The room media player with a play/pause button. */
-export function RoomMediaBlock({
+export const RoomMediaBlock = ({
   view,
   roomName,
   t,
   actions,
-}: RoomMediaBlockProps) {
+}: RoomMediaBlockProps) => {
   if (!view) return null;
 
   return (
@@ -123,4 +127,4 @@ export function RoomMediaBlock({
       </div>
     </div>
   );
-}
+};

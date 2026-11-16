@@ -12,16 +12,16 @@ import { makeConfig, makeHass } from "../fixtures/home";
 
 const FIXED_NOW = new Date("2026-11-13T01:19:00+01:00");
 
-function historyStub(): HistoryCache {
+const historyStub = (): HistoryCache => {
   return {
     ensure: async () => undefined,
     series: () => [],
     window: () => [],
     raw: () => [],
   } as unknown as HistoryCache;
-}
+};
 
-function actionsStub(): ArcusActions {
+const actionsStub = (): ArcusActions => {
   return {
     callService: vi.fn(),
     navigate: vi.fn(),
@@ -31,10 +31,10 @@ function actionsStub(): ArcusActions {
     toast: vi.fn(),
     setAtmo: vi.fn(),
   };
-}
+};
 
 /** Props matching the card bridge, so a render here proves the shell alone. */
-function bridgeProps() {
+const bridgeProps = () => {
   const hass = makeHass();
   const config = makeConfig();
 
@@ -68,7 +68,7 @@ function bridgeProps() {
     atmoMode: "night" as const,
     dark: true,
   };
-}
+};
 
 afterEach(() => {
   document.body.innerHTML = "";

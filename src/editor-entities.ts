@@ -30,20 +30,24 @@ interface RankedEntity {
   available: boolean;
 }
 
-function domainOf(entityId: string): string {
+const domainOf = (entityId: string): string => {
   return entityId.includes(".") ? entityId.slice(0, entityId.indexOf(".")) : "";
-}
+};
 
-function attributeOf(hass: ArcusHass, entityId: string, key: string): unknown {
+const attributeOf = (
+  hass: ArcusHass,
+  entityId: string,
+  key: string,
+): unknown => {
   return hass.states?.[entityId]?.attributes?.[key];
-}
+};
 
-function deviceClassOf(hass: ArcusHass, entityId: string): string {
+const deviceClassOf = (hass: ArcusHass, entityId: string): string => {
   const value = attributeOf(hass, entityId, "device_class");
   return typeof value === "string" ? value : "";
-}
+};
 
-function textOf(hass: ArcusHass, entityId: string): string {
+const textOf = (hass: ArcusHass, entityId: string): string => {
   const friendly = attributeOf(hass, entityId, "friendly_name");
   const registry = hass.entities?.[entityId]?.name;
   return `${entityId} ${
@@ -53,9 +57,9 @@ function textOf(hass: ArcusHass, entityId: string): string {
         ? registry
         : ""
   }`;
-}
+};
 
-function isAvailable(hass: ArcusHass, entityId: string): boolean {
+const isAvailable = (hass: ArcusHass, entityId: string): boolean => {
   const state = hass.states?.[entityId]?.state;
   return (
     typeof state === "string" &&
@@ -63,13 +67,13 @@ function isAvailable(hass: ArcusHass, entityId: string): boolean {
     state !== "unavailable" &&
     state !== "unknown"
   );
-}
+};
 
-function hasRequiredAttribute(
+const hasRequiredAttribute = (
   hass: ArcusHass,
   entityId: string,
   keys: string[],
-): boolean {
+): boolean => {
   return keys.some((key) => {
     const value = attributeOf(hass, entityId, key);
     if (Array.isArray(value)) return value.length > 0;
@@ -78,18 +82,18 @@ function hasRequiredAttribute(
     }
     return value !== undefined && value !== null && value !== "";
   });
-}
+};
 
-function isHidden(hass: ArcusHass, entityId: string): boolean {
+const isHidden = (hass: ArcusHass, entityId: string): boolean => {
   const entry = hass.entities?.[entityId];
   return Boolean(entry?.hidden_by || entry?.disabled_by);
-}
+};
 
-function rankOf(
+const rankOf = (
   hass: ArcusHass,
   entityId: string,
   spec: EntitySuggestionSpec,
-): number | null {
+): number | null => {
   const nameHit = Boolean(spec.name?.test(textOf(hass, entityId)));
   if (spec.strict && spec.name && !nameHit) return null;
   if (spec.deviceClasses?.length) {
@@ -102,9 +106,12 @@ function rankOf(
   // must not flood the list. Free-text entry still works.
   if (spec.name) return nameHit ? 1 : null;
   return 2;
-}
+};
 
-function collect(hass: ArcusHass, spec: EntitySuggestionSpec): RankedEntity[] {
+const collect = (
+  hass: ArcusHass,
+  spec: EntitySuggestionSpec,
+): RankedEntity[] => {
   const ranked: RankedEntity[] = [];
   for (const entityId of Object.keys(hass.states ?? {})) {
     if (isHidden(hass, entityId)) continue;
@@ -125,9 +132,12 @@ function collect(hass: ArcusHass, spec: EntitySuggestionSpec): RankedEntity[] {
     });
   }
   return ranked;
-}
+};
 
-function domainFallback(hass: ArcusHass, spec: EntitySuggestionSpec): string[] {
+const domainFallback = (
+  hass: ArcusHass,
+  spec: EntitySuggestionSpec,
+): string[] => {
   if (!spec.domains?.length) return [];
   const ids = Object.keys(hass.states ?? {}).filter(
     (entityId) =>
@@ -138,7 +148,7 @@ function domainFallback(hass: ArcusHass, spec: EntitySuggestionSpec): string[] {
       Number(isAvailable(hass, b)) - Number(isAvailable(hass, a));
     return availability || a.localeCompare(b);
   });
-}
+};
 
 /**
  * Ranked, deduplicated entity IDs for one editor field.
@@ -149,11 +159,11 @@ function domainFallback(hass: ArcusHass, spec: EntitySuggestionSpec): string[] {
  * installed), the field falls back to its domain and finally to the capped
  * global list, so the picker never becomes unusable.
  */
-export function suggestEntities(
+export const suggestEntities = (
   hass: ArcusHass | undefined,
   spec: EntitySuggestionSpec,
   limit = 60,
-): string[] {
+): string[] => {
   if (!hass) return [];
   const capped = Math.max(1, Math.floor(limit));
   const ranked = collect(hass, spec);
@@ -181,9 +191,9 @@ export function suggestEntities(
   return Object.keys(hass.states ?? {})
     .filter((entityId) => !isHidden(hass, entityId))
     .slice(0, capped);
-}
+};
 
 /** Stable DOM id for a field's datalist. */
-export function datalistId(path: string): string {
+export const datalistId = (path: string): string => {
   return `arcus-entities-${path.replace(/[^a-z0-9]+/gi, "-")}`;
-}
+};

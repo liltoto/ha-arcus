@@ -19,14 +19,14 @@ export interface HeatingReserveProps {
 }
 
 /** The optional extra reserve-channel block. */
-export function HeatingReserve({
+export const HeatingReserve = ({
   reserve,
   hass,
   language,
   unit,
   t,
   onSetpoint,
-}: HeatingReserveProps) {
+}: HeatingReserveProps) => {
   if (!reserve.length) return null;
 
   return (
@@ -47,4 +47,4 @@ export function HeatingReserve({
       </div>
     </div>
   );
-}
+};

@@ -21,7 +21,7 @@ const RISE = 72;
  * arc. It gives the forecast tab a solar-shaped chart instead of another
  * rectangular line plot.
  */
-export function SolarArc({ points, now, empty }: SolarArcProps) {
+export const SolarArc = ({ points, now, empty }: SolarArcProps) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const dayEnd = dayStart.getTime() + DAY_MS;
@@ -113,4 +113,4 @@ export function SolarArc({ points, now, empty }: SolarArcProps) {
       </div>
     </div>
   );
-}
+};

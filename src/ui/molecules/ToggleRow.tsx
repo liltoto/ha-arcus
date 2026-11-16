@@ -16,7 +16,7 @@ export interface ToggleRowProps {
  * A label plus the legacy pill toggle used throughout the sheets. The whole
  * row is one button so the label and the switch share a single hit target.
  */
-export function ToggleRow({
+export const ToggleRow = ({
   label,
   sub,
   isOn,
@@ -25,7 +25,7 @@ export function ToggleRow({
   disabled,
   dataAct = "toggle-switch",
   dataEntity,
-}: ToggleRowProps) {
+}: ToggleRowProps) => {
   return (
     <button
       type="button"
@@ -45,4 +45,4 @@ export function ToggleRow({
       <span className={c("toggle", isOn && "on")} aria-hidden="true" />
     </button>
   );
-}
+};

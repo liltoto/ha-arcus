@@ -5,9 +5,9 @@ import type { LightGroupModel, RoomModel } from "../types";
  * deduplicated. A group contributes its members (or its own entity when it
  * has no members) plus its extras.
  */
-export function lightIdsForGroups(
+export const lightIdsForGroups = (
   groups: readonly LightGroupModel[],
-): string[] {
+): string[] => {
   const ids = new Set<string>();
   for (const group of groups) {
     if (group.members.length) {
@@ -18,8 +18,8 @@ export function lightIdsForGroups(
     group.extra.forEach((id) => ids.add(id));
   }
   return [...ids];
-}
+};
 
-export function lightIdsForRoom(room: Pick<RoomModel, "lights">): string[] {
+export const lightIdsForRoom = (room: Pick<RoomModel, "lights">): string[] => {
   return lightIdsForGroups(room.lights);
-}
+};

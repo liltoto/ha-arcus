@@ -13,14 +13,14 @@ export interface ConfirmBarProps {
  * `cancel-confirm` for the cancel button and a per-action data-act for the
  * confirmation; `confirmAct` keeps that hook available to the sheet page.
  */
-export function ConfirmBar({
+export const ConfirmBar = ({
   text,
   onConfirm,
   onCancel,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   confirmAct = "confirm-yes",
-}: ConfirmBarProps) {
+}: ConfirmBarProps) => {
   return (
     <div className={c("confirm")} data-confirm>
       <span className={c("txt")}>{text}</span>
@@ -42,4 +42,4 @@ export function ConfirmBar({
       </button>
     </div>
   );
-}
+};

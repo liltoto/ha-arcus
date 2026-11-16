@@ -42,7 +42,7 @@ const LAYER_STYLE: CSSProperties = {
  * room uses `route.sub`. Unknown rooms fall back to the first indoor room,
  * matching the prototype's first-room fallback.
  */
-export function RoomBody({ route }: LayerBodyProps) {
+export const RoomBody = ({ route }: LayerBodyProps) => {
   const { hass, model, config, t, history, now, actions } = useHistoryFrame();
   const lightActions = useLightActions();
 
@@ -151,4 +151,4 @@ export function RoomBody({ route }: LayerBodyProps) {
       </div>
     </div>
   );
-}
+};

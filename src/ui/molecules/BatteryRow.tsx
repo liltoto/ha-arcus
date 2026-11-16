@@ -12,7 +12,7 @@ export interface BatteryRowProps {
  * A battery level row. The tone thresholds mirror the security sheet: under
  * 20 % is critical, under 40 % is a warning, everything else is sage.
  */
-export function BatteryRow({ name, value, sub, entity }: BatteryRowProps) {
+export const BatteryRow = ({ name, value, sub, entity }: BatteryRowProps) => {
   const level = clampPercent(value);
   const tone = level < 20 ? "warn" : level < 40 ? "mid" : "";
 
@@ -31,4 +31,4 @@ export function BatteryRow({ name, value, sub, entity }: BatteryRowProps) {
       </span>
     </div>
   );
-}
+};

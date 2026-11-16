@@ -3,10 +3,10 @@ import { normalizeConfig } from "../src/config";
 import { discoverSystems } from "../src/model/discover-systems";
 import type { ArcusConfig, ArcusHass, HassEntity } from "../src/types";
 
-function state(
+const state = (
   value: string,
   attributes: Record<string, unknown> = {},
-): HassEntity {
+): HassEntity => {
   return {
     entity_id: undefined,
     state: value,
@@ -14,12 +14,12 @@ function state(
     last_changed: "2026-11-13T00:00:00+00:00",
     last_updated: "2026-11-13T00:00:00+00:00",
   };
-}
+};
 
-function hassWith(
+const hassWith = (
   states: Record<string, HassEntity>,
   extra: Partial<ArcusHass> = {},
-): ArcusHass {
+): ArcusHass => {
   return {
     states,
     areas: {},
@@ -30,11 +30,11 @@ function hassWith(
     callService: async () => undefined,
     ...extra,
   };
-}
+};
 
-function config(input: Record<string, unknown> = {}): ArcusConfig {
+const config = (input: Record<string, unknown> = {}): ArcusConfig => {
   return normalizeConfig({ type: "custom:arcus-card", ...input });
-}
+};
 
 describe("discoverSystems", () => {
   test("returns the same config when auto_discover is false", () => {

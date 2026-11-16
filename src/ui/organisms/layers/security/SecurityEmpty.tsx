@@ -9,7 +9,7 @@ export interface SecurityEmptyProps {
 }
 
 /** The sheet frame when the model has no security section at all. */
-export function SecurityEmpty({ t, onClose }: SecurityEmptyProps) {
+export const SecurityEmpty = ({ t, onClose }: SecurityEmptyProps) => {
   return (
     <div
       data-react-layer
@@ -32,4 +32,4 @@ export function SecurityEmpty({ t, onClose }: SecurityEmptyProps) {
       </div>
     </div>
   );
-}
+};

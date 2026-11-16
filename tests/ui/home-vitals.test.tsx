@@ -14,11 +14,11 @@ import { makeArcusProps, renderWithArcus } from "./home-test-utils";
 const WEATHER_STRIP =
   '<span class="wday"><span class="wname">I dag</span><span class="wico"></span><span class="wtemps"><b>4°</b>1°</span></span>';
 
-function vitalFor(label: string): HTMLElement {
+const vitalFor = (label: string): HTMLElement => {
   const button = screen.getByText(label).closest("button");
   if (!button) throw new Error(`Missing vital button for ${label}`);
   return button;
-}
+};
 
 describe("Vitals", () => {
   it("renders the four statistics from the bindings", () => {

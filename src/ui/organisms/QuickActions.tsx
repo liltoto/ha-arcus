@@ -21,7 +21,7 @@ interface QuickButtonProps {
  * Local button for the quick rows. The `QuickAction` molecule only exposes
  * icon/label/on, while the card still patches these `data-*` hooks.
  */
-function QuickButton({
+const QuickButton = ({
   icon,
   label,
   on = false,
@@ -31,7 +31,7 @@ function QuickButton({
   nav,
   quick,
   onClick,
-}: QuickButtonProps) {
+}: QuickButtonProps) => {
   return (
     <button
       type="button"
@@ -48,14 +48,14 @@ function QuickButton({
       {label}
     </button>
   );
-}
+};
 
 /**
  * Configured quick actions, or the legacy default shortcuts when the config
  * has none. The section is its own wrapper because the home template no
  * longer supplies one.
  */
-export function QuickActions() {
+export const QuickActions = () => {
   const config = useConfig();
   const t = useTranslator();
   const store = useArcusStore();
@@ -157,4 +157,4 @@ export function QuickActions() {
       </div>
     </section>
   );
-}
+};

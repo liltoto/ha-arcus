@@ -11,37 +11,37 @@ const clamp = (v: number, a: number, b: number): number =>
  * A symmetric 1000×300 parabola. The defaults put the endpoints at
  * (40, 210) and (960, 210), with the apex at (500, 60).
  */
-export function arcPoint(
+export const arcPoint = (
   t: number,
   w = 920,
   x0 = 40,
   base = 210,
   rise = 150,
-): ChartPoint {
+): ChartPoint => {
   const x = x0 + w * clamp(t, 0, 1);
   const y = base - rise * 4 * clamp(t, 0, 1) * (1 - clamp(t, 0, 1));
   return { x, y };
-}
+};
 
-export function priceColor(
+export const priceColor = (
   price: number | null | undefined,
   min: number,
   max: number,
-): string {
+): string => {
   if (price === null || price === undefined) return "#6b7280";
   const r = max > min ? (price - min) / (max - min) : 0;
   if (r < 0.34) return "#8FB08B";
   if (r < 0.67) return "#D8A657";
   return "#E0785E";
-}
+};
 
-export function sparkPath(
+export const sparkPath = (
   values: ChartValues,
   w = 100,
   h = 28,
   pad = 2,
   range: ChartRange | null = null,
-): string {
+): string => {
   const nums = (values || []).map((v) =>
     v === null || v === undefined || Number.isNaN(Number(v)) ? null : Number(v),
   );
@@ -68,28 +68,28 @@ export function sparkPath(
     pen = true;
   });
   return d;
-}
+};
 
-export function areaPath(
+export const areaPath = (
   values: ChartValues,
   w = 100,
   h = 28,
   pad = 2,
   range: ChartRange | null = null,
-): string {
+): string => {
   const line = sparkPath(values, w, h, pad, range);
   if (!line) return "";
   return `${line}L${w - pad},${h - pad}L${pad},${h - pad}Z`;
-}
+};
 
 /**
  * Average the series into `target` buckets, preserving gaps as nulls.
  * A series already short enough is returned unchanged.
  */
-export function downsample(
+export const downsample = (
   values: ChartValues,
   target = 48,
-): Array<number | null> {
+): Array<number | null> => {
   if (!values || !values.length) return [];
   if (values.length <= target) {
     return values.map((v) =>
@@ -115,4 +115,4 @@ export function downsample(
     out.push(n ? sum / n : null);
   }
   return out;
-}
+};

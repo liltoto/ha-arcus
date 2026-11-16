@@ -5,6 +5,6 @@ export interface DotProps {
   className?: string;
 }
 
-export function Dot({ tone = "ok", className }: DotProps) {
+export const Dot = ({ tone = "ok", className }: DotProps) => {
   return <i className={c("sdot", tone === "ok" ? "" : tone, className)} />;
-}
+};

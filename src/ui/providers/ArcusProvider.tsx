@@ -27,85 +27,85 @@ export type { ArcusActions, ArcusProviderProps } from "../types";
  */
 const StoreContext = createContext<ArcusStore | null>(null);
 
-function useRequiredStore(hook: string): ArcusStore {
+const useRequiredStore = (hook: string): ArcusStore => {
   const store = useContext(StoreContext);
   if (store === null) {
     throw new Error(`${hook} must be used inside an <ArcusProvider>.`);
   }
   return store;
-}
+};
 
 /** The raw store, for advanced selectors in tests and stories. */
-export function useArcusStore(): ArcusStore {
+export const useArcusStore = (): ArcusStore => {
   return useRequiredStore("useArcusStore");
-}
+};
 
-export function useHass(): ArcusHass {
+export const useHass = (): ArcusHass => {
   const store = useRequiredStore("useHass");
   return useStore(store, (state) => state.hass);
-}
+};
 
-export function useModel(): HomeModel {
+export const useModel = (): HomeModel => {
   const store = useRequiredStore("useModel");
   return useStore(store, (state) => state.model);
-}
+};
 
-export function useConfig(): ArcusConfig {
+export const useConfig = (): ArcusConfig => {
   const store = useRequiredStore("useConfig");
   return useStore(store, (state) => state.config);
-}
+};
 
-export function useTranslator(): Translator {
+export const useTranslator = (): Translator => {
   const store = useRequiredStore("useTranslator");
   return useStore(store, (state) => state.t);
-}
+};
 
-export function useBindings(): Record<string, string> {
+export const useBindings = (): Record<string, string> => {
   const store = useRequiredStore("useBindings");
   return useStore(store, (state) => state.bindings);
-}
+};
 
-export function useRoute(): ArcusRoute {
+export const useRoute = (): ArcusRoute => {
   const store = useRequiredStore("useRoute");
   return useStore(store, (state) => state.route);
-}
+};
 
-export function useActions(): ArcusActions {
+export const useActions = (): ArcusActions => {
   const store = useRequiredStore("useActions");
   return useStore(store, (state) => state.actions);
-}
+};
 
-export function useHistory(): HistoryCache {
+export const useHistory = (): HistoryCache => {
   const store = useRequiredStore("useHistory");
   return useStore(store, (state) => state.history);
-}
+};
 
-export function useNow(): () => Date {
+export const useNow = (): (() => Date) => {
   const store = useRequiredStore("useNow");
   return useStore(store, (state) => state.now);
-}
+};
 
-export function useAtmo(): AtmosphereSetting {
+export const useAtmo = (): AtmosphereSetting => {
   const store = useRequiredStore("useAtmo");
   return useStore(store, (state) => state.atmo);
-}
+};
 
-export function useAtmoMode(): AtmosphereSetting {
+export const useAtmoMode = (): AtmosphereSetting => {
   const store = useRequiredStore("useAtmoMode");
   return useStore(store, (state) => state.atmoMode);
-}
+};
 
-export function useDark(): boolean {
+export const useDark = (): boolean => {
   const store = useRequiredStore("useDark");
   return useStore(store, (state) => state.dark);
-}
+};
 
 /**
  * Injects the card's store. Values are not copied or memoized here; the card
  * publishes a new snapshot into the store.
  */
-export function ArcusProvider({ store, children }: ArcusProviderProps) {
+export const ArcusProvider = ({ store, children }: ArcusProviderProps) => {
   return (
     <StoreContext.Provider value={store}>{children}</StoreContext.Provider>
   );
-}
+};

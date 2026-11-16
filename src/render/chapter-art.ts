@@ -23,38 +23,31 @@ type ResolvedContext = ChapterArtContext & {
 
 type ChapterArt = (context: ResolvedContext) => string;
 
-function clamp(value: number, min: number, max: number): number {
+const clamp = (value: number, min: number, max: number): number => {
   return Math.max(min, Math.min(max, value));
-}
+};
+
+const dayFraction = (date: Date): number => {
+  return (
+    (date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60) / 1440
+  );
+};
 
 /**
  * The small illustration at the bottom of each chapter card. The home view
  * renders a model-only version for the first paint; the card calls it again
  * with the history cache and live on/off states.
  */
-export function renderChapterArt(
+export const renderChapterArt = (
   key: ChapterKey | string,
   context: ChapterArtContext,
-): string {
+): string => {
   const isOn = context.isOn ?? (() => false);
   const art = CHAPTER_ART[key as ChapterKey];
   return art ? art({ ...context, isOn }) : "";
-}
-
-const CHAPTER_ART: Partial<Record<ChapterKey, ChapterArt>> = {
-  energi: energy,
-  sol: solar,
-  vand: water,
-  sikkerhed: security,
-  ventilation,
-  teknik: tech,
-  oekonomi: economy,
-  lys: lights,
-  varme: heating,
-  alarmer: alerts,
 };
 
-function energy({ model, now }: ResolvedContext): string {
+const energy = ({ model, now }: ResolvedContext): string => {
   const price = model.price;
   if (!price || !price.values.length) return "";
   const start = now ?? new Date();
@@ -84,9 +77,9 @@ function energy({ model, now }: ResolvedContext): string {
         )}%"></i>`,
     )
     .join("")}</div>`;
-}
+};
 
-function solar({ model, t, language }: ResolvedContext): string {
+const solar = ({ model, t, language }: ResolvedContext): string => {
   const series = model.solar?.forecastSeries ?? [];
   const max = Math.max(3000, ...series.map((point) => point.v), 1);
   const points = series.map((point) => {
@@ -111,16 +104,16 @@ function solar({ model, t, language }: ResolvedContext): string {
   return `<svg viewBox="0 0 220 110" preserveAspectRatio="none" ${graph}><path d="${area}" fill="url(#solarFill)" opacity=".55" stroke="none"/><path d="${line}" fill="none" stroke="var(--amber)" stroke-width="1.2" vector-effect="non-scaling-stroke"/><text x="4" y="96" fill="var(--muted)" font-size="7">${escapeHtml(
     t("solar.battery").toLocaleUpperCase(),
   )} ${formatNumber(soc, 0, language)} %</text></svg>`;
-}
+};
 
-function water({ model, t, language }: ResolvedContext): string {
+const water = ({ model, t, language }: ResolvedContext): string => {
   const salt = clamp(model.water?.salt ?? 0, 0, 100);
   return `<svg viewBox="0 0 220 52" preserveAspectRatio="none"><rect x="0" y="38" width="220" height="2" fill="var(--line)"/><rect x="0" y="36" width="${(salt / 100) * 220}" height="6" rx="3" fill="var(--sky)" opacity=".8"/><text x="4" y="24" fill="var(--muted)" font-size="8">${escapeHtml(
     t("water.salt").toLocaleUpperCase(),
   )} ${formatNumber(salt, 0, language)} %</text></svg>`;
-}
+};
 
-function security({ model, isOn }: ResolvedContext): string {
+const security = ({ model, isOn }: ResolvedContext): string => {
   const openings =
     model.security?.openings ?? model.rooms.flatMap((room) => room.openings);
   return `<div class="${c("sec-dots")}">${openings
@@ -131,9 +124,9 @@ function security({ model, isOn }: ResolvedContext): string {
         )}"></i>`,
     )
     .join("")}</div>`;
-}
+};
 
-function ventilation({ model }: ResolvedContext): string {
+const ventilation = ({ model }: ResolvedContext): string => {
   const system = model.systemCards.find((card) => card.id === "ventilation");
   const step =
     model.ventilation?.step ?? numberFromState(system?.step?.state) ?? 0;
@@ -145,9 +138,9 @@ function ventilation({ model }: ResolvedContext): string {
         }"></i>`,
     )
     .join("")}</div>`;
-}
+};
 
-function tech({ model, config, history, now }: ResolvedContext): string {
+const tech = ({ model, config, history, now }: ResolvedContext): string => {
   const id = config.network?.router;
   const cached = id && history ? history.series(id, { fill: "hold" }) : [];
   const values = cached.length ? cached : [model.tech?.router ?? null];
@@ -168,9 +161,9 @@ function tech({ model, config, history, now }: ResolvedContext): string {
     52,
     2,
   )}" fill="none" stroke="var(--sky)" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>`;
-}
+};
 
-function economy({ model, config, history, now }: ResolvedContext): string {
+const economy = ({ model, config, history, now }: ResolvedContext): string => {
   const id = config.economy?.bond;
   const cached = id && history ? history.series(id, { fill: "hold" }) : [];
   const values = cached.length ? cached : [model.economy?.value ?? null];
@@ -191,16 +184,16 @@ function economy({ model, config, history, now }: ResolvedContext): string {
     52,
     2,
   )}" fill="none" stroke="var(--brass)" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>`;
-}
+};
 
-function lights({ model, isOn }: ResolvedContext): string {
+const lights = ({ model, isOn }: ResolvedContext): string => {
   const ids = lightIdsForGroups(model.lights);
   return `<div class="${c("light-dots")}">${ids
     .map((id) => `<i class="${isOn(id) ? "on" : ""}"></i>`)
     .join("")}</div>`;
-}
+};
 
-function heating({ model }: ResolvedContext): string {
+const heating = ({ model }: ResolvedContext): string => {
   const zones = [...model.heating, ...model.heatingReserve];
   return `<div class="${c("zone-strip")}">${zones
     .map((zone) => {
@@ -216,17 +209,28 @@ function heating({ model }: ResolvedContext): string {
       )}"></i>`;
     })
     .join("")}</div>`;
-}
+};
 
-function alerts({ model }: ResolvedContext): string {
+const alerts = ({ model }: ResolvedContext): string => {
   const hasAlerts = model.alerts.length > 0;
   return `<svg viewBox="0 0 220 52" preserveAspectRatio="none"><path d="M0 30 C 20 30, 24 30, 30 30 S 36 12, 44 30 S 52 42, 60 30 S 68 8, 76 30 S 86 36, 94 30 S 104 18, 112 30 S 122 30, 130 30 S 140 10, 148 30 S 158 40, 166 30 S 176 20, 184 30 S 200 30, 220 30" fill="none" stroke="${
     hasAlerts ? "var(--coral)" : "var(--sage)"
   }" stroke-width="1.1" opacity=".7"/></svg>`;
-}
+};
 
-function dayFraction(date: Date): number {
-  return (
-    (date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60) / 1440
-  );
-}
+/**
+ * Declared after the chapter renderers it references: arrow functions are not
+ * hoisted, so this map must initialize once every entry is defined.
+ */
+const CHAPTER_ART: Partial<Record<ChapterKey, ChapterArt>> = {
+  energi: energy,
+  sol: solar,
+  vand: water,
+  sikkerhed: security,
+  ventilation,
+  teknik: tech,
+  oekonomi: economy,
+  lys: lights,
+  varme: heating,
+  alarmer: alerts,
+};

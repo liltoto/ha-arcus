@@ -16,19 +16,19 @@ import type { ArcusRenderOptions } from "../home-test-utils";
 
 const NOW = new Date("2026-11-13T01:19:00+01:00");
 
-function renderSolar(
+const renderSolar = (
   sub: string | null = null,
   options: ArcusRenderOptions = {},
-) {
+) => {
   return renderLayer(SolarBody, {
     ...options,
     route: { base: "sol", sub },
   });
-}
+};
 
-function baseModel(config: ArcusConfig = makeConfig()) {
+const baseModel = (config: ArcusConfig = makeConfig()) => {
   return buildModel(makeHass(), config, NOW);
-}
+};
 
 describe("SolarBody", () => {
   it("renders the overview header, readouts, tabs, and charts", async () => {

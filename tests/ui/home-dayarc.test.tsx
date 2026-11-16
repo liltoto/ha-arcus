@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { DayArc } from "../../src/ui/organisms/DayArc";
 import { renderWithArcus } from "./home-test-utils";
 
-function query(container: ParentNode, selector: string): Element {
+const query = (container: ParentNode, selector: string): Element => {
   const element = container.querySelector(selector);
   expect(element, selector).not.toBeNull();
   return element as Element;
-}
+};
 
 describe("DayArc", () => {
   it("renders the arc skeleton with the gradient and past-clip defs", () => {

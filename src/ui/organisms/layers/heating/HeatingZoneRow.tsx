@@ -22,7 +22,7 @@ export interface HeatingZoneRowProps {
 }
 
 /** One discovered climate zone with its setpoint and hvac toggle. */
-export function HeatingZoneRow({
+export const HeatingZoneRow = ({
   zone,
   reading,
   activity,
@@ -32,7 +32,7 @@ export function HeatingZoneRow({
   t,
   onSetpoint,
   onToggle,
-}: HeatingZoneRowProps) {
+}: HeatingZoneRowProps) => {
   const entityId = zone.entity.entityId;
 
   return (
@@ -81,4 +81,4 @@ export function HeatingZoneRow({
       />
     </div>
   );
-}
+};

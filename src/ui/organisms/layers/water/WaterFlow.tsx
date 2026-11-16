@@ -14,7 +14,7 @@ const DAY_MS = 86_400_000;
  * React needs the same values as props, so decode the escaped entities that
  * `graphAttrs` adds when it serialises the series JSON.
  */
-function graphProps(input: GraphInput): Record<string, string> {
+const graphProps = (input: GraphInput): Record<string, string> => {
   const props: Record<string, string> = {};
   for (const match of graphAttrs(input).matchAll(
     /data-([a-z0-9]+)="([^"]*)"/g,
@@ -26,7 +26,7 @@ function graphProps(input: GraphInput): Record<string, string> {
       .replaceAll("&amp;", "&");
   }
   return props;
-}
+};
 
 interface WaterFlowProps {
   values: Array<number | null>;
@@ -35,7 +35,7 @@ interface WaterFlowProps {
 }
 
 /** The 24-hour flow chart, with the exact legacy graph bindings. */
-export function WaterFlow({ values, end, t }: WaterFlowProps) {
+export const WaterFlow = ({ values, end, t }: WaterFlowProps) => {
   const gradientId = `water-chart-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const hasData = values.some(
     (value) => typeof value === "number" && Number.isFinite(value),
@@ -95,4 +95,4 @@ export function WaterFlow({ values, end, t }: WaterFlowProps) {
       </ChartBox>
     </div>
   );
-}
+};
