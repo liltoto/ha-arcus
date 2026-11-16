@@ -83,6 +83,19 @@ describe("room chart states", () => {
     expect(chart?.querySelector(".chart-empty")).toHaveTextContent("Indlæser…");
   });
 
+  test("maps a failed history request to unavailable, not empty", () => {
+    const { container } = renderLayer(RoomBody, {
+      route: { base: "rum", sub: "stue" },
+      history: historyStub("failed"),
+    });
+
+    const chart = container.querySelectorAll(".chart-box")[0];
+    expect(chart).toHaveAttribute("data-state", "unavailable");
+    expect(chart.querySelector(".chart-empty")).toHaveTextContent(
+      "Utilgængelig",
+    );
+  });
+
   test("cached data wins over an unavailable sensor", () => {
     const { container } = renderLayer(RoomBody, {
       route: { base: "rum", sub: "stue" },

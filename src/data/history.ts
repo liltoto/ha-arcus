@@ -59,9 +59,12 @@ interface CacheEntry {
 /**
  * How far an entity's history has progressed. `ready` means rows are cached,
  * `loading` means a request is in flight, `empty` means a request finished
- * without rows, and `idle` means nothing has been requested yet.
+ * without rows, `failed` means every transport errored or timed out, and
+ * `idle` means nothing has been requested yet. `failed` is deliberately
+ * distinct from `empty`: a recorder that is down must not read as "this
+ * sensor has never had history".
  */
-export type HistoryStatus = "idle" | "loading" | "ready" | "empty";
+export type HistoryStatus = "idle" | "loading" | "ready" | "empty" | "failed";
 
 const CACHE_MS = 5 * 60 * 1000;
 
@@ -81,6 +84,45 @@ const FETCH_BATCH = 4;
  * per-request budget above without starving the recorder.
  */
 const FETCH_CONCURRENCY = 4;
+
+/**
+ * Per-transport request budget. A recorder that stops answering (a restarting
+ * container, a wedged SQLite writer) leaves `callWS` pending forever, which
+ * used to pin the entity at `loading` and block every later refresh. The
+ * timeout turns a hung socket into a normal failure that the next clock tick
+ * can retry.
+ */
+const FETCH_TIMEOUT_MS = 10_000;
+
+/** One retry covers a WebSocket reconnect window without delaying REST long. */
+const RETRY_DELAY_MS = 400;
+
+export interface HistoryCacheOptions {
+  /** Per-request budget in milliseconds; `0` disables the timeout. */
+  timeoutMs?: number;
+  /** Pause before the single WebSocket retry. */
+  retryDelayMs?: number;
+}
+
+/** Reject when `work` has not settled within `ms`; the work keeps running. */
+const withTimeout = <T>(work: Promise<T>, ms: number): Promise<T> => {
+  if (!(ms > 0)) return work;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error("Arcus: history request timed out"));
+    }, ms);
+  });
+  return Promise.race([work, deadline]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer);
+  });
+};
+
+const pause = (ms: number): Promise<void> => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+};
 
 /** Opt-in console diagnostics: set `localStorage.arcus-debug = "1"`. */
 const debugHistory = (message: string, details: unknown): void => {
@@ -124,12 +166,15 @@ export const rowValue = (row: HistoryRow): number | null => {
  *
  * A fetch is considered fresh for five minutes, in-flight requests are shared
  * per entity, and a request for a shorter range never replaces a longer one
- * that is already cached. WebSocket failures fall back to the REST history
- * endpoint.
+ * that is already cached. A WebSocket failure is retried once and then falls
+ * back to the REST history endpoint; when both transports fail or time out the
+ * entity reports `failed` instead of a misleading empty series.
  */
 export class HistoryCache {
   private readonly hass: HistoryHass;
   private readonly now: () => Date;
+  private readonly timeoutMs: number;
+  private readonly retryDelayMs: number;
   private readonly cache = new Map<string, CacheEntry>();
   private readonly inflight = new Map<string, Promise<void>>();
   /**
@@ -139,12 +184,20 @@ export class HistoryCache {
    * "asked, nothing came back".
    */
   private readonly settled = new Set<string>();
+  /** Entities whose last request errored on every transport. */
+  private readonly failed = new Set<string>();
   private readonly listeners = new Set<() => void>();
   private version = 0;
 
-  constructor(hass: HistoryHass, now: () => Date = () => new Date()) {
+  constructor(
+    hass: HistoryHass,
+    now: () => Date = () => new Date(),
+    options: HistoryCacheOptions = {},
+  ) {
     this.hass = hass;
     this.now = now;
+    this.timeoutMs = options.timeoutMs ?? FETCH_TIMEOUT_MS;
+    this.retryDelayMs = options.retryDelayMs ?? RETRY_DELAY_MS;
   }
 
   /**
@@ -186,7 +239,10 @@ export class HistoryCache {
     if (!need.length) return;
 
     // A new request makes the previous "nothing came back" answer stale.
-    need.forEach((id) => this.settled.delete(id));
+    need.forEach((id) => {
+      this.settled.delete(id);
+      this.failed.delete(id);
+    });
     const request = this.fetch(need, hours);
     need.forEach((id) => this.inflight.set(id, request));
     try {
@@ -303,6 +359,7 @@ export class HistoryCache {
     const entry = this.cache.get(entityId);
     if (entry?.rows.length) return "ready";
     if (this.inflight.has(entityId)) return "loading";
+    if (this.failed.has(entityId)) return "failed";
     if (entry || this.settled.has(entityId)) return "empty";
     return "idle";
   }
@@ -326,7 +383,11 @@ export class HistoryCache {
     const worker = async (): Promise<void> => {
       while (next < batches.length) {
         const batch = batches[next++];
-        await this.fetchBatch(batch, hours);
+        const answered = await this.fetchBatch(batch, hours);
+        batch.forEach((id) => {
+          if (answered) this.failed.delete(id);
+          else this.failed.add(id);
+        });
       }
     };
     const workers = Math.min(FETCH_CONCURRENCY, batches.length);
@@ -340,7 +401,15 @@ export class HistoryCache {
     }
   }
 
-  private async fetchBatch(entityIds: string[], hours: number): Promise<void> {
+  /**
+   * Resolve the rows for one batch. The WebSocket request is retried once
+   * (covering a Home Assistant reconnect window) before the REST fallback.
+   * `false` means both transports errored or timed out for this batch.
+   */
+  private async fetchBatch(
+    entityIds: string[],
+    hours: number,
+  ): Promise<boolean> {
     const end = this.now();
     const start = new Date(end.getTime() - hours * 60 * 60 * 1000);
     const message: HistoryWsRequest = {
@@ -354,35 +423,50 @@ export class HistoryCache {
     };
 
     const started = Date.now();
-    try {
-      const response = await this.hass.callWS(message);
-      this.ingest(response, entityIds, hours);
-      debugHistory("ws batch", {
-        entities: entityIds.length,
-        hours,
-        ms: Date.now() - started,
-      });
-      return;
-    } catch (error) {
-      debugHistory("ws batch failed", {
-        entities: entityIds.length,
-        hours,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      /* WebSocket unavailable: fall through to the REST endpoint. */
-    }
+    const viaWebSocket = async (attempt: number): Promise<boolean> => {
+      try {
+        const response = await withTimeout(
+          this.hass.callWS(message),
+          this.timeoutMs,
+        );
+        this.ingest(response, entityIds, hours);
+        debugHistory("ws batch", {
+          entities: entityIds.length,
+          hours,
+          attempt,
+          ms: Date.now() - started,
+        });
+        return true;
+      } catch (error) {
+        debugHistory("ws batch failed", {
+          entities: entityIds.length,
+          hours,
+          attempt,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return false;
+      }
+    };
+
+    if (await viaWebSocket(1)) return true;
+    await pause(this.retryDelayMs);
+    if (await viaWebSocket(2)) return true;
 
     try {
       const path =
         `history/period/${encodeURIComponent(start.toISOString())}` +
         `?filter_entity_id=${entityIds.join(",")}&minimal_response&no_attributes`;
-      const response = await this.hass.callApi("GET", path);
+      const response = await withTimeout(
+        this.hass.callApi("GET", path),
+        this.timeoutMs,
+      );
       this.ingest(response, entityIds, hours);
       debugHistory("rest batch", {
         entities: entityIds.length,
         hours,
         ms: Date.now() - started,
       });
+      return true;
     } catch (error) {
       debugHistory("rest batch failed", {
         entities: entityIds.length,
@@ -390,6 +474,7 @@ export class HistoryCache {
         error: error instanceof Error ? error.message : String(error),
       });
       /* Both transports failed: keep previously cached data. */
+      return false;
     }
   }
 
@@ -425,6 +510,7 @@ export class HistoryCache {
     if (!entityId || !Array.isArray(rows)) return;
     const previous = this.cache.get(entityId);
     if (previous && hours < previous.hours) return;
+    this.failed.delete(entityId);
     this.cache.set(entityId, {
       rows: rows as HistoryRow[],
       fetchedAt: this.now().getTime(),

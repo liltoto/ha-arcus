@@ -102,6 +102,11 @@ export class ArcusCard extends HTMLElement {
   private _store: ArcusStore | null = null;
   private _lastBindings: Record<string, string> | null = null;
   private readonly _nowFn = (): Date => this._now();
+  /** True once at least one model built successfully; drives crash containment. */
+  private _modelReady = false;
+  private _modelWarned = false;
+  private _historyWarned = false;
+  private _shell: "app" | "failure" | null = null;
 
   /**
    * Stable bridge for the React tree. Every method reads the current
@@ -178,13 +183,11 @@ export class ArcusCard extends HTMLElement {
     this._config = next;
     this._configSignature = signature;
     this._updateLanguage(this._hass);
-    if (this._hass) {
-      this._model = buildModel(this._hass, next, this._now());
-    }
+    if (this._hass) this._buildModel(this._hass, next);
 
     if (this._built) {
-      if (changed) this._build();
-      else this._schedule();
+      if (changed) this._build(true);
+      else if (this._shell === "app") this._schedule();
     }
   }
 
@@ -197,6 +200,7 @@ export class ArcusCard extends HTMLElement {
 
     const previous = this._hass;
     const first = !previous;
+    const recovered = !this._modelReady;
     const registryChanged =
       !!previous &&
       (hass.areas !== previous.areas ||
@@ -205,17 +209,17 @@ export class ArcusCard extends HTMLElement {
 
     this._hass = hass;
     this._updateLanguage(hass);
-    this._model = buildModel(hass, this._config, this._now());
+    this._buildModel(hass, this._config);
 
     if (first) {
       this._firstHass();
       return;
     }
 
-    if (this._built) {
-      if (registryChanged) this._build();
-      else this._schedule();
-    }
+    if (!this._built) return;
+
+    if (registryChanged || (recovered && this._modelReady)) this._build();
+    else if (this._shell === "app") this._schedule();
   }
 
   /** The imperative action bridge consumed by the React provider. */
@@ -612,16 +616,35 @@ export class ArcusCard extends HTMLElement {
     return bindings;
   }
 
-  _build(): void {
+  /**
+   * Render the card shell. A failed first model build gets the static failure
+   * panel instead of mounting React, so an exception in `buildModel` cannot
+   * repeat on every state push.
+   */
+  _build(force = false): void {
     if (!this._hass) return;
+    const ready = this._modelReady;
+    if (!force && this._shell === "failure" && !ready) return;
+
     this._unmountReact();
     this._built = true;
+    this._shell = ready ? "app" : "failure";
     this._root.innerHTML = `<style>${STYLES}</style><div class="arcus-react"></div>`;
 
     const container = this._root.querySelector<HTMLElement>(".arcus-react");
     if (!container) return;
     container.style.display = "contents";
     this._route = this._parseHash();
+
+    if (!ready) {
+      container.innerHTML = this._failureHTML();
+      container
+        .querySelector<HTMLElement>("[data-retry]")
+        ?.addEventListener("click", () => this._retryModel());
+      this._markReady();
+      return;
+    }
+
     this._publish();
 
     const store = this._store;
@@ -635,6 +658,58 @@ export class ArcusCard extends HTMLElement {
     this._startClock();
     void this._loadInitial();
     this._markReady();
+  }
+
+  /**
+   * Build the model without letting a parse failure escape into Home
+   * Assistant's `hass` setter. After a successful build the previous model
+   * stays on screen, so a transient bad state costs freshness, not the card.
+   */
+  private _buildModel(hass: ArcusHass, config: ArcusConfig): void {
+    try {
+      this._model = buildModel(hass, config, this._now());
+      this._modelReady = true;
+      this._modelWarned = false;
+    } catch (error) {
+      if (!this._modelWarned) {
+        this._modelWarned = true;
+        console.error("[arcus] could not build the home model", error);
+      }
+    }
+  }
+
+  /** The static panel shown when no model has ever built successfully. */
+  private _failureHTML(): string {
+    const app = c("app", !this._themeDark() && "light");
+    const attrs =
+      `data-atmo="${this._atmo()}"` +
+      ` data-density="${this._config.density}"` +
+      ` data-text="${this._config.text_scale}"`;
+    return (
+      `<div class="${app}" ${attrs}>` +
+      `<div class="${c("failure")}">` +
+      `<div class="${c("failure-panel")}" role="alert">` +
+      `<span class="${c("failure-kicker")}">${escapeHtml(
+        this._t("failure.kicker"),
+      )}</span>` +
+      `<h2 class="${c("failure-title")}">${escapeHtml(
+        this._t("failure.title"),
+      )}</h2>` +
+      `<p class="${c("failure-body")}">${escapeHtml(
+        this._t("failure.body"),
+      )}</p>` +
+      `<button type="button" class="${c(
+        "failure-retry",
+      )}" data-retry>${escapeHtml(this._t("failure.retry"))}</button>` +
+      `</div></div></div>`
+    );
+  }
+
+  /** Manual retry from the failure panel; state pushes also retry. */
+  private _retryModel(): void {
+    if (!this._hass) return;
+    this._buildModel(this._hass, this._config);
+    this._build(this._modelReady);
   }
 
   /** The snapshot the React tree reads for the current card state. */
@@ -671,7 +746,7 @@ export class ArcusCard extends HTMLElement {
 
   /** Publish the current card state into the per-card store. */
   private _publish(): void {
-    if (!this._hass) return;
+    if (!this._hass || !this._modelReady) return;
     const snapshot = this._snapshot();
     if (this._store) this._store.setState(snapshot);
     else this._store = createArcusStore(snapshot);
@@ -731,12 +806,19 @@ export class ArcusCard extends HTMLElement {
     this._clockTimer = setInterval(() => {
       this._schedule();
       // `ensure` is a TTL check; it only refetches when the cache is stale.
-      void this._ensureHistory(this._historyIds(), 24);
+      if (this._modelReady) void this._ensureHistory(this._historyIds(), 24);
     }, 20_000);
   }
 
   private _schedule(): void {
-    if (this._publishFrame !== null || !this._built || !this._hass) return;
+    if (
+      this._publishFrame !== null ||
+      !this._built ||
+      !this._hass ||
+      !this._modelReady
+    ) {
+      return;
+    }
     const commit = () => {
       this._publishFrame = null;
       if (!this._built || !this._hass) return;
@@ -844,7 +926,17 @@ export class ArcusCard extends HTMLElement {
       ),
     ];
     if (!clean.length) return;
-    await this._history.ensure(clean, hours);
+    try {
+      await this._history.ensure(clean, hours);
+      this._historyWarned = false;
+    } catch (error) {
+      // History is optional: charts keep their last series. Swallowing here
+      // keeps every `void this._ensureHistory(...)` call site honest.
+      if (!this._historyWarned) {
+        this._historyWarned = true;
+        console.warn("[arcus] history refresh failed", error);
+      }
+    }
     this._schedule();
   }
 
@@ -868,9 +960,10 @@ export class ArcusCard extends HTMLElement {
         response?.service_response?.[entityId]?.forecast ?? response?.forecast;
       if (Array.isArray(forecast)) this._weather = forecast;
     } catch {
-      const fallback =
-        this._model.weather?.forecast ??
-        this._hass.states?.[entityId]?.attributes?.forecast;
+      const fallback = this._modelReady
+        ? (this._model.weather?.forecast ??
+          this._hass.states?.[entityId]?.attributes?.forecast)
+        : undefined;
       if (Array.isArray(fallback)) this._weather = fallback;
     }
     this._schedule();
