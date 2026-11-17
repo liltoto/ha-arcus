@@ -1,6 +1,11 @@
 import type { HistoryCache } from "../../../data/history";
 import { formatNumber } from "../../../format";
 import { EmptyState } from "../../atoms/EmptyState";
+import {
+  chartStateFor,
+  rangeStatusFor,
+  useRangeEnsure,
+} from "../../hooks/useHistoryRange";
 import { useHistoryFrame } from "../../hooks/useLayerFrame";
 import { HistoryChart } from "../../molecules/HistoryChart";
 import { ListRow } from "../../molecules/ListRow";
@@ -9,24 +14,31 @@ import { SheetHeader } from "../../molecules/SheetHeader";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { c } from "../../styles/classes";
 
+const DAY_MS = 86_400_000;
+
+/** The bond chart never shortens below its original thirty-day window. */
+const MIN_CHART_DAYS = 30;
+
 const windowOf = (
   history: HistoryCache,
   entityId: string | undefined,
   days: number,
+  end: number,
 ): Array<number | null> => {
   if (!entityId) return [];
   return typeof history.window === "function"
-    ? history.window(entityId, days, { fill: "hold" })
+    ? history.window(entityId, days, { end, fill: "hold" })
     : [];
 };
 
 /**
  * Economy: the bond price, today's change, effective yield, duration and the
  * 30-day price chart from the history cache, ported from
- * `views/layers/economy.ts`.
+ * `views/layers/economy.ts`. The chart rewinds to the selected window while
+ * the readings stay live.
  */
 export const EconomyBody = (_props: LayerBodyProps) => {
-  const { model, config, history, t, now, actions } = useHistoryFrame();
+  const { model, config, history, range, t, now, actions } = useHistoryFrame();
 
   const language = model.language;
   const fmt = (value: number | null | undefined, digits = 2) =>
@@ -43,8 +55,10 @@ export const EconomyBody = (_props: LayerBodyProps) => {
   const yieldValue = economy?.yield ?? null;
   const duration = economy?.duration ?? null;
   const bondId = config.economy?.bond;
-  const bondSeries = windowOf(history, bondId, 30);
-  const nowMs = now().getTime();
+
+  // The bond chart keeps a thirty-day window even when the selected period is
+  // shorter, so ask for the missing lookback behind the anchor.
+  useRangeEnsure([bondId], Math.max(1, MIN_CHART_DAYS - range.days) * DAY_MS);
 
   if (!economy) {
     return (
@@ -70,6 +84,26 @@ export const EconomyBody = (_props: LayerBodyProps) => {
       </div>
     );
   }
+
+  const chartDays = Math.max(
+    MIN_CHART_DAYS,
+    Math.round((range.end - range.start) / DAY_MS),
+  );
+  // Live windows stop at now so the held series cannot paint the future.
+  const chartEnd = range.live ? now().getTime() : range.end;
+  const chartStart = chartEnd - chartDays * DAY_MS;
+  const bondSeries = windowOf(history, bondId, chartDays, chartEnd);
+  const bondHasData = bondSeries.some(
+    (entry) => typeof entry === "number" && Number.isFinite(entry),
+  );
+  const bondState = chartStateFor(
+    bondHasData,
+    rangeStatusFor(history, bondId, range),
+  );
+  const chartTitle = t("chart.period", {
+    label: t("economy.chart30"),
+    period: t("range.days30"),
+  });
 
   return (
     <div
@@ -120,7 +154,7 @@ export const EconomyBody = (_props: LayerBodyProps) => {
           <Readout label={t("economy.price")} value={fmt(value, 2)} />
         </div>
         <div className={c("block")}>
-          <div className={c("block-label")}>{t("economy.chart30")}</div>
+          <div className={c("block-label")}>{chartTitle}</div>
           <HistoryChart
             series={[
               {
@@ -130,11 +164,12 @@ export const EconomyBody = (_props: LayerBodyProps) => {
               },
             ]}
             t={t}
-            nowMs={nowMs}
-            windowMs={30 * 86_400_000}
+            start={chartStart}
+            end={chartEnd}
             unit=""
             decimals={2}
             idPrefix="economy-chart"
+            state={bondState}
           />
         </div>
         <div className={c("block")}>

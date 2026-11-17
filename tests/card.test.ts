@@ -1,6 +1,7 @@
 import { waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { ArcusCard } from "../src/card";
+import { resolveRange, startOfDay } from "../src/range";
 import { HOME_AREA_IDS, makeConfig, makeHass } from "./fixtures/home";
 
 const mount = async (
@@ -35,6 +36,33 @@ describe("ArcusCard", () => {
     expect(text).toContain("Stue");
     expect(text).toContain("Rum for rum");
     expect(card.shadowRoot!.querySelector('[data-room="stue"]')).not.toBeNull();
+  });
+
+  test("moves the history window and fetches the padded selected range", async () => {
+    const card = await mount();
+    const now = new Date("2026-11-13T01:19:00+01:00");
+    const state = {
+      anchor: startOfDay(new Date(2026, 10, 10)),
+      days: 7 as const,
+    };
+    const range = resolveRange(state, now);
+    const callWS = vi.spyOn(card.hass!, "callWS");
+
+    card.actions.setHistoryRange(state);
+
+    await waitFor(() => {
+      expect(callWS).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "history/history_during_period",
+          start_time: new Date(range.start - 86_400_000).toISOString(),
+          end_time: new Date(range.end).toISOString(),
+        }),
+      );
+    });
+
+    const bar = card.shadowRoot!.querySelector("[data-range]");
+    expect(bar).toHaveAttribute("data-days", "7");
+    expect(bar).toHaveAttribute("data-live", "0");
   });
 
   test("publishes the configured text scale on the app shell", async () => {

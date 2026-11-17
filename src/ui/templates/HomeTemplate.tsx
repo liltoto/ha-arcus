@@ -7,6 +7,7 @@ import type {
 import { ChapterGrid } from "../organisms/ChapterGrid";
 import { Footer } from "../organisms/Footer";
 import { Hero } from "../organisms/Hero";
+import { HistoryRange } from "../organisms/HistoryRange";
 import { QuickActions } from "../organisms/QuickActions";
 import { RoomGrid } from "../organisms/RoomGrid";
 import { TopBar } from "../organisms/TopBar";
@@ -74,6 +75,7 @@ export const HomeTemplate = ({
           <TopBar />
         </header>
         <main className={c("wrap")}>
+          <HistoryRange />
           <section className={c("hero")}>
             <Hero />
             <Vitals />

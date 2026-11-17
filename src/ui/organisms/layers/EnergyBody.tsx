@@ -1,3 +1,4 @@
+import { useRangeEnsure } from "../../hooks/useHistoryRange";
 import { useHistoryFrame } from "../../hooks/useLayerFrame";
 import { Icon } from "../../atoms/Icon";
 import { SheetHeader } from "../../molecules/SheetHeader";
@@ -14,7 +15,20 @@ import { resolveEnergyView } from "./energy/energy-view";
  * blocks come from `config.energy` and read their live values from `hass`.
  */
 export const EnergyBody = (_props: LayerBodyProps) => {
-  const { hass, model, config, t, history, now, actions } = useHistoryFrame();
+  const { hass, model, config, t, history, range, now, actions } =
+    useHistoryFrame();
+  const priceEntity = config.price?.current ?? config.price?.spot;
+  const energy = config.energy;
+
+  // The card's range fetch only covers `_historyIds`; keep the sheet's chart
+  // sensors covered too while the user moves the window.
+  useRangeEnsure([
+    priceEntity,
+    energy?.standby,
+    energy?.ev?.power,
+    ...(energy?.appliances ?? []).map((appliance) => appliance.entity),
+  ]);
+
   const view = resolveEnergyView(hass, model, config, history, now, t);
 
   return (
@@ -37,13 +51,21 @@ export const EnergyBody = (_props: LayerBodyProps) => {
       <div className={c("sheet-scroll")}>
         {view ? (
           <>
-            <EnergyPrice view={view} t={t} />
+            <EnergyPrice
+              view={view}
+              t={t}
+              history={history}
+              range={range}
+              priceEntity={priceEntity}
+            />
             <EnergyDevices
               ev={view.ev}
               standby={view.standby}
               appliances={view.appliances}
               hass={hass}
               history={history}
+              range={range}
+              now={now}
               t={t}
               language={view.language}
             />

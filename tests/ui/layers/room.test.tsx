@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import type { HistoryCache } from "../../../src/data/history";
+import { resolveRange, startOfDay } from "../../../src/range";
 import { RoomBody } from "../../../src/ui/organisms/layers/RoomBody";
 import { ArcusProvider } from "../../../src/ui/providers/ArcusProvider";
 import { createArcusStore } from "../../../src/ui/providers/store";
@@ -243,6 +244,39 @@ describe("RoomBody", () => {
     expect(chart).toHaveAttribute("data-graph", "line");
     expect(chart).not.toHaveClass("no-data");
     expect(chart?.querySelector("path[stroke]")).not.toHaveAttribute("d", "");
+  });
+
+  test("a past range feeds the selected window to every room chart", () => {
+    const now = () => new Date("2026-11-13T01:19:00+01:00");
+    const range = resolveRange(
+      { anchor: startOfDay(new Date(2026, 10, 10)), days: 7 },
+      now(),
+    );
+    const props = makeArcusProps({ now, range });
+    const series = vi.fn(() => [18, 19, 20]);
+    const rangeStatus = vi.fn(() => "ready" as const);
+    const history = {
+      ...props.history,
+      series,
+      rangeStatus,
+    } as unknown as HistoryCache;
+
+    render(
+      <ArcusProvider store={createArcusStore({ ...props, history })}>
+        <RoomBody route={{ base: "rum", sub: "stue" }} />
+      </ArcusProvider>,
+    );
+
+    expect(series).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ start: range.start, end: range.end }),
+    );
+    expect(rangeStatus).toHaveBeenCalledWith(
+      expect.any(String),
+      range.start,
+      range.end,
+    );
+    expect(screen.getByText("Temperatur · 7 dage")).toBeInTheDocument();
   });
 
   test("an empty model renders the empty state", () => {

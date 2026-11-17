@@ -1,6 +1,6 @@
 import { useId } from "react";
 import type { TemperatureUnit } from "../../../../types";
-import { ChartBox } from "../../../molecules/ChartBox";
+import { ChartBox, type ChartState } from "../../../molecules/ChartBox";
 import { c } from "../../../styles/classes";
 import { CHART_HEIGHT } from "./helpers";
 
@@ -19,26 +19,32 @@ export interface HeatingChartProps {
   title: string;
   values: Array<number | null>;
   hasData: boolean;
+  state: ChartState;
   line: string;
   area: string;
   unit: TemperatureUnit;
   start: number;
   end: number;
   emptyLabel: string;
+  loadingLabel: string;
+  unavailableLabel: string;
 }
 
-/** The 24-hour temperature chart, keeping the legacy graph attributes. */
+/** The temperature chart for the selected history window. */
 export const HeatingChart = ({
   label,
   title,
   values,
   hasData,
+  state,
   line,
   area,
   unit,
   start,
   end,
   emptyLabel,
+  loadingLabel,
+  unavailableLabel,
 }: HeatingChartProps) => {
   const gradientId = `heat-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
@@ -47,8 +53,10 @@ export const HeatingChart = ({
       <div className={c("block-label")}>{label}</div>
       <ChartBox
         title={title}
-        state={hasData ? "ready" : "empty"}
+        state={state}
         emptyLabel={emptyLabel}
+        loadingLabel={loadingLabel}
+        unavailableLabel={unavailableLabel}
       >
         <svg
           viewBox={`0 0 560 ${CHART_HEIGHT}`}

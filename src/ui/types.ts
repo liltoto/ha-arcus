@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { StoreApi } from "zustand/vanilla";
 import type { HistoryCache } from "../data/history";
+import type { HistoryRangeState, ResolvedHistoryRange } from "../range";
 import type {
   ActionConfig,
   ArcusConfig,
@@ -29,6 +30,8 @@ export interface ArcusActions {
   performAction(action: ActionConfig): void;
   toast(text: string): void;
   setAtmo(mode: AtmosphereSetting): void;
+  /** Move the card-wide history window; clamped to today by the card. */
+  setHistoryRange(next: HistoryRangeState): void;
 }
 
 /**
@@ -55,6 +58,7 @@ export interface ArcusStoreState {
   actions: ArcusActions;
   history: HistoryCache;
   now: () => Date;
+  range: ResolvedHistoryRange;
   atmo: AtmosphereSetting;
   /** The atmosphere mode the user picked (`auto` is not resolved). */
   atmoMode: AtmosphereSetting;

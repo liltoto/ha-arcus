@@ -1,12 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, test } from "vitest";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
 import type { HistoryCache } from "../../../src/data/history";
 import { buildModel } from "../../../src/model/build";
+import { rangePeriodLabel, resolveRange, startOfDay } from "../../../src/range";
 import { parseGraph } from "../../../src/render/graph";
 import { WaterBody } from "../../../src/ui/organisms/layers/WaterBody";
 import { VentilationBody } from "../../../src/ui/organisms/layers/VentilationBody";
-import { ArcusProvider } from "../../../src/ui/providers/ArcusProvider";
-import { createArcusStore } from "../../../src/ui/providers/store";
 import type { ArcusRoute } from "../../../src/ui/types";
 import { makeConfig, makeHass } from "../../fixtures/home";
 import { makeArcusProps } from "../home-test-utils";
@@ -15,6 +14,13 @@ import { renderLayer } from "../layer-test-utils";
 const WATER_ROUTE: ArcusRoute = { base: "vand", sub: null };
 const VENT_ROUTE: ArcusRoute = { base: "ventilation", sub: null };
 const LEAK_ID = "binary_sensor.klippbok_water_leak_sensor_water_leak";
+
+const NOW = new Date("2026-11-13T01:19:00+01:00");
+const PAST_RANGE = resolveRange(
+  { anchor: startOfDay(new Date(2026, 10, 10)), days: 1 },
+  NOW,
+);
+const PREFETCH_MS = 86_400_000;
 
 const readout = (container: HTMLElement, label: string) => {
   const cell = [...container.querySelectorAll<HTMLElement>(".reading")].find(
@@ -135,33 +141,73 @@ describe("WaterBody", () => {
     expect(props.actions.closeSheet).toHaveBeenCalledTimes(1);
   });
 
-  test("binds the 24-hour flow history to the chart", () => {
-    const props = makeArcusProps({ route: WATER_ROUTE });
+  test("binds and loads the selected flow window", async () => {
     const values = [0, 0.42, 0.18, 0.31];
     const history = {
-      ensure: async () => undefined,
-      series: (entityId: string) =>
-        entityId === props.config.water?.flow ? values : [],
-      window: () => [],
-      raw: () => [],
+      ensureRange: vi.fn(async () => undefined),
+      series: vi.fn(() => values),
+      window: vi.fn(() => []),
+      raw: vi.fn(() => []),
     } as unknown as HistoryCache;
 
-    const { container } = render(
-      <ArcusProvider store={createArcusStore({ ...props, history })}>
-        <WaterBody route={WATER_ROUTE} />
-      </ArcusProvider>,
+    const { container, props } = renderLayer(WaterBody, {
+      route: WATER_ROUTE,
+      range: PAST_RANGE,
+      now: () => NOW,
+      history,
+    });
+
+    const flowId = props.config.water!.flow!;
+    expect(history.series).toHaveBeenCalledWith(flowId, {
+      start: PAST_RANGE.start,
+      end: PAST_RANGE.end,
+      buckets: 96,
+      fill: "hold",
+    });
+
+    await waitFor(() => {
+      expect(history.ensureRange).toHaveBeenCalledTimes(1);
+    });
+    expect(history.ensureRange).toHaveBeenCalledWith(
+      [flowId],
+      PAST_RANGE.start - PREFETCH_MS,
+      PAST_RANGE.end,
     );
+
+    const label = `Flow · ${rangePeriodLabel(PAST_RANGE, props.t, "da", NOW)}`;
+    expect(screen.getByText(label)).toBeInTheDocument();
 
     const chart = container.querySelector(".chart-box")!;
     expect(chart).not.toHaveClass("no-data");
     const svg = chart.querySelector("svg")!;
     expect(svg).toHaveAttribute("data-graph", "line");
+    expect(svg).toHaveAttribute("data-gt0", String(PAST_RANGE.start));
+    expect(svg).toHaveAttribute("data-gt1", String(PAST_RANGE.end));
     const graph = parseGraph(svg);
     expect(graph?.series[0].values).toEqual(values);
     expect(graph?.series[0].unit).toBe("L/min");
     expect(svg.querySelector('path[fill="none"]')?.getAttribute("d")).not.toBe(
       "",
     );
+  });
+
+  test("clips a live day after the current time", () => {
+    const values = [0, 0.42, 0.18, 0.31];
+    const history = {
+      series: vi.fn(() => values),
+      window: vi.fn(() => []),
+      raw: vi.fn(() => []),
+      status: vi.fn(() => "ready"),
+    } as unknown as HistoryCache;
+
+    const { container } = renderLayer(WaterBody, {
+      route: WATER_ROUTE,
+      now: () => NOW,
+      history,
+    });
+
+    const graph = parseGraph(container.querySelector("svg[data-graph]")!);
+    expect(graph?.series[0].values).toEqual([0, null, null, null]);
   });
 
   test("names an unnamed leak sensor after its area", () => {

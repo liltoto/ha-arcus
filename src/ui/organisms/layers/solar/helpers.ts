@@ -4,6 +4,12 @@ import {
   type HistoryRow,
 } from "../../../../data/history";
 import { formatNumber } from "../../../../format";
+import {
+  addDays,
+  clipSeries,
+  startOfDay,
+  type ResolvedHistoryRange,
+} from "../../../../range";
 import type {
   ArcusConfig,
   ArcusHass,
@@ -136,10 +142,11 @@ export const historySeries = (
   id: string | undefined,
   days: number,
   fill: number | "hold" | null = "hold",
+  end?: number,
 ): Array<number | null> => {
   if (!id) return [];
   try {
-    return history.window(id, days, { buckets: 96, fill }) ?? [];
+    return history.window(id, days, { buckets: 96, fill, end }) ?? [];
   } catch {
     return [];
   }
@@ -234,24 +241,42 @@ export interface DayBarDatum {
   today: boolean;
 }
 
+/** The bars always show one week, whatever length the range control selects. */
+const PRODUCTION_DAYS = 7;
+
+/**
+ * The seven local calendar days ending on the anchor day; `end` is the
+ * exclusive midnight after it, so this matches the selected range's end.
+ */
+export const productionWindow = (
+  end: number,
+): { start: number; end: number } => {
+  return {
+    start: startOfDay(addDays(new Date(end - 1), -(PRODUCTION_DAYS - 1))),
+    end,
+  };
+};
+
 export const dailyProductionDays = (
   history: HistoryCache,
   entityId: string | undefined,
-  now: Date,
+  end: number,
   language: Language,
+  now: Date,
 ): DayBarDatum[] => {
   const rows = safeRaw(history, entityId);
+  const { start } = productionWindow(end);
   const byDay = new Map<string, number>();
   for (const entry of rows) {
     const time = rowTime(entry);
     const value = rowValue(entry);
-    if (!time || value === null) continue;
+    if (!time || value === null || time < start || time >= end) continue;
     const key = localDayKey(new Date(time));
     byDay.set(key, Math.max(byDay.get(key) ?? 0, value));
   }
   const days = [...byDay.entries()]
     .sort((a, b) => a[0].localeCompare(b[0]))
-    .slice(-7);
+    .slice(-PRODUCTION_DAYS);
   const todayKey = localDayKey(now);
   const weekday = new Intl.DateTimeFormat(localeFor(language), {
     weekday: "short",
@@ -312,6 +337,43 @@ export const installedAtValue = (
   }).format(date);
 };
 
+/** Entity ids the active tab's history charts read. */
+export const historyIdsFor = (
+  config: SolarConfig | undefined,
+  sub: SolarTab,
+): string[] => {
+  if (!config) return [];
+
+  const ids = new Set<string>();
+  const add = (id?: string) => {
+    if (id) ids.add(id);
+  };
+
+  if (sub === "overblik") {
+    add(config.load);
+    add(config.batteryPower);
+    add(config.grid);
+    add(config.gridL1);
+    add(config.gridL2);
+    add(config.gridL3);
+  } else if (sub === "produktion") {
+    add(config.today);
+    add(config.power);
+    add(config.pv1);
+    add(config.pv2);
+    add(config.pv3);
+    add(config.pv4);
+  } else if (sub === "batteri") {
+    add(config.batterySoc);
+    add(config.batteryCharge);
+    add(config.batteryDischarge);
+  } else if (sub === "afkast") {
+    add(config.savingsTotal);
+  }
+
+  return [...ids];
+};
+
 export const ensureHistory = (
   history: HistoryCache,
   config: SolarConfig | undefined,
@@ -335,59 +397,59 @@ export const ensureHistory = (
 
   // The payback tab only needs the savings total, but it needs a year of it.
   if (sub === "afkast") {
-    request(config.savingsTotal ? [config.savingsTotal] : [], 24 * 365);
+    request(historyIdsFor(config, sub), 24 * 365);
     return;
   }
 
-  const ids = new Set<string>();
-  const add = (id?: string) => {
-    if (id) ids.add(id);
-  };
-  add(config.batterySoc);
-  add(config.batteryCharge);
-  add(config.batteryDischarge);
-  add(config.today);
-  add(config.power);
-  add(config.load);
-  add(config.grid);
-  add(config.batteryPower);
-  add(config.pv1);
-  add(config.pv2);
-  add(config.pv3);
-  add(config.pv4);
-  add(config.gridL1);
-  add(config.gridL2);
-  add(config.gridL3);
-  request([...ids], 24 * 7);
+  // Preload every non-payback tab so switching tabs is instant.
+  const tabs: readonly SolarTab[] = ["overblik", "produktion", "batteri"];
+  const preload = tabs.flatMap((tab) => historyIdsFor(config, tab));
+  request([...new Set(preload)], 24 * 7);
 };
 
-/** Local calendar-day bounds for the day containing `now`. */
-export const dayWindow = (now: Date): { start: number; end: number } => {
+/** Local calendar-day bounds for the day containing `date`. */
+export const dayWindow = (date: Date): { start: number; end: number } => {
   const start = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
   ).getTime();
   return { start, end: start + DAY_MS };
 };
 
 /**
- * History series bucketed across the local calendar day. Buckets after `now`
- * are nulled so an actual line stops at the present instead of dropping to
- * zero across the rest of the day.
+ * A fixed-length window ending at `end`; the same arithmetic as
+ * `history.window(id, days, { end })`, so the chart axis matches the series.
+ */
+export const endWindow = (
+  end: number,
+  days: number,
+): { start: number; end: number } => {
+  return { start: end - days * DAY_MS, end };
+};
+
+/**
+ * History series bucketed across the selected range. Buckets after `now` are
+ * nulled so a live window stops at the present instead of holding the last
+ * value through the future.
  */
 export const historyDaySeries = (
   history: HistoryCache,
   id: string | undefined,
+  range: ResolvedHistoryRange,
   now: Date,
   fill: number | "hold" | null = "hold",
 ): Array<number | null> => {
   if (!id) return [];
-  const { start, end } = dayWindow(now);
   try {
-    const values = history.series(id, { start, end, buckets: 96, fill }) ?? [];
-    const cutoff = Math.floor(((now.getTime() - start) / DAY_MS) * 96);
-    return values.map((value, index) => (index <= cutoff ? value : null));
+    const values =
+      history.series(id, {
+        start: range.start,
+        end: range.end,
+        buckets: 96,
+        fill,
+      }) ?? [];
+    return clipSeries(values, 96, range, now);
   } catch {
     return [];
   }

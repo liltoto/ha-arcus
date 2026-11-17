@@ -4,6 +4,8 @@
  * Kept local to this module so the history cache does not depend on the
  * (still unfinished) shared types module.
  */
+import { startOfDay } from "../range";
+
 export interface HistoryHass {
   callWS(message: HistoryWsRequest): Promise<unknown>;
   callApi(method: string, path: string, data?: unknown): Promise<unknown>;
@@ -41,6 +43,12 @@ export interface SeriesOptions {
   fill?: number | "hold" | null;
 }
 
+/** A half-open window whose rows have been requested from the recorder. */
+interface Coverage {
+  start: number;
+  end: number;
+}
+
 export interface HistoryRow {
   s?: string | number | null;
   lu?: string | number | null;
@@ -53,7 +61,8 @@ export interface HistoryRow {
 interface CacheEntry {
   rows: HistoryRow[];
   fetchedAt: number;
-  hours: number;
+  /** Windows already answered by the recorder, merged and sorted. */
+  coverage: Coverage[];
 }
 
 /**
@@ -162,6 +171,61 @@ export const rowValue = (row: HistoryRow): number | null => {
 };
 
 /**
+ * Merge a refresh into the cached rows. A shorter live-tail request must not
+ * throw away an older multi-day window, so rows are unioned by timestamp
+ * (the newer row wins) instead of replacing the array.
+ */
+const mergeRows = (
+  previous: HistoryRow[],
+  next: HistoryRow[],
+): HistoryRow[] => {
+  if (!next.length) return previous;
+  if (!previous.length) {
+    return next.slice().sort((a, b) => rowTimestamp(a) - rowTimestamp(b));
+  }
+  const byTime = new Map<number, HistoryRow>();
+  const unknown = new Map<string, HistoryRow>();
+  const add = (row: HistoryRow): void => {
+    const timestamp = rowTimestamp(row);
+    if (timestamp) {
+      byTime.set(timestamp, row);
+      return;
+    }
+    unknown.set(JSON.stringify(row), row);
+  };
+  previous.forEach(add);
+  next.forEach(add);
+  return [
+    ...unknown.values(),
+    ...[...byTime.entries()].sort((a, b) => a[0] - b[0]).map(([, row]) => row),
+  ];
+};
+
+const mergeCoverage = (intervals: Coverage[], next: Coverage): Coverage[] => {
+  const all = [...intervals, next]
+    .filter((interval) => interval.end > interval.start)
+    .sort((a, b) => a.start - b.start);
+  const merged: Coverage[] = [];
+  for (const interval of all) {
+    const last = merged[merged.length - 1];
+    if (last && interval.start <= last.end) {
+      last.end = Math.max(last.end, interval.end);
+    } else {
+      merged.push({ ...interval });
+    }
+  }
+  return merged;
+};
+
+const sameCoverage = (a: Coverage[], b: Coverage[]): boolean => {
+  if (a.length !== b.length) return false;
+  return a.every(
+    (interval, index) =>
+      interval.start === b[index].start && interval.end === b[index].end,
+  );
+};
+
+/**
  * Per-entity history cache used by the cards and sheets.
  *
  * A fetch is considered fresh for five minutes, in-flight requests are shared
@@ -219,8 +283,26 @@ export class HistoryCache {
     this.listeners.forEach((listener) => listener());
   }
 
-  /** Load up to `hours` of history for the given entities. */
+  /** Load up to `hours` of history ending now for the given entities. */
   async ensure(entityIds: string[], hours: number): Promise<void> {
+    const end = this.now().getTime();
+    await this.ensureRange(entityIds, end - hours * 60 * 60 * 1000, end);
+  }
+
+  /**
+   * Load exactly the half-open window `[start, end)` for the given entities.
+   *
+   * A date picker must not download everything from now back to a day a year
+   * ago, so the request carries the selected window instead of an "hours from
+   * now" length. Coverage is tracked per entity, and a successful answer for
+   * an entity with no rows still marks the window as answered so a purged day
+   * resolves to `empty` rather than a permanent `loading`.
+   */
+  async ensureRange(
+    entityIds: string[],
+    start: number,
+    end: number,
+  ): Promise<void> {
     const ids = [
       ...new Set(
         entityIds.filter((id) => typeof id === "string" && id.length > 0),
@@ -228,13 +310,18 @@ export class HistoryCache {
     ];
     if (!ids.length) return;
 
+    const nowMs = this.now().getTime();
+    const endMs = Math.min(end, nowMs);
+    const startMs = Math.min(start, endMs);
+    if (startMs >= endMs) return;
+
     const pending = ids
       .map((id) => this.inflight.get(id))
       .filter((request): request is Promise<void> => Boolean(request));
     if (pending.length) await Promise.allSettled(pending);
 
     const need = ids.filter((id) =>
-      this.needs(id, hours, this.now().getTime()),
+      this.needsRange(id, startMs, endMs, this.now().getTime()),
     );
     if (!need.length) return;
 
@@ -243,7 +330,7 @@ export class HistoryCache {
       this.settled.delete(id);
       this.failed.delete(id);
     });
-    const request = this.fetch(need, hours);
+    const request = this.fetch(need, startMs, endMs);
     need.forEach((id) => this.inflight.set(id, request));
     try {
       await request;
@@ -278,7 +365,10 @@ export class HistoryCache {
     );
   }
 
-  /** Cached series for the last `days`, mapped into time buckets. */
+  /**
+   * Cached series for the `days` ending at `options.end` (now by default).
+   * Historical chart windows pass an explicit end so they do not drift.
+   */
   window(
     entityId: string,
     days: number,
@@ -286,10 +376,11 @@ export class HistoryCache {
   ): Array<number | null> {
     const entry = this.cache.get(entityId);
     if (!entry) return [];
-    const end = this.now().getTime();
+    const end = options.end ?? this.now().getTime();
+    const start = options.start ?? end - days * DAY_MS;
     return this.bucket(
       entry.rows,
-      end - days * DAY_MS,
+      start,
       end,
       options.buckets ?? 90,
       options.fill ?? null,
@@ -303,6 +394,7 @@ export class HistoryCache {
     buckets: number,
     fill: number | "hold" | null,
   ): Array<number | null> {
+    if (end <= start) return [];
     const count = Math.max(1, Math.round(buckets));
     const width = (end - start) / count;
     const sums = Array.from({ length: count }, () => 0);
@@ -312,7 +404,8 @@ export class HistoryCache {
 
     for (const row of rows) {
       const timestamp = rowTimestamp(row);
-      if (!timestamp || timestamp < start || timestamp > end) continue;
+      // Windows are half-open: a row exactly at `end` belongs to the next one.
+      if (!timestamp || timestamp < start || timestamp >= end) continue;
       const index = Math.min(
         count - 1,
         Math.max(0, Math.floor((timestamp - start) / width)),
@@ -364,14 +457,69 @@ export class HistoryCache {
     return "idle";
   }
 
-  private needs(entityId: string, hours: number, nowMs: number): boolean {
-    const entry = this.cache.get(entityId);
-    if (!entry) return true;
-    if (nowMs - entry.fetchedAt > CACHE_MS) return true;
-    return hours > entry.hours + 1;
+  /**
+   * Load state for a specific window. `status()` is per entity, so an entity
+   * with rows from another window would otherwise read as `ready` and the
+   * chart would draw a misleading empty series while the requested day is
+   * still loading.
+   */
+  rangeStatus(entityId: string, start: number, end: number): HistoryStatus {
+    const endMs = Math.min(end, this.now().getTime());
+    if (endMs <= start || this.covers(entityId, start, endMs)) {
+      return this.status(entityId);
+    }
+    if (this.inflight.has(entityId)) return "loading";
+    if (this.failed.has(entityId)) return "failed";
+    return "idle";
   }
 
-  private async fetch(entityIds: string[], hours: number): Promise<void> {
+  private covers(entityId: string, start: number, end: number): boolean {
+    const entry = this.cache.get(entityId);
+    return Boolean(
+      entry?.coverage.some(
+        (interval) => interval.start <= start && interval.end >= end,
+      ),
+    );
+  }
+
+  private needsRange(
+    entityId: string,
+    start: number,
+    end: number,
+    nowMs: number,
+  ): boolean {
+    const entry = this.cache.get(entityId);
+    if (!entry) return true;
+
+    // Past windows are immutable, so only a window that includes today needs
+    // the TTL refresh. A purged day must not be re-requested on every open.
+    const liveTail = end > startOfDay(nowMs);
+    if (liveTail && nowMs - entry.fetchedAt > CACHE_MS) return true;
+    if (this.covers(entityId, start, end)) return false;
+    if (!entry.coverage.length) return true;
+
+    const earliest = Math.min(
+      ...entry.coverage.map((interval) => interval.start),
+    );
+    // Extending the window further back always needs a request.
+    if (start < earliest) return true;
+
+    const latest = Math.max(...entry.coverage.map((interval) => interval.end));
+    if (end > latest) {
+      // A live window keeps growing as the clock advances. The TTL above
+      // decides when its tail refreshes; requiring exact coverage here would
+      // refetch on every 20-second clock tick.
+      return !liveTail;
+    }
+    // Within the outer bounds: a hole between covered intervals.
+    return true;
+  }
+
+  private async fetch(
+    entityIds: string[],
+    startMs: number,
+    endMs: number,
+  ): Promise<void> {
     const batches: string[][] = [];
     for (let index = 0; index < entityIds.length; index += FETCH_BATCH) {
       batches.push(entityIds.slice(index, index + FETCH_BATCH));
@@ -380,14 +528,16 @@ export class HistoryCache {
     // Worker pool: at most FETCH_CONCURRENCY batches are in flight, and every
     // batch is still started in request order.
     let next = 0;
+    let failedAny = false;
     const worker = async (): Promise<void> => {
       while (next < batches.length) {
         const batch = batches[next++];
-        const answered = await this.fetchBatch(batch, hours);
+        const answered = await this.fetchBatch(batch, startMs, endMs);
         batch.forEach((id) => {
           if (answered) this.failed.delete(id);
           else this.failed.add(id);
         });
+        if (!answered) failedAny = true;
       }
     };
     const workers = Math.min(FETCH_CONCURRENCY, batches.length);
@@ -398,6 +548,7 @@ export class HistoryCache {
       // may fail. Either way the request is finished, so status must stop
       // saying "loading" even when no cache entry was written.
       entityIds.forEach((id) => this.settled.add(id));
+      if (failedAny) this.notify();
     }
   }
 
@@ -408,10 +559,12 @@ export class HistoryCache {
    */
   private async fetchBatch(
     entityIds: string[],
-    hours: number,
+    startMs: number,
+    endMs: number,
   ): Promise<boolean> {
-    const end = this.now();
-    const start = new Date(end.getTime() - hours * 60 * 60 * 1000);
+    const start = new Date(startMs);
+    const end = new Date(endMs);
+    const hours = (endMs - startMs) / 3_600_000;
     const message: HistoryWsRequest = {
       type: "history/history_during_period",
       start_time: start.toISOString(),
@@ -423,13 +576,18 @@ export class HistoryCache {
     };
 
     const started = Date.now();
+    const accept = (response: unknown): void => {
+      const changed = this.ingest(response, entityIds);
+      const covered = this.cover(entityIds, startMs, endMs);
+      if (changed || covered) this.notify();
+    };
     const viaWebSocket = async (attempt: number): Promise<boolean> => {
       try {
         const response = await withTimeout(
           this.hass.callWS(message),
           this.timeoutMs,
         );
-        this.ingest(response, entityIds, hours);
+        accept(response);
         debugHistory("ws batch", {
           entities: entityIds.length,
           hours,
@@ -455,12 +613,14 @@ export class HistoryCache {
     try {
       const path =
         `history/period/${encodeURIComponent(start.toISOString())}` +
-        `?filter_entity_id=${entityIds.join(",")}&minimal_response&no_attributes`;
+        `?filter_entity_id=${entityIds.join(",")}` +
+        `&end_time=${encodeURIComponent(end.toISOString())}` +
+        `&minimal_response&no_attributes`;
       const response = await withTimeout(
         this.hass.callApi("GET", path),
         this.timeoutMs,
       );
-      this.ingest(response, entityIds, hours);
+      accept(response);
       debugHistory("rest batch", {
         entities: entityIds.length,
         hours,
@@ -478,44 +638,70 @@ export class HistoryCache {
     }
   }
 
-  private ingest(response: unknown, entityIds: string[], hours: number): void {
-    if (!response) return;
+  /** Merge a response; `true` means at least one entity received rows. */
+  private ingest(response: unknown, entityIds: string[]): boolean {
+    if (!response) return false;
+    let changed = false;
+    const write = (entityId: string | undefined, rows: unknown): void => {
+      if (this.put(entityId, rows)) changed = true;
+    };
 
     if (Array.isArray(response)) {
       if (response.every((item) => Array.isArray(item))) {
-        response.forEach((rows, index) =>
-          this.put(entityIds[index], rows, hours),
-        );
-        return;
+        response.forEach((rows, index) => write(entityIds[index], rows));
+        return changed;
       }
       // A flat list of rows is only unambiguous for a single entity.
-      if (entityIds.length === 1) this.put(entityIds[0], response, hours);
-      return;
+      if (entityIds.length === 1) write(entityIds[0], response);
+      return changed;
     }
 
     if (typeof response === "object") {
       for (const [id, rows] of Object.entries(
         response as Record<string, unknown>,
       )) {
-        this.put(id, rows, hours);
+        write(id, rows);
       }
     }
+    return changed;
   }
 
-  private put(
-    entityId: string | undefined,
-    rows: unknown,
-    hours: number,
-  ): void {
-    if (!entityId || !Array.isArray(rows)) return;
+  /**
+   * Merge rows into the cache without replacing a longer window with a
+   * shorter live-tail refresh.
+   */
+  private put(entityId: string | undefined, rows: unknown): boolean {
+    if (!entityId || !Array.isArray(rows) || !rows.length) return false;
     const previous = this.cache.get(entityId);
-    if (previous && hours < previous.hours) return;
     this.failed.delete(entityId);
     this.cache.set(entityId, {
-      rows: rows as HistoryRow[],
-      fetchedAt: this.now().getTime(),
-      hours,
+      rows: mergeRows(previous?.rows ?? [], rows as HistoryRow[]),
+      fetchedAt: previous?.fetchedAt ?? this.now().getTime(),
+      coverage: previous?.coverage ?? [],
     });
-    this.notify();
+    return true;
+  }
+
+  /**
+   * Mark a window as answered for every requested entity, even when the
+   * recorder returned no rows. Without this a purged day would stay
+   * `loading` forever.
+   */
+  private cover(entityIds: string[], start: number, end: number): boolean {
+    const nowMs = this.now().getTime();
+    let changed = false;
+    for (const entityId of entityIds) {
+      const previous = this.cache.get(entityId);
+      const coverage = mergeCoverage(previous?.coverage ?? [], { start, end });
+      if (!previous || !sameCoverage(previous.coverage, coverage)) {
+        changed = true;
+      }
+      this.cache.set(entityId, {
+        rows: previous?.rows ?? [],
+        fetchedAt: nowMs,
+        coverage,
+      });
+    }
+    return changed;
   }
 }

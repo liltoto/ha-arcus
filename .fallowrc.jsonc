@@ -40,7 +40,7 @@
       {
         "name": "root",
         "patterns": [
-          "src/{actions,card,config,editor-entities,editor-utils,editor,format,localize,main,strategy-editor,strategy,types,version}.ts",
+          "src/{actions,card,config,editor-entities,editor-utils,editor,format,localize,main,range,strategy-editor,strategy,types,version}.ts",
           "src/types/**",
         ],
       },

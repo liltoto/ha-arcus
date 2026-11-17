@@ -16,6 +16,7 @@ Arcus is a Dashboard plugin for the Home Assistant Marketplace. It installs as o
 
 - **Rooms from your registries.** Arcus reads Home Assistant's areas, devices, and entities. A room appears when it has an area; its temperature, humidity, air quality, lights, openings, climate, media, leak sensor, and battery are discovered automatically.
 - **The arc of the day.** Prayer times, sunrise, the solar curve, and the hour-by-hour price sit on one arc, so the dashboard shows where the day is.
+- **Yesterday is one tap away.** A card-wide history control steps back a day, picks any day, or switches to a 7- or 30-day window. Room, solar, energy, water, heating, tech, economy, and home charts follow it; live readings and forecasts stay live.
 - **Chapters that earn their place.** Energy, solar, water, security, ventilation, tech, economy, lights, heating, and alerts only appear when there is data for them.
 - **Sheets for the details.** Room, light, heating, ventilation, energy, solar, water, security, tech, economy, prayer, and alert sheets use the same visual language as the home view.
 - **A dashboard that follows your home.** The strategy generates one panel view containing the card. When you add an area or rename a device, the card rebuilds without a dashboard edit.
@@ -386,7 +387,7 @@ The card editor exposes the title, subtitle, language, appearance, atmosphere, d
 
 **The card or strategy does not appear after an update.** Hard refresh the browser. The Marketplace adds the resource with a version query such as `?v=...`; a cached module can survive a normal reload. Check **Settings → Dashboards → Resources** for one Arcus entry and remove duplicates. If the `www` folder did not exist when Home Assistant started, restart Home Assistant once so the Marketplace can create it.
 
-**The strategy is not in the picker.** Reload the browser and check the browser console for `Arcus v0.5.2`. If the module did not load, verify the resource URL and that its type is **JavaScript module**. You can always paste the strategy YAML into the raw dashboard editor.
+**The strategy is not in the picker.** Reload the browser and check the browser console for `Arcus v0.6.0`. If the module did not load, verify the resource URL and that its type is **JavaScript module**. You can always paste the strategy YAML into the raw dashboard editor.
 
 **A configuration error appears.** Arcus reports the field that failed, for example `areas.include must be an array of strings`. Check that lists are lists, booleans are `true` or `false`, and enum values are spelled as shown above.
 

@@ -2,6 +2,7 @@ import type { Decorator } from "@storybook/react";
 import { createTranslator } from "../../localize";
 import { buildBindings } from "../../model/bindings";
 import { buildModel } from "../../model/build";
+import { defaultRange, resolveRange } from "../../range";
 import type { ArcusActions, ArcusRoute, ArcusStoreState } from "../types";
 import type { HistoryCache } from "../../data/history";
 import { makeConfig, makeHass } from "../../../tests/fixtures/home";
@@ -22,6 +23,7 @@ const actions: ArcusActions = {
   performAction: () => undefined,
   toast: () => undefined,
   setAtmo: () => undefined,
+  setHistoryRange: () => undefined,
 };
 
 const history = {
@@ -56,6 +58,7 @@ const providerState: ArcusStoreState = {
   actions,
   history,
   now,
+  range: resolveRange(defaultRange(now()), now()),
   atmo: "night",
   atmoMode: "night",
   dark: true,

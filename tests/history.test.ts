@@ -77,7 +77,7 @@ test("reads array-of-arrays responses with ISO timestamps", async () => {
     [
       { state: "2.5", last_updated: "2026-11-13T08:00:00+01:00" },
       { state: "unknown", last_changed: "2026-11-13T09:00:00+01:00" },
-      { state: "3", last_updated: "2026-11-13T10:00:00+01:00" },
+      { state: "3", last_updated: "2026-11-13T09:59:00+01:00" },
     ],
   ]);
   const cache = new HistoryCache(hass, () => FIXED);
@@ -109,7 +109,9 @@ test("retries the WebSocket once, then falls back to REST", async () => {
   expect(api).toHaveBeenCalledTimes(1);
   expect(api.mock.calls[0][0]).toBe("GET");
   expect(api.mock.calls[0][1]).toBe(
-    `history/period/${encodeURIComponent(start)}?filter_entity_id=sensor.c&minimal_response&no_attributes`,
+    `history/period/${encodeURIComponent(start)}?filter_entity_id=sensor.c` +
+      `&end_time=${encodeURIComponent(FIXED.toISOString())}` +
+      `&minimal_response&no_attributes`,
   );
   expect(nonNull(cache.series("sensor.c"))).toEqual([4]);
   expect(cache.status("sensor.c")).toBe("ready");
@@ -246,7 +248,7 @@ test("window filters cached rows by timestamp", async () => {
   expect(nonNull(cache.window("sensor.d", 1))).toEqual([1]);
 });
 
-test("keeps a longer cached range when a shorter one is fetched later", async () => {
+test("merges a shorter refresh into a longer cached range", async () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-11-13T10:00:00Z"));
   const ws = vi
@@ -267,7 +269,7 @@ test("keeps a longer cached range when a shorter one is fetched later", async ()
   await cache.ensure(["sensor.a"], 12);
 
   expect(ws).toHaveBeenCalledTimes(2);
-  expect(nonNull(cache.series("sensor.a"))).toEqual([1, 2]);
+  expect(nonNull(cache.series("sensor.a"))).toEqual([1, 2, 9]);
 });
 
 test("maps long series into 90 equal time buckets", async () => {
@@ -477,6 +479,86 @@ test("reports empty when a completed fetch omits the entity", async () => {
   second.resolve({});
   await refresh;
   expect(cache.status("sensor.omitted")).toBe("empty");
+});
+
+test("fetches an explicit historical window and tracks its coverage", async () => {
+  const calls: HistoryWsRequest[] = [];
+  const ws = vi.fn(async (message: HistoryWsRequest) => {
+    calls.push(message);
+    return {
+      "sensor.past": [
+        {
+          s: "18",
+          lu: Math.floor(new Date("2026-11-10T12:00:00Z").getTime() / 1000),
+        },
+      ],
+    };
+  });
+  const cache = new HistoryCache(makeHass(ws), () => FIXED);
+  const start = new Date("2026-11-10T00:00:00Z").getTime();
+  const end = new Date("2026-11-11T00:00:00Z").getTime();
+
+  expect(cache.rangeStatus("sensor.past", start, end)).toBe("idle");
+  await cache.ensureRange(["sensor.past"], start, end);
+
+  expect(calls).toHaveLength(1);
+  expect(calls[0].start_time).toBe(new Date(start).toISOString());
+  expect(calls[0].end_time).toBe(new Date(end).toISOString());
+  expect(cache.rangeStatus("sensor.past", start, end)).toBe("ready");
+  expect(nonNull(cache.series("sensor.past", { start, end }))).toEqual([18]);
+
+  // The same window is already answered; a second call must not re-request it.
+  await cache.ensureRange(["sensor.past"], start, end);
+  expect(calls).toHaveLength(1);
+});
+
+test("marks a purged window as empty instead of loading forever", async () => {
+  const ws = vi.fn(async () => ({}));
+  const cache = new HistoryCache(makeHass(ws), () => FIXED);
+  const start = new Date("2026-10-01T00:00:00Z").getTime();
+  const end = new Date("2026-10-02T00:00:00Z").getTime();
+
+  await cache.ensureRange(["sensor.purged"], start, end);
+
+  expect(cache.rangeStatus("sensor.purged", start, end)).toBe("empty");
+  expect(cache.status("sensor.purged")).toBe("empty");
+  expect(cache.raw("sensor.purged")).toEqual([]);
+});
+
+test("reports loading for an uncovered window while its request is in flight", async () => {
+  const pending = deferred<unknown>();
+  const ws = vi.fn(() => pending.promise);
+  const cache = new HistoryCache(makeHass(ws), () => FIXED);
+  const start = new Date("2026-11-10T00:00:00Z").getTime();
+  const end = new Date("2026-11-11T00:00:00Z").getTime();
+
+  const load = cache.ensureRange(["sensor.past"], start, end);
+  expect(cache.rangeStatus("sensor.past", start, end)).toBe("loading");
+
+  pending.resolve({});
+  await load;
+  expect(cache.rangeStatus("sensor.past", start, end)).toBe("empty");
+});
+
+test("honours an explicit end for window()", async () => {
+  const ws = vi.fn(async () => ({
+    "sensor.window": [
+      {
+        s: "1",
+        lu: Math.floor(new Date("2026-11-10T12:00:00Z").getTime() / 1000),
+      },
+      {
+        s: "2",
+        lu: Math.floor(new Date("2026-11-12T12:00:00Z").getTime() / 1000),
+      },
+    ],
+  }));
+  const cache = new HistoryCache(makeHass(ws), () => FIXED);
+
+  await cache.ensure(["sensor.window"], 24 * 10);
+  const end = new Date("2026-11-11T00:00:00Z").getTime();
+
+  expect(nonNull(cache.window("sensor.window", 1, { end }))).toEqual([1]);
 });
 
 test("reports idle, loading, empty, and ready status transitions", async () => {

@@ -5,6 +5,7 @@ import type { HistoryCache } from "../../src/data/history";
 import { createTranslator } from "../../src/localize";
 import { buildBindings } from "../../src/model/bindings";
 import { buildModel } from "../../src/model/build";
+import { defaultRange, resolveRange } from "../../src/range";
 import type { ArcusActions } from "../../src/ui/types";
 import { ArcusApp } from "../../src/ui/ArcusApp";
 import { createArcusStore } from "../../src/ui/providers/store";
@@ -30,6 +31,7 @@ const actionsStub = (): ArcusActions => {
     performAction: vi.fn(),
     toast: vi.fn(),
     setAtmo: vi.fn(),
+    setHistoryRange: vi.fn(),
   };
 };
 
@@ -64,6 +66,7 @@ const bridgeProps = () => {
     actions: actionsStub(),
     history: historyStub(),
     now: () => FIXED_NOW,
+    range: resolveRange(defaultRange(FIXED_NOW), FIXED_NOW),
     atmo: "night" as const,
     atmoMode: "night" as const,
     dark: true,

@@ -2,13 +2,17 @@ import { useEffect, useRef } from "react";
 import { applyGraph } from "../../../../render/graph";
 import { escapeHtml, formatNumber } from "../../../../format";
 import type { Language } from "../../../../types";
-import { DAY_MS, type DayBarDatum } from "./helpers";
+import type { DayBarDatum } from "./helpers";
 import { c } from "../../../styles/classes";
 
 export interface DayBarsProps {
   days: DayBarDatum[];
   empty: string;
   language: Language;
+  /** Start of the seven-day window the bars belong to, epoch milliseconds. */
+  start: number;
+  /** Exclusive end of the window, matching the selected range. */
+  end: number;
 }
 
 /**
@@ -16,9 +20,16 @@ export interface DayBarsProps {
  *
  * The bars are written imperatively so the `applyGraph` dataset can be rebuilt
  * from the same day buckets on every history refresh. Rebuilding is skipped
- * while the rendered signature (`days`, `empty`, `language`) is unchanged.
+ * while the rendered signature (`days`, `empty`, `language`, window) is
+ * unchanged.
  */
-export const DayBars = ({ days, empty, language }: DayBarsProps) => {
+export const DayBars = ({
+  days,
+  empty,
+  language,
+  start,
+  end,
+}: DayBarsProps) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const paintedRef = useRef<{ element: HTMLElement; sig: string } | null>(null);
 
@@ -26,7 +37,7 @@ export const DayBars = ({ days, empty, language }: DayBarsProps) => {
     const element = hostRef.current;
     if (!element) return;
 
-    const sig = JSON.stringify([days, empty, language]);
+    const sig = JSON.stringify([days, empty, language, start, end]);
     const painted = paintedRef.current;
     if (painted?.element === element && painted.sig === sig) return;
     paintedRef.current = { element, sig };
@@ -54,9 +65,6 @@ export const DayBars = ({ days, empty, language }: DayBarsProps) => {
       )
       .join("");
 
-    const start = new Date(`${days[0].key}T00:00:00`).getTime();
-    const last = days[days.length - 1].key;
-    const end = new Date(`${last}T00:00:00`).getTime() + DAY_MS;
     applyGraph(element, {
       mode: "bars",
       start,

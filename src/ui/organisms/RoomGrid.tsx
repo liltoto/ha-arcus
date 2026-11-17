@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { resolveTempUnit } from "../../format";
 import { resolveLanguage } from "../../localize";
+import { clipSeries } from "../../range";
 import type { RoomModel, TemperatureUnit } from "../../types";
 import { Icon } from "../atoms/Icon";
 import {
@@ -12,6 +13,7 @@ import {
   useHistoryVersion,
   useModel,
   useNow,
+  useRange,
   useTranslator,
 } from "../hooks";
 import { roomView, systemCardView } from "../home-view";
@@ -73,14 +75,22 @@ const RoomTile = ({ room, language, tempUnit, outdoor }: RoomTileProps) => {
   const actions = useActions();
   const history = useHistory();
   const now = useNow();
-  const spark = history.series(room.temp?.entityId ?? "", {
-    buckets: 48,
-    fill: "hold",
-  });
+  const range = useRange();
+  const current = now();
+  const spark = clipSeries(
+    history.series(room.temp?.entityId ?? "", {
+      buckets: 48,
+      fill: "hold",
+      start: range.start,
+      end: range.end,
+    }),
+    48,
+    range,
+    current,
+  );
   const kind = outdoor
     ? `${t("sheet.kickerOutside")} · ${t("room.kind")}`
     : undefined;
-  const nowMs = now().getTime();
 
   return (
     <RoomCard
@@ -92,8 +102,8 @@ const RoomTile = ({ room, language, tempUnit, outdoor }: RoomTileProps) => {
         spark.length
           ? {
               mode: "line",
-              start: nowMs - 86_400_000,
-              end: nowMs,
+              start: range.start,
+              end: range.end,
               unit: tempUnit,
               decimals: 1,
               series: [{ values: spark }],
@@ -113,17 +123,25 @@ const SystemTiles = ({ tempUnit }: { tempUnit: TemperatureUnit }) => {
   const actions = useActions();
   const history = useHistory();
   const now = useNow();
+  const range = useRange();
   const language = resolveLanguage(hass.language, config);
-  const nowMs = now().getTime();
+  const current = now();
 
   return (
     <>
       {model.systemCards.map((card) => {
         const view = systemCardView(card, language, t);
-        const spark = history.series(view.tempEntity, {
-          buckets: 48,
-          fill: "hold",
-        });
+        const spark = clipSeries(
+          history.series(view.tempEntity, {
+            buckets: 48,
+            fill: "hold",
+            start: range.start,
+            end: range.end,
+          }),
+          48,
+          range,
+          current,
+        );
         return (
           <SystemCard
             key={`system:${card.id}`}
@@ -133,8 +151,8 @@ const SystemTiles = ({ tempUnit }: { tempUnit: TemperatureUnit }) => {
               spark.length
                 ? {
                     mode: "line",
-                    start: nowMs - 86_400_000,
-                    end: nowMs,
+                    start: range.start,
+                    end: range.end,
                     unit: tempUnit,
                     decimals: 1,
                     series: [{ values: spark }],

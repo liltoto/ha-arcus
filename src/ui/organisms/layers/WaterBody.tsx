@@ -1,5 +1,11 @@
+import { clipSeries, rangePeriodLabel } from "../../../range";
 import { EmptyState } from "../../atoms/EmptyState";
 import { SheetHeader } from "../../molecules/SheetHeader";
+import {
+  chartStateFor,
+  rangeStatusFor,
+  useRangeEnsure,
+} from "../../hooks/useHistoryRange";
 import { useHistoryFrame } from "../../hooks/useLayerFrame";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { c } from "../../styles/classes";
@@ -14,13 +20,18 @@ import {
 import { resolveWaterView } from "./water/water-view";
 
 /**
- * Water: the BWT softener, consumption, leak sensors, and the 24-hour flow
- * chart. Everything except the controls comes from `model.water`; the live
- * states are only needed for the holiday switch and the leak sensors.
+ * Water: the BWT softener, consumption, leak sensors, and the flow chart for
+ * the selected history window. Everything except the controls comes from
+ * `model.water`; the live states are only needed for the holiday switch and
+ * the leak sensors.
  */
 export const WaterBody = (_props: LayerBodyProps) => {
-  const { hass, model, config, t, history, now, actions } = useHistoryFrame();
+  const { hass, model, config, t, history, range, now, actions } =
+    useHistoryFrame();
   const water = model.water;
+  const flowId = config.water?.flow;
+
+  useRangeEnsure([flowId]);
 
   if (!water) {
     return (
@@ -40,9 +51,24 @@ export const WaterBody = (_props: LayerBodyProps) => {
   }
 
   const view = resolveWaterView(hass, model, config, water, t);
-  const flowId = config.water?.flow;
-  const flowSeries = flowId ? history.series(flowId, { fill: "hold" }) : [];
-  const end = now().getTime();
+  const nowDate = now();
+  const values = flowId
+    ? history.series(flowId, {
+        start: range.start,
+        end: range.end,
+        buckets: 96,
+        fill: "hold",
+      })
+    : [];
+  const flowSeries = clipSeries(values, 96, range, nowDate);
+  const hasData = flowSeries.some(
+    (value) => typeof value === "number" && Number.isFinite(value),
+  );
+  const state = chartStateFor(hasData, rangeStatusFor(history, flowId, range));
+  const flowLabel = t("chart.period", {
+    label: t("water.flow"),
+    period: rangePeriodLabel(range, t, model.language, nowDate),
+  });
   const holidayId = view.holidayId;
 
   const toggleHoliday = (): void => {
@@ -74,7 +100,14 @@ export const WaterBody = (_props: LayerBodyProps) => {
 
         <WaterLeaks view={view} t={t} />
 
-        <WaterFlow values={flowSeries} end={end} t={t} />
+        <WaterFlow
+          values={flowSeries}
+          label={flowLabel}
+          start={range.start}
+          end={range.end}
+          state={state}
+          t={t}
+        />
 
         {view.hasSoftener ? (
           <div className={c("note")}>{t("water.footer")}</div>

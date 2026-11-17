@@ -1,4 +1,5 @@
 import type { HistoryCache } from "../../data/history";
+import type { ResolvedHistoryRange } from "../../range";
 import type {
   ArcusConfig,
   ArcusHass,
@@ -13,6 +14,7 @@ import {
   useHistory,
   useModel,
   useNow,
+  useRange,
   useTranslator,
 } from "../providers/ArcusProvider";
 import type { ArcusActions } from "../types";
@@ -27,9 +29,10 @@ export interface LayerFrame {
   actions: ArcusActions;
 }
 
-/** A layer frame plus the history cache and its version subscription. */
+/** A layer frame plus the history cache, range, and version subscription. */
 export interface HistoryFrame extends LayerFrame {
   history: HistoryCache;
+  range: ResolvedHistoryRange;
 }
 
 /**
@@ -52,7 +55,8 @@ const useLayerFrame = (): LayerFrame => {
 export const useHistoryFrame = (): HistoryFrame => {
   const frame = useLayerFrame();
   const history = useHistory();
+  const range = useRange();
   useHistoryVersion();
 
-  return { ...frame, history };
+  return { ...frame, history, range };
 };

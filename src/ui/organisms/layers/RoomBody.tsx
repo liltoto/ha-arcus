@@ -1,8 +1,9 @@
-import { useEffect, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import { resolveTempUnit } from "../../../format";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { EmptyState } from "../../atoms/EmptyState";
 import { SheetHeader } from "../../molecules/SheetHeader";
+import { useRangeEnsure } from "../../hooks/useHistoryRange";
 import { useHistoryFrame } from "../../hooks/useLayerFrame";
 import { useLightActions } from "../../hooks/useLightActions";
 import { c } from "../../styles/classes";
@@ -43,7 +44,8 @@ const LAYER_STYLE: CSSProperties = {
  * matching the prototype's first-room fallback.
  */
 export const RoomBody = ({ route }: LayerBodyProps) => {
-  const { hass, model, config, t, history, now, actions } = useHistoryFrame();
+  const { hass, model, config, t, history, range, now, actions } =
+    useHistoryFrame();
   const lightActions = useLightActions();
 
   const room = resolveRoom(model, route);
@@ -52,22 +54,16 @@ export const RoomBody = ({ route }: LayerBodyProps) => {
   const nowMs = now().getTime();
 
   // The chart ids, not the hass object: a state push that leaves the room's
-  // sensors alone must not re-run the fetch effect.
-  const historyKey = room
+  // sensors alone must not re-run the range fetch.
+  const historyIds = room
     ? [
         temperatureChartId(hass, room),
         room.humidity?.entityId,
         room.co2?.entityId,
         room.pm25?.entityId,
       ]
-        .filter((id): id is string => typeof id === "string" && id.length > 0)
-        .join("|")
-    : "";
-
-  useEffect(() => {
-    if (!historyKey) return;
-    void history.ensure(historyKey.split("|"), 24);
-  }, [history, historyKey]);
+    : [];
+  useRangeEnsure(historyIds);
 
   if (!room) {
     return (
@@ -108,6 +104,7 @@ export const RoomBody = ({ route }: LayerBodyProps) => {
           view={view}
           history={history}
           hass={hass}
+          range={range}
           now={now}
           t={t}
           language={language}

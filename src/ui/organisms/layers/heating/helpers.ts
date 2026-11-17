@@ -15,7 +15,6 @@ import {
   type HeatingReading,
 } from "./heating-state";
 
-export const DAY_MS = 24 * 60 * 60 * 1000;
 export const CHART_HEIGHT = 120;
 
 export const temperature = (

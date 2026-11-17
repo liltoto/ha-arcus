@@ -1,6 +1,8 @@
 import { fireEvent, screen, within } from "@testing-library/react";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
+import type { HistoryCache, SeriesOptions } from "../../../src/data/history";
 import { parseGraph } from "../../../src/render/graph";
+import { resolveRange, startOfDay } from "../../../src/range";
 import { EnergyBody } from "../../../src/ui/organisms/layers/EnergyBody";
 import { renderLayer } from "../layer-test-utils";
 import { makeArcusProps } from "../home-test-utils";
@@ -179,6 +181,116 @@ describe("EnergyBody", () => {
     expect(appliances).toHaveTextContent("69");
     expect(appliances.querySelectorAll(".row svg.ico")).toHaveLength(2);
   });
+
+  test("rewinds the price and device charts to a past range", () => {
+    const nowDate = new Date("2026-11-13T01:19:00+01:00");
+    const range = resolveRange(
+      {
+        anchor: startOfDay(new Date("2026-11-12T12:00:00+01:00")),
+        days: 1,
+      },
+      nowDate,
+    );
+    const series = vi.fn((_entityId: string, _options?: SeriesOptions) =>
+      Array.from({ length: 24 }, (_, index) => 1 + index / 100),
+    );
+    const history = {
+      ensure: async () => undefined,
+      series,
+      window: () => [],
+      raw: () => [],
+      status: () => "ready",
+      rangeStatus: () => "ready",
+    } as unknown as HistoryCache;
+
+    const { container } = renderLayer(EnergyBody, {
+      config: makeConfig({
+        energy: {
+          standby: "sensor.all_standby_power",
+          ev: {
+            name: "Tesla",
+            power: "sensor.tesla_wall_connector_total_power",
+          },
+          appliances: [
+            {
+              name: "Fryser",
+              entity: "sensor.grillplats_plug_effekt",
+              icon: "snow",
+            },
+          ],
+        },
+      }),
+      history,
+      now: () => nowDate,
+      range,
+    });
+
+    expect(series).toHaveBeenCalledWith("sensor.electricity_total_price", {
+      start: range.start,
+      end: range.end,
+      buckets: 24,
+      fill: null,
+    });
+
+    const bars = container.querySelector<HTMLElement>(".bar-chart");
+    expect(bars).not.toBeNull();
+    expect(bars).toHaveAttribute("data-gt0", String(range.start));
+    expect(bars).toHaveAttribute("data-gt1", String(range.end));
+    expect(bars!.querySelectorAll("i")).toHaveLength(24);
+    expect(bars!.querySelector("i.now")).toBeNull();
+    expect(parseGraph(bars!)?.series[0]?.values[0]).toBeCloseTo(1, 5);
+
+    expect(series).toHaveBeenCalledWith("sensor.grillplats_plug_effekt", {
+      start: range.start,
+      end: range.end,
+      buckets: 96,
+      fill: "hold",
+    });
+
+    const charts = container.querySelectorAll(".chart-box");
+    expect(charts).toHaveLength(3);
+    for (const chart of charts) {
+      expect(chart).toHaveAttribute("data-gt0", String(range.start));
+      expect(chart).toHaveAttribute("data-gt1", String(range.end));
+    }
+    expect(screen.getByText(/^Fryser · /)).toBeInTheDocument();
+  });
+
+  test.each([
+    ["failed", "Utilgængelig"],
+    ["idle", "Indlæser…"],
+    ["loading", "Indlæser…"],
+    ["empty", "Ingen data"],
+  ] as const)(
+    "shows the %s recorder state for a purged price day",
+    (status, label) => {
+      const nowDate = new Date("2026-11-13T01:19:00+01:00");
+      const range = resolveRange(
+        {
+          anchor: startOfDay(new Date("2026-11-12T12:00:00+01:00")),
+          days: 1,
+        },
+        nowDate,
+      );
+      const history = {
+        ensure: async () => undefined,
+        series: () => [],
+        window: () => [],
+        raw: () => [],
+        status: () => status,
+        rangeStatus: () => status,
+      } as unknown as HistoryCache;
+
+      renderLayer(EnergyBody, {
+        history,
+        now: () => nowDate,
+        range,
+      });
+
+      const block = screen.getByText("Døgnets priser").closest(".block");
+      expect(block).toHaveTextContent(label);
+    },
+  );
 
   test("renders the calm empty state when the price model is missing", () => {
     const base = makeArcusProps();

@@ -1,5 +1,10 @@
 import { formatNumber } from "../../../format";
 import { EmptyState } from "../../atoms/EmptyState";
+import {
+  chartStateFor,
+  rangeStatusFor,
+  useRangeEnsure,
+} from "../../hooks/useHistoryRange";
 import { useHistoryFrame } from "../../hooks/useLayerFrame";
 import { SheetHeader } from "../../molecules/SheetHeader";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
@@ -18,17 +23,22 @@ const SHEET_STYLE = {
 
 /**
  * Tech: router/Google/Cloudflare latency, packet loss, jitter and the
- * inverter/datalogger details, ported from `views/layers/tech.ts`. The 6-hour
- * pulse is rendered from the history cache rather than left for the card to
- * fill in later.
+ * inverter/datalogger details, ported from `views/layers/tech.ts`. The pulse
+ * chart is rendered from the history cache across the card-wide window rather
+ * than left for the card to fill in later.
  */
 export const TechBody = (_props: LayerBodyProps) => {
-  const { model, config, history, t, now, actions } = useHistoryFrame();
+  const { model, config, history, range, t, now, actions } = useHistoryFrame();
 
   const language = model.language;
   const fmt: TechFormat = (value, digits = 1) =>
     formatNumber(value, digits, language);
   const tech = model.tech;
+  const routerId = config.network?.router;
+  const googleId = config.network?.google;
+  const cloudflareId = config.network?.cloudflare;
+
+  useRangeEnsure([routerId, googleId, cloudflareId]);
 
   if (!tech) {
     return (
@@ -48,7 +58,17 @@ export const TechBody = (_props: LayerBodyProps) => {
   }
 
   const status = techStatus(t, tech.routerOnline);
-  const nowMs = now().getTime();
+  const nowDate = now();
+  const router = seriesOf(history, routerId, range, nowDate);
+  const google = seriesOf(history, googleId, range, nowDate);
+  const cloudflare = seriesOf(history, cloudflareId, range, nowDate);
+  const pulseHasData = [router, google, cloudflare].some((values) =>
+    values.some((value) => typeof value === "number" && Number.isFinite(value)),
+  );
+  const pulseState = chartStateFor(
+    pulseHasData,
+    rangeStatusFor(history, routerId, range),
+  );
 
   return (
     <div data-react-layer style={SHEET_STYLE}>
@@ -67,10 +87,13 @@ export const TechBody = (_props: LayerBodyProps) => {
         <TechReadings tech={tech} fmt={fmt} t={t} />
         <TechPulse
           t={t}
-          nowMs={nowMs}
-          router={seriesOf(history, config.network?.router)}
-          google={seriesOf(history, config.network?.google)}
-          cloudflare={seriesOf(history, config.network?.cloudflare)}
+          language={language}
+          range={range}
+          now={now}
+          state={pulseState}
+          router={router}
+          google={google}
+          cloudflare={cloudflare}
         />
         <TechQuality tech={tech} fmt={fmt} t={t} status={status} />
         <TechInverter tech={tech} fmt={fmt} t={t} language={language} />

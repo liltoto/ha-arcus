@@ -1,8 +1,11 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import type { HistoryCache, HistoryRow } from "../../../src/data/history";
 import { buildModel } from "../../../src/model/build";
+import { rangePeriodLabel, resolveRange } from "../../../src/range";
 import { SolarBody } from "../../../src/ui/organisms/layers/SolarBody";
+import { productionWindow } from "../../../src/ui/organisms/layers/solar/helpers";
 import type { ArcusConfig } from "../../../src/types";
 import { makeConfig, makeHass } from "../../fixtures/home";
 import { renderLayer } from "../layer-test-utils";
@@ -16,6 +19,12 @@ import type { ArcusRenderOptions } from "../home-test-utils";
 
 const NOW = new Date("2026-11-13T01:19:00+01:00");
 
+/** A day the mock home has history for, but not the live day. */
+const PAST_RANGE = resolveRange(
+  { anchor: new Date("2026-11-12T00:00:00+01:00").getTime(), days: 1 },
+  NOW,
+);
+
 const renderSolar = (
   sub: string | null = null,
   options: ArcusRenderOptions = {},
@@ -28,6 +37,38 @@ const renderSolar = (
 
 const baseModel = (config: ArcusConfig = makeConfig()) => {
   return buildModel(makeHass(), config, NOW);
+};
+
+/**
+ * A history double that returns plotted values for every series, so the
+ * chart frames carry their hover window instead of the no-data overlay.
+ */
+const makeHistory = () => {
+  const values = (): Array<number | null> =>
+    Array.from({ length: 96 }, (_, index) => index);
+  const series = vi.fn(values);
+  const window = vi.fn(values);
+  const raw = vi.fn((): HistoryRow[] => []);
+  const ensure = vi.fn(async () => undefined);
+  const ensureRange = vi.fn(async () => undefined);
+  const history = {
+    ensure,
+    ensureRange,
+    series,
+    window,
+    raw,
+    status: () => "ready",
+    rangeStatus: () => "ready",
+  } as unknown as HistoryCache;
+  return { history, series, window, raw, ensure, ensureRange };
+};
+
+/** Ten noon rows before `end`, so the seven-day window has spare days. */
+const productionRows = (end: number): HistoryRow[] => {
+  return Array.from({ length: 10 }, (_, index) => ({
+    lu: (end - (index + 1) * 86_400_000 + 12 * 3_600_000) / 1000,
+    s: String((index + 1) * 2),
+  }));
 };
 
 describe("SolarBody", () => {
@@ -100,7 +141,7 @@ describe("SolarBody", () => {
   it("renders the production forecast, strings, totals, and daily bars", () => {
     const { container } = renderSolar("produktion");
 
-    expect(screen.getByText("Produktion mod prognose")).toBeInTheDocument();
+    expect(screen.getByText(/Produktion mod prognose/)).toBeInTheDocument();
     expect(screen.getByText("Strings")).toBeInTheDocument();
     expect(screen.getByText("Total produceret")).toBeInTheDocument();
     expect(container.querySelector(".tab.active")).toHaveAttribute(
@@ -328,5 +369,156 @@ describe("SolarBody", () => {
     expect(container.querySelector(".sheet-sum")).toHaveTextContent(
       "Ingen solcelledata",
     );
+  });
+
+  it("reads the selected day for the 24-hour charts", () => {
+    const { history, series } = makeHistory();
+    const { container, props } = renderSolar(null, {
+      history,
+      range: PAST_RANGE,
+    });
+
+    expect(series).toHaveBeenCalledWith(
+      "sensor.sunmate_io_pulse_ee40a0_pulse_load_w_totalpower",
+      {
+        start: PAST_RANGE.start,
+        end: PAST_RANGE.end,
+        buckets: 96,
+        fill: "hold",
+      },
+    );
+
+    const chart = container.querySelector(
+      '[data-chart="solar-24h"]',
+    ) as HTMLElement;
+    expect(chart).toHaveAttribute("data-gt0", String(PAST_RANGE.start));
+    expect(chart).toHaveAttribute("data-gt1", String(PAST_RANGE.end));
+    expect(chart.querySelector('[data-chart-line="solarForecast"]')).toBeNull();
+
+    const title = props.t("chart.period", {
+      label: props.t("solar.power"),
+      period: rangePeriodLabel(PAST_RANGE, props.t, "da", NOW),
+    });
+    expect(screen.getByText(title)).toBeInTheDocument();
+  });
+
+  it("loads the selected window for the active tab", async () => {
+    const { history, ensureRange } = makeHistory();
+    renderSolar(null, { history, range: PAST_RANGE });
+
+    await waitFor(() => {
+      expect(ensureRange).toHaveBeenCalled();
+    });
+    const [ids, start, end] = ensureRange.mock.calls[0] as unknown as [
+      string[],
+      number,
+      number,
+    ];
+    expect(ids).toContain(
+      "sensor.sunmate_io_pulse_ee40a0_pulse_load_w_totalpower",
+    );
+    expect(start).toBe(PAST_RANGE.start - 86_400_000);
+    expect(end).toBe(PAST_RANGE.end);
+  });
+
+  it("hides the forecast overlay on a past production day", () => {
+    const { history, raw } = makeHistory();
+    raw.mockReturnValue(productionRows(PAST_RANGE.end));
+    const { container } = renderSolar("produktion", {
+      history,
+      range: PAST_RANGE,
+    });
+
+    const chart = container.querySelector(
+      '[data-chart="solar-production-forecast"]',
+    ) as HTMLElement;
+    expect(chart.querySelector('[data-chart-line="solarForecast"]')).toBeNull();
+    const block = chart.closest(".block") as HTMLElement;
+    expect(block.querySelector(".legend")).not.toHaveTextContent(
+      "Prognose i dag",
+    );
+    expect(chart).toHaveAttribute("data-gt0", String(PAST_RANGE.start));
+    expect(chart).toHaveAttribute("data-gt1", String(PAST_RANGE.end));
+  });
+
+  it("keeps the seven-day battery charts ending on the anchor", () => {
+    const { history, window } = makeHistory();
+    const { container } = renderSolar("batteri", {
+      history,
+      range: PAST_RANGE,
+    });
+
+    expect(window).toHaveBeenCalledWith(
+      "sensor.sunmate_io_pulse_ee40a0_pulse_battery_soc",
+      7,
+      { buckets: 96, fill: "hold", end: PAST_RANGE.end },
+    );
+    expect(window).toHaveBeenCalledWith(
+      "sensor.sunmate_io_pulse_ee40a0_pulse_daily_battery_charge",
+      7,
+      { buckets: 96, fill: "hold", end: PAST_RANGE.end },
+    );
+
+    const soc = container.querySelector(
+      '[data-chart="solar-soc-7d"]',
+    ) as HTMLElement;
+    expect(soc).toHaveAttribute(
+      "data-gt0",
+      String(PAST_RANGE.end - 7 * 86_400_000),
+    );
+    expect(soc).toHaveAttribute("data-gt1", String(PAST_RANGE.end));
+  });
+
+  it("keeps the savings charts at 30 and 365 days ending on the anchor", () => {
+    const { history, window } = makeHistory();
+    const { container } = renderSolar("afkast", {
+      history,
+      range: PAST_RANGE,
+    });
+
+    expect(window).toHaveBeenCalledWith("sensor.sparet_total", 30, {
+      buckets: 96,
+      fill: "hold",
+      end: PAST_RANGE.end,
+    });
+    expect(window).toHaveBeenCalledWith("sensor.sparet_total", 365, {
+      buckets: 96,
+      fill: "hold",
+      end: PAST_RANGE.end,
+    });
+
+    const month = container.querySelector(
+      '[data-chart="solar-savings-30d"]',
+    ) as HTMLElement;
+    expect(month).toHaveAttribute(
+      "data-gt0",
+      String(PAST_RANGE.end - 30 * 86_400_000),
+    );
+    const year = container.querySelector(
+      '[data-chart="solar-savings-365d"]',
+    ) as HTMLElement;
+    expect(year).toHaveAttribute(
+      "data-gt0",
+      String(PAST_RANGE.end - 365 * 86_400_000),
+    );
+    expect(year).toHaveAttribute("data-gt1", String(PAST_RANGE.end));
+  });
+
+  it("shows the seven days ending on the anchor in the production bars", () => {
+    const { history, raw } = makeHistory();
+    raw.mockReturnValue(productionRows(PAST_RANGE.end));
+    const { container } = renderSolar("produktion", {
+      history,
+      range: PAST_RANGE,
+    });
+
+    const bars = container.querySelector(
+      '[data-bars="solarWeek"]',
+    ) as HTMLElement;
+    const week = productionWindow(PAST_RANGE.end);
+    expect(bars).toHaveAttribute("data-days", "7");
+    expect(bars).toHaveAttribute("data-gt0", String(week.start));
+    expect(bars).toHaveAttribute("data-gt1", String(week.end));
+    expect(bars.querySelectorAll(".day")).toHaveLength(7);
   });
 });

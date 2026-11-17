@@ -7,6 +7,7 @@ import {
   useHistoryVersion,
   useModel,
   useNow,
+  useRange,
   useTranslator,
 } from "../hooks";
 
@@ -22,6 +23,7 @@ export const ChapterArt = ({ chKey }: ChapterArtProps) => {
   const hass = useHass();
   const history = useHistory();
   const now = useNow();
+  const range = useRange();
   useHistoryVersion();
 
   const html = renderChapterArt(chKey, {
@@ -31,6 +33,7 @@ export const ChapterArt = ({ chKey }: ChapterArtProps) => {
     language: model.language,
     history,
     now: now(),
+    range,
     isOn: (entityId) => hass.states[entityId]?.state === "on",
   });
 

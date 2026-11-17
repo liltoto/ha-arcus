@@ -7,8 +7,10 @@ import type { ReactElement, ReactNode } from "react";
 import { vi } from "vitest";
 import type { HistoryCache } from "../../src/data/history";
 import { createTranslator } from "../../src/localize";
+import type { ResolvedHistoryRange } from "../../src/range";
 import { buildBindings } from "../../src/model/bindings";
 import { buildModel } from "../../src/model/build";
+import { defaultRange, resolveRange } from "../../src/range";
 import { ArcusProvider } from "../../src/ui/providers/ArcusProvider";
 import { createArcusStore } from "../../src/ui/providers/store";
 import type { ArcusActions, ArcusRoute, ArcusStore } from "../../src/ui/types";
@@ -27,6 +29,7 @@ export interface ArcusRenderOptions {
   route?: ArcusRoute;
   now?: () => Date;
   history?: HistoryCache;
+  range?: ResolvedHistoryRange;
   /**
    * Card-level bindings that are not part of `buildBindings` (the hero copy,
    * date, person, clock, and version). They are merged over the generated map.
@@ -43,6 +46,7 @@ export const makeActions = (): ArcusActions => {
     performAction: vi.fn(),
     toast: vi.fn(),
     setAtmo: vi.fn(),
+    setHistoryRange: vi.fn(),
   };
 };
 
@@ -94,6 +98,7 @@ export const makeArcusProps = (options: ArcusRenderOptions = {}) => {
     actions: makeActions(),
     history: options.history ?? historyStub(),
     now,
+    range: options.range ?? resolveRange(defaultRange(now()), now()),
     atmo: "night" as const,
     atmoMode: "auto" as const,
     dark: true,

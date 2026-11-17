@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 
 const file = "dist/arcus.js";
-const limit = 400 * 1024;
+const limit = 420 * 1024;
 const bytes = readFileSync(file);
 const gzip = gzipSync(bytes).length;
 

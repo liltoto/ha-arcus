@@ -1,6 +1,7 @@
 import { useEffect, useMemo, type CSSProperties, type ReactNode } from "react";
 import type { HistoryCache } from "../../../data/history";
 import { resolveCurrency, resolveTempUnit } from "../../../format";
+import { rangePeriodLabel, type ResolvedHistoryRange } from "../../../range";
 import type {
   ArcusConfig,
   ArcusHass,
@@ -11,6 +12,7 @@ import type {
 import type { ArcusActions } from "../../types";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
 import { useHistoryFrame } from "../../hooks/useLayerFrame";
+import { useRangeEnsure } from "../../hooks/useHistoryRange";
 import { EmptyState } from "../../atoms/EmptyState";
 import { Readout } from "../../molecules/Readout";
 import { SegmentedTabs } from "../../molecules/SegmentedTabs";
@@ -24,17 +26,20 @@ import { SolarChart, type SolarSeries } from "./solar/SolarChart";
 import {
   DAY_MS,
   dailyProductionDays,
+  dayWindow,
+  endWindow,
   ensureHistory,
   entityKey,
   forecast48Values,
   fmt,
   historyDaySeries,
+  historyIdsFor,
   historySeries,
-  dayWindow,
   installedAtValue,
   isFiniteNumber,
   normalizeSub,
   pointsOnDate,
+  productionWindow,
   solarHasData,
   solarNumber,
   sumDelta,
@@ -51,6 +56,7 @@ interface SolarContext {
   t: Translator;
   language: Language;
   now: Date;
+  range: ResolvedHistoryRange;
   actions: ArcusActions;
   pv: SolarPvActive;
 }
@@ -115,6 +121,18 @@ interface SolarReading {
   value: ReactNode;
   unit: string;
 }
+
+/** Build a readings grid from `[label, value, unit, digits]` rows. */
+const solarReadings = (
+  language: Language,
+  rows: Array<[string, number | null, string, number]>,
+): SolarReading[] => {
+  return rows.map(([label, value, unit, digits]) => ({
+    label,
+    value: fmt(value, digits, language),
+    unit,
+  }));
+};
 
 /** A four-cell `.readings` grid for the production totals. */
 const SolarTotals = ({ readings }: { readings: SolarReading[] }) => {
@@ -342,6 +360,7 @@ const ControlRow = ({
 const gridSeriesFor = (
   config: ArcusConfig,
   history: HistoryCache,
+  range: ResolvedHistoryRange,
   now: Date,
 ): SolarSeries[] => {
   const onePhase =
@@ -351,7 +370,7 @@ const gridSeriesFor = (
   const series: SolarSeries[] = [
     {
       key: windowKey(config.solar?.gridL1),
-      values: historyDaySeries(history, config.solar?.gridL1, now),
+      values: historyDaySeries(history, config.solar?.gridL1, range, now),
       color: "var(--sky)",
       label: "L1",
     },
@@ -361,13 +380,13 @@ const gridSeriesFor = (
     ...series,
     {
       key: windowKey(config.solar?.gridL2),
-      values: historyDaySeries(history, config.solar?.gridL2, now),
+      values: historyDaySeries(history, config.solar?.gridL2, range, now),
       color: "var(--brass)",
       label: "L2",
     },
     {
       key: windowKey(config.solar?.gridL3),
-      values: historyDaySeries(history, config.solar?.gridL3, now),
+      values: historyDaySeries(history, config.solar?.gridL3, range, now),
       color: "var(--plum)",
       label: "L3",
     },
@@ -412,15 +431,33 @@ interface OverviewPowerChartProps {
 }
 
 const OverviewPowerChart = ({ ctx }: OverviewPowerChartProps) => {
-  const { solar, config, history, t, now } = ctx;
-  const day = dayWindow(now);
+  const { solar, config, history, t, language, now, range } = ctx;
+  const title = t("chart.period", {
+    label: t("solar.power"),
+    period: rangePeriodLabel(range, t, language, now),
+  });
+  // The forecast curve is a single day's shape; it only lines up with a
+  // one-day live axis.
+  const showForecast = range.live && range.days === 1;
+  const forecast: SolarSeries[] = showForecast
+    ? [
+        {
+          key: "solarForecast",
+          values: todayForecastValues(solar, now),
+          color: "var(--amber)",
+          label: t("solar.legendSolar"),
+        },
+      ]
+    : [];
   return (
     <div className={c("block")}>
       <div className={c("block-head")}>
-        <div className={c("block-label")}>{t("solar.power24")}</div>
+        <div className={c("block-label")}>{title}</div>
         <Legend
           items={[
-            { color: "var(--amber)", label: t("solar.legendSolar") },
+            ...(range.live
+              ? [{ color: "var(--amber)", label: t("solar.legendSolar") }]
+              : []),
             { color: "var(--sky)", label: t("solar.legendHouse") },
             { color: "var(--sage)", label: t("solar.legendBattery") },
             { color: "var(--muted)", label: t("solar.legendGrid") },
@@ -433,30 +470,30 @@ const OverviewPowerChart = ({ ctx }: OverviewPowerChartProps) => {
         now={now}
         empty={t("empty.chart")}
         shared
-        start={day.start}
-        end={day.end}
+        start={range.start}
+        end={range.end}
         series={[
-          {
-            key: "solarForecast",
-            values: todayForecastValues(solar, now),
-            color: "var(--amber)",
-            label: t("solar.legendSolar"),
-          },
+          ...forecast,
           {
             key: windowKey(config.solar?.load),
-            values: historyDaySeries(history, config.solar?.load, now),
+            values: historyDaySeries(history, config.solar?.load, range, now),
             color: "var(--sky)",
             label: t("solar.legendHouse"),
           },
           {
             key: windowKey(config.solar?.batteryPower),
-            values: historyDaySeries(history, config.solar?.batteryPower, now),
+            values: historyDaySeries(
+              history,
+              config.solar?.batteryPower,
+              range,
+              now,
+            ),
             color: "var(--sage)",
             label: t("solar.legendBattery"),
           },
           {
             key: windowKey(config.solar?.grid),
-            values: historyDaySeries(history, config.solar?.grid, now),
+            values: historyDaySeries(history, config.solar?.grid, range, now),
             color: "var(--muted)",
             label: t("solar.legendGrid"),
           },
@@ -467,14 +504,17 @@ const OverviewPowerChart = ({ ctx }: OverviewPowerChartProps) => {
 };
 
 const OverviewGrid = ({ ctx }: { ctx: SolarContext }) => {
-  const { solar, config, history, t, language, now } = ctx;
-  const day = dayWindow(now);
+  const { solar, config, history, t, language, now, range } = ctx;
   const grid = solar.grid;
   const gridLabel =
     grid !== null && grid < 0 ? t("solar.gridBuy") : t("solar.gridSell");
+  const title = t("chart.period", {
+    label: t("solar.gridPhases"),
+    period: rangePeriodLabel(range, t, language, now),
+  });
   return (
     <div className={c("block")}>
-      <div className={c("block-label")}>{t("solar.gridPhases")}</div>
+      <div className={c("block-label")}>{title}</div>
       <div className={c("readings")}>
         <Readout label="L1" value={fmt(solar.gridL1, 1, language)} unit="A" />
         <Readout label="L2" value={fmt(solar.gridL2, 1, language)} unit="A" />
@@ -493,9 +533,9 @@ const OverviewGrid = ({ ctx }: { ctx: SolarContext }) => {
         shared
         unit="A"
         decimals={1}
-        start={day.start}
-        end={day.end}
-        series={gridSeriesFor(config, history, now)}
+        start={range.start}
+        end={range.end}
+        series={gridSeriesFor(config, history, range, now)}
       />
     </div>
   );
@@ -562,49 +602,49 @@ const SolarOverview = ({ ctx }: { ctx: SolarContext }) => {
 };
 
 const SolarProduction = ({ ctx }: { ctx: SolarContext }) => {
-  const { solar, config, history, t, language, now, pv } = ctx;
-  const day = dayWindow(now);
-  const days = dailyProductionDays(history, config.solar?.today, now, language);
-  const strings = stringChartSeries(config, pv, t, (id) =>
-    historySeries(history, id, 1, 0),
+  const { solar, config, history, t, language, now, pv, range } = ctx;
+  const days = dailyProductionDays(
+    history,
+    config.solar?.today,
+    range.end,
+    language,
+    now,
   );
-  const productionStrings =
-    pv.pv1 || pv.pv2
-      ? stringChartSeries(config, pv, t, (id) =>
-          historyDaySeries(history, id, now, 0),
-        )
-      : [];
+  const week = productionWindow(range.end);
+  const period = rangePeriodLabel(range, t, language, now);
+  const strings = stringChartSeries(config, pv, t, (id) =>
+    historyDaySeries(history, id, range, now, 0),
+  );
+  const productionStrings = pv.pv1 || pv.pv2 ? strings : [];
+  const showForecast = range.live && range.days === 1;
+  const forecast: SolarSeries[] = showForecast
+    ? [
+        {
+          key: "solarForecast",
+          values: todayForecastValues(solar, now),
+          color: "var(--amber)",
+          label: t("solar.forecastToday"),
+        },
+      ]
+    : [];
 
   return (
     <>
       <SolarTotals
-        readings={[
-          {
-            label: t("solar.forecastToday"),
-            value: fmt(solar.forecastToday, 1, language),
-            unit: t("energy.kwh"),
-          },
-          {
-            label: t("solar.actualToday"),
-            value: fmt(solar.today, 1, language),
-            unit: t("energy.kwh"),
-          },
-          {
-            label: t("solar.thisMonth"),
-            value: fmt(solar.month, 1, language),
-            unit: t("energy.kwh"),
-          },
-          {
-            label: t("solar.thisYear"),
-            value: fmt(solar.year, 1, language),
-            unit: t("energy.kwh"),
-          },
-        ]}
+        readings={solarReadings(language, [
+          [t("solar.forecastToday"), solar.forecastToday, t("energy.kwh"), 1],
+          [t("solar.actualToday"), solar.today, t("energy.kwh"), 1],
+          [t("solar.thisMonth"), solar.month, t("energy.kwh"), 1],
+          [t("solar.thisYear"), solar.year, t("energy.kwh"), 1],
+        ])}
       />
       <div className={c("block")}>
         <div className={c("block-head")}>
           <div className={c("block-label")}>
-            {t("solar.productionVsForecast")}
+            {t("chart.period", {
+              label: t("solar.productionVsForecast"),
+              period,
+            })}
           </div>
         </div>
         <SolarChart
@@ -613,18 +653,19 @@ const SolarProduction = ({ ctx }: { ctx: SolarContext }) => {
           now={now}
           empty={t("empty.chart")}
           shared
-          start={day.start}
-          end={day.end}
+          start={range.start}
+          end={range.end}
           series={[
-            {
-              key: "solarForecast",
-              values: todayForecastValues(solar, now),
-              color: "var(--amber)",
-              label: t("solar.forecastToday"),
-            },
+            ...forecast,
             {
               key: windowKey(config.solar?.power),
-              values: historyDaySeries(history, config.solar?.power, now, 0),
+              values: historyDaySeries(
+                history,
+                config.solar?.power,
+                range,
+                now,
+                0,
+              ),
               color: "var(--text)",
               label: t("solar.actual"),
             },
@@ -633,7 +674,9 @@ const SolarProduction = ({ ctx }: { ctx: SolarContext }) => {
         />
         <Legend
           items={[
-            { color: "var(--amber)", label: t("solar.forecastToday") },
+            ...(showForecast
+              ? [{ color: "var(--amber)", label: t("solar.forecastToday") }]
+              : []),
             { color: "var(--text)", label: t("solar.actual") },
             ...seriesLegend(productionStrings),
           ]}
@@ -644,13 +687,17 @@ const SolarProduction = ({ ctx }: { ctx: SolarContext }) => {
         <MpptReadings solar={solar} t={t} language={language} pv={pv} />
       </div>
       <div className={c("block")}>
-        <div className={c("block-label")}>{t("solar.strings24")}</div>
+        <div className={c("block-label")}>
+          {t("chart.period", { label: t("solar.strings"), period })}
+        </div>
         <SolarChart
           chart="solar-strings-24h"
           height={110}
           now={now}
           empty={t("empty.chart")}
           shared
+          start={range.start}
+          end={range.end}
           series={strings}
         />
         <Legend items={seriesLegend(strings)} />
@@ -658,40 +705,36 @@ const SolarProduction = ({ ctx }: { ctx: SolarContext }) => {
       <div className={c("block")}>
         <div className={c("block-label")}>{t("solar.total")}</div>
         <SolarTotals
-          readings={[
-            {
-              label: t("solar.totalProduced"),
-              value: fmt(solar.totalProduction, 0, language),
-              unit: t("energy.kwh"),
-            },
-            {
-              label: t("solar.thisMonth"),
-              value: fmt(solar.month, 1, language),
-              unit: t("energy.kwh"),
-            },
-            {
-              label: t("solar.thisYear"),
-              value: fmt(solar.year, 1, language),
-              unit: t("energy.kwh"),
-            },
-            {
-              label: t("solar.actualToday"),
-              value: fmt(solar.today, 1, language),
-              unit: t("energy.kwh"),
-            },
-          ]}
+          readings={solarReadings(language, [
+            [
+              t("solar.totalProduced"),
+              solar.totalProduction,
+              t("energy.kwh"),
+              0,
+            ],
+            [t("solar.thisMonth"), solar.month, t("energy.kwh"), 1],
+            [t("solar.thisYear"), solar.year, t("energy.kwh"), 1],
+            [t("solar.actualToday"), solar.today, t("energy.kwh"), 1],
+          ])}
         />
       </div>
       <div className={c("block")}>
         <div className={c("block-label")}>{t("solar.dailyEnergy7")}</div>
-        <DayBars days={days} empty={t("empty.dataYet")} language={language} />
+        <DayBars
+          days={days}
+          empty={t("empty.dataYet")}
+          language={language}
+          start={week.start}
+          end={week.end}
+        />
       </div>
     </>
   );
 };
 
 const SolarBattery = ({ ctx }: { ctx: SolarContext }) => {
-  const { solar, config, hass, history, t, language, now, actions } = ctx;
+  const { solar, config, hass, history, t, language, now, range, actions } =
+    ctx;
   const tempUnit = resolveTempUnit(hass, config);
   const minSoc = solarNumber(
     solar,
@@ -709,6 +752,10 @@ const SolarBattery = ({ ctx }: { ctx: SolarContext }) => {
   const maxEntity = config.solar?.batteryMaxSoc;
   const minBounds = entityBounds(hass, minEntity, 0, 100);
   const maxBounds = entityBounds(hass, maxEntity, 0, 100);
+  // The battery charts keep their seven-day length and end on the anchor day.
+  // While live they stop at now so `fill: "hold"` cannot paint the future.
+  const weekEnd = range.live ? now.getTime() : range.end;
+  const week = endWindow(weekEnd, 7);
 
   const setNumber = (entityId: string | undefined, value: number): void => {
     if (!entityId) return;
@@ -781,12 +828,18 @@ const SolarBattery = ({ ctx }: { ctx: SolarContext }) => {
           empty={t("empty.chart")}
           unit="%"
           decimals={0}
-          start={now.getTime() - 7 * DAY_MS}
-          end={now.getTime()}
+          start={week.start}
+          end={week.end}
           series={[
             {
               key: entityKey(config.solar?.batterySoc),
-              values: historySeries(history, config.solar?.batterySoc, 7),
+              values: historySeries(
+                history,
+                config.solar?.batterySoc,
+                7,
+                "hold",
+                weekEnd,
+              ),
               color: "var(--sage)",
             },
           ]}
@@ -800,18 +853,30 @@ const SolarBattery = ({ ctx }: { ctx: SolarContext }) => {
           now={now}
           empty={t("empty.chart")}
           shared
-          start={now.getTime() - 7 * DAY_MS}
-          end={now.getTime()}
+          start={week.start}
+          end={week.end}
           series={[
             {
               key: entityKey(config.solar?.batteryCharge),
-              values: historySeries(history, config.solar?.batteryCharge, 7),
+              values: historySeries(
+                history,
+                config.solar?.batteryCharge,
+                7,
+                "hold",
+                weekEnd,
+              ),
               color: "var(--sky)",
               label: t("solar.charge"),
             },
             {
               key: entityKey(config.solar?.batteryDischarge),
-              values: historySeries(history, config.solar?.batteryDischarge, 7),
+              values: historySeries(
+                history,
+                config.solar?.batteryDischarge,
+                7,
+                "hold",
+                weekEnd,
+              ),
               color: "var(--brass)",
               label: t("solar.discharge"),
             },
@@ -970,7 +1035,8 @@ const SolarForecast = ({ ctx }: { ctx: SolarContext }) => {
 };
 
 const SolarPayback = ({ ctx }: { ctx: SolarContext }) => {
-  const { solar, config, hass, history, t, language, now, actions } = ctx;
+  const { solar, config, hass, history, t, language, now, range, actions } =
+    ctx;
   const currency = resolveCurrency(hass, config, language);
   const withCurrency = (text: string): string =>
     text.replaceAll(t("energy.kr"), currency);
@@ -1014,6 +1080,12 @@ const SolarPayback = ({ ctx }: { ctx: SolarContext }) => {
   const batteryEntity = config.solar?.investmentBattery;
   const solarBounds = entityBounds(hass, solarEntity, 0, 500_000);
   const batteryBounds = entityBounds(hass, batteryEntity, 0, 500_000);
+  // Savings charts keep their own length and end on the anchor day. While
+  // live they stop at now, matching the held series instead of painting a
+  // flat future.
+  const savingsEnd = range.live ? now.getTime() : range.end;
+  const monthWindow = endWindow(savingsEnd, 30);
+  const yearWindow = endWindow(savingsEnd, 365);
 
   const setInvestment = (entityId: string | undefined, value: number): void => {
     if (!entityId) return;
@@ -1100,12 +1172,18 @@ const SolarPayback = ({ ctx }: { ctx: SolarContext }) => {
           empty={t("empty.chart")}
           unit={currency}
           decimals={0}
-          start={now.getTime() - 30 * DAY_MS}
-          end={now.getTime()}
+          start={monthWindow.start}
+          end={monthWindow.end}
           series={[
             {
               key: "savings30",
-              values: historySeries(history, config.solar?.savingsTotal, 30),
+              values: historySeries(
+                history,
+                config.solar?.savingsTotal,
+                30,
+                "hold",
+                savingsEnd,
+              ),
               color: "var(--sage)",
             },
           ]}
@@ -1120,12 +1198,18 @@ const SolarPayback = ({ ctx }: { ctx: SolarContext }) => {
           empty={t("empty.chart")}
           unit={currency}
           decimals={0}
-          start={now.getTime() - 365 * DAY_MS}
-          end={now.getTime()}
+          start={yearWindow.start}
+          end={yearWindow.end}
           series={[
             {
               key: "savings365",
-              values: historySeries(history, config.solar?.savingsTotal, 365),
+              values: historySeries(
+                history,
+                config.solar?.savingsTotal,
+                365,
+                "hold",
+                savingsEnd,
+              ),
               color: "var(--brass)",
             },
           ]}
@@ -1247,6 +1331,7 @@ export const SolarBody = ({ route }: LayerBodyProps) => {
     config,
     t,
     history,
+    range,
     now: getNow,
     actions,
   } = useHistoryFrame();
@@ -1257,9 +1342,25 @@ export const SolarBody = ({ route }: LayerBodyProps) => {
   const active = normalizeSub(route.sub);
 
   useEffect(() => {
-    if (!hasData) return;
+    // The broad preload always ends now; a past anchor is covered by the
+    // range-aware request below instead.
+    if (!hasData || !range.live) return;
     ensureHistory(history, config.solar, active);
-  }, [history, config.solar, active, hasData]);
+  }, [history, config.solar, active, hasData, range.live]);
+
+  // Fixed-purpose charts need the part of their own lookback that the
+  // selected window does not already cover: 7-day battery/production, 365-day
+  // savings. One day of padding keeps the arrows instant.
+  const chartDays =
+    active === "afkast"
+      ? 365
+      : active === "batteri" || active === "produktion"
+        ? 7
+        : 1;
+  useRangeEnsure(
+    historyIdsFor(config.solar, active),
+    Math.max(1, chartDays - range.days) * DAY_MS,
+  );
 
   const pv = activePv(config, solar);
   const hasBattery = hasSolarBattery(config, solar);
@@ -1317,6 +1418,7 @@ export const SolarBody = ({ route }: LayerBodyProps) => {
               t,
               language,
               now,
+              range,
               actions,
               pv,
             }}
