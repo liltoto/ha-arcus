@@ -20,6 +20,7 @@ import type {
   VitalPresetKey,
 } from "../../types";
 import type { HistoryCache } from "../../data/history";
+import { clipSeries, type ResolvedHistoryRange } from "../../range";
 import { Icon } from "../atoms/Icon";
 import {
   useActions,
@@ -30,6 +31,7 @@ import {
   useHistoryVersion,
   useModel,
   useNow,
+  useRange,
   useTranslator,
 } from "../hooks";
 import { VitalStat } from "../molecules/VitalStat";
@@ -67,15 +69,15 @@ const ringStroke = (soc: number): string => {
 
 const sparkGraph = (
   values: Array<number | null>,
-  nowMs: number,
+  range: ResolvedHistoryRange,
   unit: string,
   decimals: number,
 ): GraphInput | null => {
   if (!values.length) return null;
   return {
     mode: "line",
-    start: nowMs - 86_400_000,
-    end: nowMs,
+    start: range.start,
+    end: range.end,
     unit,
     decimals,
     series: [{ values }],
@@ -105,6 +107,7 @@ interface VitalsContext {
   hass: ArcusHass;
   history: HistoryCache;
   nowMs: number;
+  range: ResolvedHistoryRange;
   language: Language;
   currency: string;
   tempUnit: TemperatureUnit;
@@ -128,8 +131,16 @@ const roomSeries = (
   history: HistoryCache,
   entityId: string | undefined,
   fill: number | "hold",
+  range: ResolvedHistoryRange,
+  now: Date,
 ): Array<number | null> => {
-  return history.series(entityId ?? "", { buckets: 96, fill });
+  const values = history.series(entityId ?? "", {
+    buckets: 96,
+    fill,
+    start: range.start,
+    end: range.end,
+  });
+  return clipSeries(values, 96, range, now);
 };
 
 interface RoomContext {
@@ -176,23 +187,35 @@ const sparkSeries = (
   history: HistoryCache,
   config: ArcusConfig,
   rooms: RoomContext,
+  range: ResolvedHistoryRange,
+  now: Date,
 ): SparkSeries => {
   return {
     indoorSpark: roomSeries(
       history,
       config.ventilation?.temperature ?? rooms.displayRoom?.temp?.entityId,
       "hold",
+      range,
+      now,
     ),
-    solarSpark: roomSeries(history, config.solar?.power, 0),
+    solarSpark: roomSeries(history, config.solar?.power, 0, range, now),
     outdoorSpark: roomSeries(
       history,
       rooms.outdoorRoom?.temp?.entityId ?? config.ventilation?.outdoor,
       "hold",
+      range,
+      now,
     ),
-    humiditySpark: roomSeries(history, rooms.humidityEntity, "hold"),
-    co2Spark: roomSeries(history, rooms.co2Entity, "hold"),
-    powerSpark: roomSeries(history, config.solar?.load, "hold"),
-    waterSpark: roomSeries(history, config.water?.day, "hold"),
+    humiditySpark: roomSeries(
+      history,
+      rooms.humidityEntity,
+      "hold",
+      range,
+      now,
+    ),
+    co2Spark: roomSeries(history, rooms.co2Entity, "hold", range, now),
+    powerSpark: roomSeries(history, config.solar?.load, "hold", range, now),
+    waterSpark: roomSeries(history, config.water?.day, "hold", range, now),
   };
 };
 
@@ -204,8 +227,9 @@ const buildContext = (input: {
   hass: ArcusHass;
   history: HistoryCache;
   nowMs: number;
+  range: ResolvedHistoryRange;
 }): VitalsContext => {
-  const { bindings, t, model, config, hass, history, nowMs } = input;
+  const { bindings, t, model, config, hass, history, nowMs, range } = input;
   const language = resolveLanguage(hass.language, config);
   const rooms = roomContext(model, config);
   const soc = model.solar?.batterySoc ?? 0;
@@ -218,6 +242,7 @@ const buildContext = (input: {
     hass,
     history,
     nowMs,
+    range,
     language,
     currency: resolveCurrency(hass, config, language),
     tempUnit: resolveTempUnit(hass, config),
@@ -225,7 +250,7 @@ const buildContext = (input: {
     outdoorRoute: rooms.outdoorRoom ? `rum/${rooms.outdoorRoom.id}` : "hjem",
     soc,
     batteryOffset: RING_CIRCUMFERENCE - (soc / 100) * RING_CIRCUMFERENCE,
-    ...sparkSeries(history, config, rooms),
+    ...sparkSeries(history, config, rooms, range, new Date(nowMs)),
     outdoorTemp:
       model.weather?.temp ?? numberFrom(model.skur?.temp?.state ?? null),
     humidity: rooms.humidity,
@@ -292,18 +317,32 @@ const PRESET_VIEWS: Record<VitalPresetKey, PresetBuilder> = {
     color: "var(--sky)",
     route: ctx.outdoorRoute,
   }),
-  price: (ctx) => ({
-    id: "price",
-    label: ctx.t("hero.priceNow"),
-    value: ctx.bindings.price,
-    unit: ctx.currency,
-    sub: ctx.bindings.priceSub,
-    spark: ctx.model.price?.values ?? [],
-    sparkUnit: ctx.currency,
-    decimals: 2,
-    color: "var(--brass)",
-    route: "energi",
-  }),
+  price: (ctx) => {
+    // The model curve is today's hourly prices. For a past day (or a
+    // multi-day window) read the configured price sensor back instead.
+    const priceSpark =
+      ctx.range.live && ctx.range.days === 1
+        ? (ctx.model.price?.values ?? [])
+        : roomSeries(
+            ctx.history,
+            ctx.config.price?.current ?? ctx.config.price?.spot,
+            "hold",
+            ctx.range,
+            new Date(ctx.nowMs),
+          );
+    return {
+      id: "price",
+      label: ctx.t("hero.priceNow"),
+      value: ctx.bindings.price,
+      unit: ctx.currency,
+      sub: ctx.bindings.priceSub,
+      spark: priceSpark,
+      sparkUnit: ctx.currency,
+      decimals: 2,
+      color: "var(--brass)",
+      route: "energi",
+    };
+  },
   battery: (ctx) => ({
     id: "battery",
     label: ctx.t("hero.battery"),
@@ -462,7 +501,13 @@ const customView = (
     label,
     value: formatNumber(state?.state, decimals, ctx.language),
     unit,
-    spark: roomSeries(ctx.history, entity, "hold"),
+    spark: roomSeries(
+      ctx.history,
+      entity,
+      "hold",
+      ctx.range,
+      new Date(ctx.nowMs),
+    ),
     sparkUnit: unit ?? "",
     decimals,
     color: vital.color ?? "var(--sky)",
@@ -498,9 +543,11 @@ export const Vitals = () => {
   const hass = useHass();
   const history = useHistory();
   const now = useNow();
+  const range = useRange();
   const actions = useActions();
   useHistoryVersion();
 
+  const current = now();
   const ctx = buildContext({
     bindings,
     t,
@@ -508,7 +555,8 @@ export const Vitals = () => {
     config,
     hass,
     history,
-    nowMs: now().getTime(),
+    nowMs: current.getTime(),
+    range,
   });
   const items: VitalItemConfig[] = config.vitals?.length
     ? config.vitals
@@ -536,12 +584,7 @@ export const Vitals = () => {
             spark={view.spark}
             sparkGraph={
               view.spark
-                ? sparkGraph(
-                    view.spark,
-                    ctx.nowMs,
-                    view.sparkUnit,
-                    view.decimals,
-                  )
+                ? sparkGraph(view.spark, range, view.sparkUnit, view.decimals)
                 : null
             }
             sparkColor={view.color}

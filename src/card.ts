@@ -16,6 +16,13 @@ import {
 import { createTranslator, resolveLanguage } from "./localize";
 import { buildModel } from "./model/build";
 import { buildBindings } from "./model/bindings";
+import {
+  clampRange,
+  defaultRange,
+  resolveRange,
+  type HistoryRangeState,
+  type ResolvedHistoryRange,
+} from "./range";
 import { mountGraphTips } from "./render/graph";
 import { icon } from "./render/icons";
 import { STYLES } from "./ui/styles";
@@ -99,6 +106,8 @@ export class ArcusCard extends HTMLElement {
   _t: Translator;
   _history: HistoryCache;
   readonly updateComplete: Promise<void>;
+  private _range: HistoryRangeState | null = null;
+  private _rangeTimer: ReturnType<typeof setTimeout> | null = null;
   private _store: ArcusStore | null = null;
   private _lastBindings: Record<string, string> | null = null;
   private readonly _nowFn = (): Date => this._now();
@@ -132,6 +141,7 @@ export class ArcusCard extends HTMLElement {
     },
     toast: (text) => this._toast(text),
     setAtmo: (mode) => this._setAtmo(mode),
+    setHistoryRange: (next) => this._setHistoryRange(next),
   };
 
   private _resolveUpdate!: () => void;
@@ -238,6 +248,7 @@ export class ArcusCard extends HTMLElement {
     if (this._clockTimer) clearInterval(this._clockTimer);
     if (this._scrubTimer) clearTimeout(this._scrubTimer);
     if (this._toastTimer) clearTimeout(this._toastTimer);
+    if (this._rangeTimer) clearTimeout(this._rangeTimer);
     this._unmountReact();
   }
 
@@ -269,6 +280,34 @@ export class ArcusCard extends HTMLElement {
     const pinned =
       typeof window !== "undefined" ? window.__HJEM_NOW : undefined;
     return pinned instanceof Date ? new Date(pinned.getTime()) : new Date();
+  }
+
+  /** Resolve the card-wide history window, defaulting to today. */
+  private _currentRange(): ResolvedHistoryRange {
+    const now = this._now();
+    this._range ??= defaultRange(now);
+    return resolveRange(this._range, now);
+  }
+
+  /**
+   * Move the history window. The fetch is debounced so fast arrow taps issue
+   * one request for the final day instead of a chain of large ones.
+   */
+  private _setHistoryRange(next: HistoryRangeState): void {
+    this._range = clampRange(next, this._now());
+    this._schedule();
+
+    if (this._rangeTimer) clearTimeout(this._rangeTimer);
+    this._rangeTimer = setTimeout(() => {
+      this._rangeTimer = null;
+      const range = this._currentRange();
+      const pad = 86_400_000;
+      void this._ensureHistoryRange(
+        this._historyIds(),
+        Math.max(0, range.start - pad),
+        range.end,
+      );
+    }, 200);
   }
 
   /**
@@ -724,6 +763,7 @@ export class ArcusCard extends HTMLElement {
       actions: this._actions,
       history: this._history,
       now: this._nowFn,
+      range: this._currentRange(),
       atmo: this._atmo(),
       atmoMode: this._atmoMode,
       dark: this._themeDark(),
@@ -806,7 +846,10 @@ export class ArcusCard extends HTMLElement {
     this._clockTimer = setInterval(() => {
       this._schedule();
       // `ensure` is a TTL check; it only refetches when the cache is stale.
-      if (this._modelReady) void this._ensureHistory(this._historyIds(), 24);
+      // A past window is immutable, so the live tick only matters on today.
+      if (this._modelReady && this._currentRange().live) {
+        void this._ensureHistory(this._historyIds(), 24);
+      }
     }, 20_000);
   }
 
@@ -911,6 +954,21 @@ export class ArcusCard extends HTMLElement {
     add(this._config.network?.cloudflare);
     add(this._config.economy?.bond);
 
+    for (const vital of this._config.vitals ?? []) {
+      if (typeof vital === "object") add(vital.entity);
+    }
+
+    const price = this._config.price;
+    add(price?.current);
+    add(price?.spot);
+
+    const energy = this._config.energy;
+    add(energy?.ev?.power);
+    add(energy?.ev?.soc);
+    add(energy?.ev?.total);
+    add(energy?.standby);
+    for (const appliance of energy?.appliances ?? []) add(appliance.entity);
+
     return [...ids];
   }
 
@@ -935,6 +993,32 @@ export class ArcusCard extends HTMLElement {
       if (!this._historyWarned) {
         this._historyWarned = true;
         console.warn("[arcus] history refresh failed", error);
+      }
+    }
+    this._schedule();
+  }
+
+  /** Fetch an explicit history window (used by the date navigator). */
+  private async _ensureHistoryRange(
+    ids: Array<string | null | undefined>,
+    start: number,
+    end: number,
+  ): Promise<void> {
+    const clean = [
+      ...new Set(
+        ids.filter(
+          (id): id is string => typeof id === "string" && id.length > 0,
+        ),
+      ),
+    ];
+    if (!clean.length || start >= end) return;
+    try {
+      await this._history.ensureRange(clean, start, end);
+      this._historyWarned = false;
+    } catch (error) {
+      if (!this._historyWarned) {
+        this._historyWarned = true;
+        console.warn("[arcus] history range refresh failed", error);
       }
     }
     this._schedule();

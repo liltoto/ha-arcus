@@ -1,11 +1,10 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import type { HistoryCache } from "../../../src/data/history";
+import { rangePeriodLabel, resolveRange, startOfDay } from "../../../src/range";
 import { HeatingBody } from "../../../src/ui/organisms/layers/HeatingBody";
 import { SecurityBody } from "../../../src/ui/organisms/layers/SecurityBody";
-import { ArcusProvider } from "../../../src/ui/providers/ArcusProvider";
-import { createArcusStore } from "../../../src/ui/providers/store";
 import type { ArcusHass } from "../../../src/types";
 import type { ArcusRoute } from "../../../src/ui/types";
 import { makeConfig } from "../../fixtures/home";
@@ -14,6 +13,13 @@ import { renderLayer } from "../layer-test-utils";
 
 const SECURITY_ROUTE: ArcusRoute = { base: "sikkerhed", sub: null };
 const HEATING_ROUTE: ArcusRoute = { base: "varme", sub: null };
+
+const NOW = new Date("2026-11-13T01:19:00+01:00");
+const PAST_RANGE = resolveRange(
+  { anchor: startOfDay(new Date(2026, 10, 10)), days: 1 },
+  NOW,
+);
+const PREFETCH_MS = 86_400_000;
 
 const hassWithStates = (
   base: ReturnType<typeof makeArcusProps>["hass"],
@@ -333,28 +339,48 @@ describe("heating sheet", () => {
     );
   });
 
-  test("draws the history chart from the history cache", () => {
+  test("draws and loads the selected history window", async () => {
     const values = [21.1, 21.3, 21.6, 21.4];
-    const props = makeArcusProps({ route: HEATING_ROUTE });
     const history = {
-      ...props.history,
-      ensure: vi.fn(async () => undefined),
+      ensureRange: vi.fn(async () => undefined),
       series: vi.fn(() => values),
+      window: () => [],
+      raw: () => [],
+      status: () => "empty",
     } as unknown as HistoryCache;
 
-    const { container } = render(
-      <ArcusProvider store={createArcusStore({ ...props, history })}>
-        <HeatingBody route={HEATING_ROUTE} />
-      </ArcusProvider>,
+    const { container, props } = renderLayer(HeatingBody, {
+      route: HEATING_ROUTE,
+      range: PAST_RANGE,
+      now: () => NOW,
+      history,
+    });
+
+    const entityId = "sensor.alpstuga_air_quality_monitor_temperatur_2";
+    expect(history.series).toHaveBeenCalledWith(entityId, {
+      start: PAST_RANGE.start,
+      end: PAST_RANGE.end,
+      buckets: 96,
+      fill: "hold",
+    });
+
+    await waitFor(() => {
+      expect(history.ensureRange).toHaveBeenCalledTimes(1);
+    });
+    expect(history.ensureRange).toHaveBeenCalledWith(
+      [entityId],
+      PAST_RANGE.start - PREFETCH_MS,
+      PAST_RANGE.end,
     );
 
-    expect(history.series).toHaveBeenCalledWith(
-      "sensor.alpstuga_air_quality_monitor_temperatur_2",
-      { buckets: 96, fill: "hold" },
-    );
+    const label = `Temperatur · ${rangePeriodLabel(PAST_RANGE, props.t, "da", NOW)}`;
+    expect(screen.getByText(label)).toBeInTheDocument();
+
     const graph = container.querySelector("svg[data-graph]");
     expect(graph).toHaveAttribute("data-graph", "line");
     expect(graph).toHaveAttribute("data-gv", "21.1;21.3;21.6;21.4");
+    expect(graph).toHaveAttribute("data-gt0", String(PAST_RANGE.start));
+    expect(graph).toHaveAttribute("data-gt1", String(PAST_RANGE.end));
 
     expect(container.querySelector("[data-spark]")).toBeNull();
     expect(graph?.querySelector("path")?.getAttribute("d")).not.toBe("");

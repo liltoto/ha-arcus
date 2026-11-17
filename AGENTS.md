@@ -3,7 +3,7 @@
 Arcus is a Home Assistant Marketplace Dashboard plugin: one self-contained
 frontend bundle (`dist/arcus.js`), a dashboard strategy, and two visual editors.
 Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
-`v0.5.2`. CI runs on Node 22 with pnpm 12; `tsc` is strict.
+`v0.6.0`. CI runs on Node 22 with pnpm 12; `tsc` is strict.
 
 ## Commands
 
@@ -22,7 +22,7 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
   print width 80.
 - `pnpm run build` — production Panda CSS + minified `dist/arcus.js` (no
   sourcemap). Stop `pnpm run dev` first: the watcher can overwrite the build.
-- `pnpm run size` — fails above 400 KB gzip. Current bundle is ~393 KB.
+- `pnpm run size` — fails above 420 KB gzip. Current bundle is ~403 KB.
 - `pnpm run storybook` / `pnpm run build-storybook` — Storybook on `:6006`; CI
   gates the static build.
 - `pnpm run visual` — Playwright against `pnpm run dev`.
@@ -88,6 +88,15 @@ Single package, no monorepo. Published at `liltoto/ha-arcus`; current release
   WebSocket once, and reports `failed` when both transports error or hang.
   `RoomChart` maps `failed` to the unavailable state; do not collapse it into
   `empty`, which means "the recorder answered and had no rows".
+- The card-wide history window lives in `src/range.ts` (`anchor` + `days`,
+  defaulting to today) and is published as `range` in the store. `RangeBar`
+  moves it; `useRangeEnsure` loads the selected window per chart group; the
+  card also fetches it on change. `HistoryCache.ensureRange` fetches the exact
+  window (never "everything from now back"), merges rows on refresh, and
+  tracks coverage per entity so `rangeStatus` can tell "not loaded" from
+  "purged". Past windows are immutable; the 20-second tick only refreshes
+  while the range is live. Charts rewind; live readouts, forecasts, prayer
+  times and weather stay live.
 - `src/ui/` follows atomic design: `atoms/` (pure primitives), `molecules/`
   (domain-shaped, props-only), `organisms/` (sections and sheet bodies),
   `templates/` (layout shells), `pages/` (data-wired composition). Put a

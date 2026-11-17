@@ -1,5 +1,6 @@
 import type { HistoryCache } from "../../../../data/history";
 import { formatNumber } from "../../../../format";
+import { rangePeriodLabel, type ResolvedHistoryRange } from "../../../../range";
 import type {
   ArcusHass,
   Language,
@@ -22,6 +23,7 @@ export interface RoomReadingsProps {
   view: RoomView;
   history: HistoryCache;
   hass: ArcusHass;
+  range: ResolvedHistoryRange;
   now: () => Date;
   t: Translator;
   language: Language;
@@ -38,6 +40,7 @@ export const RoomReadings = ({
   view,
   history,
   hass,
+  range,
   now,
   t,
   language,
@@ -56,10 +59,14 @@ export const RoomReadings = ({
         <div className={c("block-note")}>{t("room.tempFallbackNote")}</div>
       ) : null}
       <RoomChartBlock
-        title={t("room.chart24", { label: t("room.temperature") })}
+        title={t("chart.period", {
+          label: t("room.temperature"),
+          period: rangePeriodLabel(range, t, language, now()),
+        })}
         value={`${formatNumber(view.temp, 1, language)}°`}
         entityId={view.tempChartId}
         color="var(--sky)"
+        range={range}
         height={120}
         unit={tempUnit}
         decimals={1}
@@ -75,6 +82,7 @@ export const RoomReadings = ({
         view={view}
         history={history}
         hass={hass}
+        range={range}
         now={now}
         t={t}
         language={language}
@@ -84,6 +92,7 @@ export const RoomReadings = ({
         view={view}
         history={history}
         hass={hass}
+        range={range}
         now={now}
         t={t}
         language={language}
@@ -93,6 +102,7 @@ export const RoomReadings = ({
         view={view}
         history={history}
         hass={hass}
+        range={range}
         now={now}
         t={t}
         language={language}

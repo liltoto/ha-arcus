@@ -1,4 +1,5 @@
 import type { HistoryCache } from "../../../../data/history";
+import type { ResolvedHistoryRange } from "../../../../range";
 import { c } from "../../../styles/classes";
 import { RoomChart } from "./RoomChart";
 
@@ -7,6 +8,7 @@ export interface RoomChartBlockProps {
   value: string;
   entityId: string | undefined;
   color: string;
+  range: ResolvedHistoryRange;
   height: number;
   unit: string;
   decimals: number;
@@ -18,12 +20,13 @@ export interface RoomChartBlockProps {
   unavailable?: boolean;
 }
 
-/** One titled 24-hour room chart block. */
+/** One titled room chart block for the selected history window. */
 export const RoomChartBlock = ({
   title,
   value,
   entityId,
   color,
+  range,
   height,
   unit,
   decimals,
@@ -46,6 +49,7 @@ export const RoomChartBlock = ({
         history={history}
         entityId={entityId}
         color={color}
+        range={range}
         height={height}
         unit={unit}
         decimals={decimals}

@@ -74,9 +74,9 @@ describe("history-driven charts", () => {
         .closest(".vital")
         ?.querySelector(".vital-spark"),
     ).toHaveAttribute("data-graph", "line");
-    expect(series).toHaveBeenCalledWith(props.config.solar?.power, {
-      buckets: 96,
-      fill: 0,
-    });
+    expect(series).toHaveBeenCalledWith(
+      props.config.solar?.power,
+      expect.objectContaining({ buckets: 96, fill: 0 }),
+    );
   });
 });

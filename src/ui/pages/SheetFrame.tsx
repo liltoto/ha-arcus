@@ -3,10 +3,29 @@ import { useFocusTrap } from "../hooks/useFocusTrap";
 import { useSheetDrag } from "../hooks/useSheetDrag";
 import { SheetPage } from "./SheetPage";
 import { useActions, useRoute, useTranslator } from "../hooks";
+import { HistoryRange } from "../organisms/HistoryRange";
 import { SheetTemplate } from "../templates/SheetTemplate";
 import type { ArcusRoute } from "../types";
 
 const EXIT_MS = 450;
+
+/** Sheets whose charts can follow the card-wide history window. */
+const HISTORY_ROUTES = new Set([
+  "rum",
+  "skur",
+  "sol",
+  "vand",
+  "varme",
+  "energi",
+  "teknik",
+  "oekonomi",
+]);
+
+const showsRange = (route: ArcusRoute): boolean => {
+  if (!HISTORY_ROUTES.has(route.base)) return false;
+  // The forecast tab predicts forward; it has no historical series to rewind.
+  return !(route.base === "sol" && route.sub === "prognose");
+};
 
 /**
  * Keeps the last non-home route mounted for the CSS slide-out. The sheet stays
@@ -83,6 +102,9 @@ export const SheetFrame = () => {
       sheetRef={sheetRef}
       onScrimClick={close}
     >
+      {bodyRoute && showsRange(bodyRoute) ? (
+        <HistoryRange variant="sheet" />
+      ) : null}
       {bodyRoute ? <SheetPage route={bodyRoute} /> : null}
     </SheetTemplate>
   );

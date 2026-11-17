@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 import { useStore } from "zustand";
 import type { HistoryCache } from "../../data/history";
+import type { ResolvedHistoryRange } from "../../range";
 import type {
   ArcusConfig,
   ArcusHass,
@@ -83,6 +84,11 @@ export const useHistory = (): HistoryCache => {
 export const useNow = (): (() => Date) => {
   const store = useRequiredStore("useNow");
   return useStore(store, (state) => state.now);
+};
+
+export const useRange = (): ResolvedHistoryRange => {
+  const store = useRequiredStore("useRange");
+  return useStore(store, (state) => state.range);
 };
 
 export const useAtmo = (): AtmosphereSetting => {

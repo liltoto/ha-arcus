@@ -20,6 +20,7 @@ export {
   useHistory,
   useModel,
   useNow,
+  useRange,
   useRoute,
   useTranslator,
 } from "./providers/ArcusProvider";

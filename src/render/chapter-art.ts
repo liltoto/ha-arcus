@@ -1,6 +1,7 @@
 import type { HistoryCache } from "../data/history";
 import { escapeHtml, formatNumber, numberFromState } from "../format";
 import { lightIdsForGroups } from "../model/lights";
+import { clipSeries, type ResolvedHistoryRange } from "../range";
 import type { ArcusConfig, ChapterKey, HomeModel, Translator } from "../types";
 import { c } from "../ui/styles/classes";
 import { arcPoint, priceColor, sparkPath } from "./charts";
@@ -13,6 +14,7 @@ export interface ChapterArtContext {
   language: string;
   history?: HistoryCache;
   now?: Date;
+  range?: ResolvedHistoryRange;
   isOn?: (entityId: string) => boolean;
 }
 
@@ -31,6 +33,54 @@ const dayFraction = (date: Date): number => {
   return (
     (date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60) / 1440
   );
+};
+
+/** A held history series for a chapter spark, or the current value fallback. */
+const chapterSeries = (
+  history: HistoryCache | undefined,
+  id: string | undefined,
+  range: ResolvedHistoryRange | undefined,
+  now: Date | undefined,
+): Array<number | null> => {
+  if (!id || !history) return [];
+  if (!range) return history.series(id, { fill: "hold" });
+  const values = history.series(id, {
+    fill: "hold",
+    buckets: 96,
+    start: range.start,
+    end: range.end,
+  });
+  return clipSeries(values, 96, range, now ?? new Date());
+};
+
+interface ChapterLine {
+  values: Array<number | null>;
+  graph: string;
+}
+
+/** The spark values and hover dataset shared by the tech/economy chapters. */
+const chapterLine = (
+  context: ResolvedContext,
+  id: string | undefined,
+  fallback: number | null,
+  unit: string,
+  decimals: number,
+): ChapterLine => {
+  const cached = chapterSeries(context.history, id, context.range, context.now);
+  const values = cached.length ? cached : [fallback];
+  const end = context.range?.end ?? (context.now ?? new Date()).getTime();
+  const start = context.range?.start ?? end - 86_400_000;
+  const graph =
+    values.length > 1
+      ? graphAttrs({
+          start,
+          end,
+          unit,
+          decimals,
+          series: [{ values }],
+        })
+      : "";
+  return { values, graph };
 };
 
 /**
@@ -140,21 +190,15 @@ const ventilation = ({ model }: ResolvedContext): string => {
     .join("")}</div>`;
 };
 
-const tech = ({ model, config, history, now }: ResolvedContext): string => {
-  const id = config.network?.router;
-  const cached = id && history ? history.series(id, { fill: "hold" }) : [];
-  const values = cached.length ? cached : [model.tech?.router ?? null];
-  const end = (now ?? new Date()).getTime();
-  const graph =
-    values.length > 1
-      ? graphAttrs({
-          start: end - 86_400_000,
-          end,
-          unit: "ms",
-          decimals: 0,
-          series: [{ values }],
-        })
-      : "";
+const tech = (context: ResolvedContext): string => {
+  const { model, config } = context;
+  const { values, graph } = chapterLine(
+    context,
+    config.network?.router,
+    model.tech?.router ?? null,
+    "ms",
+    0,
+  );
   return `<svg viewBox="0 0 220 52" preserveAspectRatio="none" ${graph}><path d="${sparkPath(
     values,
     220,
@@ -163,21 +207,15 @@ const tech = ({ model, config, history, now }: ResolvedContext): string => {
   )}" fill="none" stroke="var(--sky)" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>`;
 };
 
-const economy = ({ model, config, history, now }: ResolvedContext): string => {
-  const id = config.economy?.bond;
-  const cached = id && history ? history.series(id, { fill: "hold" }) : [];
-  const values = cached.length ? cached : [model.economy?.value ?? null];
-  const end = (now ?? new Date()).getTime();
-  const graph =
-    values.length > 1
-      ? graphAttrs({
-          start: end - 86_400_000,
-          end,
-          unit: "",
-          decimals: 2,
-          series: [{ values }],
-        })
-      : "";
+const economy = (context: ResolvedContext): string => {
+  const { model, config } = context;
+  const { values, graph } = chapterLine(
+    context,
+    config.economy?.bond,
+    model.economy?.value ?? null,
+    "",
+    2,
+  );
   return `<svg viewBox="0 0 220 52" preserveAspectRatio="none" ${graph}><path d="${sparkPath(
     values,
     220,

@@ -1,7 +1,12 @@
-import { useEffect } from "react";
 import { resolveTempUnit } from "../../../format";
+import { clipSeries, rangePeriodLabel } from "../../../range";
 import { areaPath, sparkPath } from "../../../render/charts";
 import type { HeatingModel } from "../../../types";
+import {
+  chartStateFor,
+  rangeStatusFor,
+  useRangeEnsure,
+} from "../../hooks/useHistoryRange";
 import { useHistoryFrame } from "../../hooks/useLayerFrame";
 import { SheetHeader } from "../../molecules/SheetHeader";
 import type { LayerBodyProps } from "../../pages/layerRegistry";
@@ -14,7 +19,6 @@ import { HeatingZones } from "./heating/HeatingZones";
 import {
   chartSource,
   CHART_HEIGHT,
-  DAY_MS,
   heatingLimits,
   heatingStrip,
   isOpeningOn,
@@ -22,7 +26,8 @@ import {
 
 /** Underfloor heating: the discovered climate zones plus reserve channels. */
 export const HeatingBody = (_props: LayerBodyProps) => {
-  const { hass, model, config, t, history, now, actions } = useHistoryFrame();
+  const { hass, model, config, t, history, range, now, actions } =
+    useHistoryFrame();
 
   const language = model.language;
   const tempUnit = resolveTempUnit(hass, config);
@@ -34,23 +39,34 @@ export const HeatingBody = (_props: LayerBodyProps) => {
 
   const source = chartSource(model);
   const sourceEntityId = source?.entityId;
+
+  useRangeEnsure([sourceEntityId]);
+
+  const nowDate = now();
   const values = sourceEntityId
-    ? history.series(sourceEntityId, { buckets: 96, fill: "hold" })
+    ? clipSeries(
+        history.series(sourceEntityId, {
+          start: range.start,
+          end: range.end,
+          buckets: 96,
+          fill: "hold",
+        }),
+        96,
+        range,
+        nowDate,
+      )
     : [];
   const hasData = values.some(
     (value) => typeof value === "number" && Number.isFinite(value),
   );
-  const end = now().getTime();
-  const start = end - DAY_MS;
+  const chartState = chartStateFor(
+    hasData,
+    rangeStatusFor(history, sourceEntityId, range),
+  );
   const line = hasData ? sparkPath(values, 560, CHART_HEIGHT, 2) : "";
   const area = hasData ? areaPath(values, 560, CHART_HEIGHT, 2) : "";
   const strip = heatingStrip(hass, zones, reserve);
   const limits = heatingLimits(model);
-
-  useEffect(() => {
-    if (!sourceEntityId) return;
-    void history.ensure([sourceEntityId], 24);
-  }, [history, sourceEntityId]);
 
   const setTemperature = (entityId: string, next: number): void => {
     actions.callService(
@@ -129,16 +145,22 @@ export const HeatingBody = (_props: LayerBodyProps) => {
           onChange={setLimit}
         />
         <HeatingChart
-          label={t("room.chart24", { label: t("room.temperature") })}
+          label={t("chart.period", {
+            label: t("room.temperature"),
+            period: rangePeriodLabel(range, t, language, nowDate),
+          })}
           title={source?.label ?? t("room.temperature")}
           values={values}
           hasData={hasData}
+          state={chartState}
           line={line}
           area={area}
           unit={tempUnit}
-          start={start}
-          end={end}
+          start={range.start}
+          end={range.end}
           emptyLabel={t("empty.chart")}
+          loadingLabel={t("empty.loading")}
+          unavailableLabel={t("empty.unavailable")}
         />
         <div className={c("note")}>
           {t("heating.footer", {

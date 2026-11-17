@@ -109,6 +109,19 @@ const da: Record<string, string> = {
   "section.quickMetaSub": "uden at lede",
   "section.chapterAlertsShort": "AL",
 
+  /* History range */
+  "range.aria": "Historik",
+  "range.prev": "Forrige dag",
+  "range.next": "Næste dag",
+  "range.today": "I dag",
+  "range.yesterday": "I går",
+  "range.period": "Periode",
+  "range.days1": "1 dag",
+  "range.days7": "7 dage",
+  "range.days30": "30 dage",
+  "range.pick": "Vælg dag",
+  "chart.period": "{label} · {period}",
+
   /* Rooms */
   "room.kind": "Rum",
   "room.kindWide": "Ophold · luft",
@@ -167,7 +180,6 @@ const da: Record<string, string> = {
   "room.playing": "spiller",
   "room.soundbar": "Soundbar",
   "room.lightCountOf": "{on} af {total}",
-  "room.chart24": "{label} · 24 timer",
   "room.relativeNow": "lige nu",
   "room.relativeMinutes": "for {count} min siden",
   "room.relativeHours": "for {count} t siden",
@@ -269,7 +281,6 @@ const da: Record<string, string> = {
   "solar.flowWatt": "WATT",
   "solar.flowBuy": "KØB",
   "solar.flowSell": "SALG",
-  "solar.power24": "Effekt · 24 timer",
   "solar.legendSolar": "Sol",
   "solar.legendHouse": "Hus",
   "solar.legendBattery": "Batteri",
@@ -299,7 +310,6 @@ const da: Record<string, string> = {
   "solar.yield": "Udbytte",
   "solar.nameplateNote":
     "Udnyttelse af navneplade lige nu: PV3 {pv3} % · PV4 {pv4} %.",
-  "solar.strings24": "Strings · 24 timer",
   "solar.total": "Total",
   "solar.totalProduced": "Total produceret",
   "solar.pv3Util": "PV3 udnyttelse",
@@ -386,7 +396,6 @@ const da: Record<string, string> = {
   "water.noWater": "Ingen vand",
   "water.battery": "Batteri",
   "water.leakBattery": "KLIPPBOK køkken",
-  "water.flow24": "Flow · 24 timer",
   "water.footer":
     "BWT Perla blødgør vandet. Saltniveauet bør holdes over 20 %. Ved ferie kan behandlingen sænkes.",
 
@@ -428,7 +437,7 @@ const da: Record<string, string> = {
   "tech.packetLoss": "Pakketab",
   "tech.packetLoss7d": "Pakketab 7 dage",
   "tech.jitter": "Jitter",
-  "tech.pulse": "Netværkets puls · 6 timer",
+  "tech.pulse": "Netværkets puls",
   "tech.quality": "Netværkskvalitet",
   "tech.responds": "svarer",
   "tech.notResponding": "svarer ikke",
@@ -450,7 +459,7 @@ const da: Record<string, string> = {
   "economy.effectiveYield": "Effektiv rente",
   "economy.duration": "Varighed",
   "economy.price": "Kurs",
-  "economy.chart30": "Kursudvikling · 30 dage",
+  "economy.chart30": "Kursudvikling",
   "economy.metrics": "Nøgletal",
   "economy.latest": "seneste",
   "economy.changeToday": "Ændring i dag",
@@ -745,6 +754,19 @@ const en: Record<string, string> = {
   "section.quickMetaSub": "without searching",
   "section.chapterAlertsShort": "AL",
 
+  /* History range */
+  "range.aria": "History",
+  "range.prev": "Previous day",
+  "range.next": "Next day",
+  "range.today": "Today",
+  "range.yesterday": "Yesterday",
+  "range.period": "Period",
+  "range.days1": "1 day",
+  "range.days7": "7 days",
+  "range.days30": "30 days",
+  "range.pick": "Pick a day",
+  "chart.period": "{label} · {period}",
+
   /* Rooms */
   "room.kind": "Room",
   "room.kindWide": "Living · air",
@@ -803,7 +825,6 @@ const en: Record<string, string> = {
   "room.playing": "playing",
   "room.soundbar": "Soundbar",
   "room.lightCountOf": "{on} of {total}",
-  "room.chart24": "{label} · 24 hours",
   "room.relativeNow": "just now",
   "room.relativeMinutes": "{count} min ago",
   "room.relativeHours": "{count} h ago",
@@ -905,7 +926,6 @@ const en: Record<string, string> = {
   "solar.flowWatt": "WATT",
   "solar.flowBuy": "BUY",
   "solar.flowSell": "SELL",
-  "solar.power24": "Power · 24 hours",
   "solar.legendSolar": "Solar",
   "solar.legendHouse": "Home",
   "solar.legendBattery": "Battery",
@@ -935,7 +955,6 @@ const en: Record<string, string> = {
   "solar.yield": "Yield",
   "solar.nameplateNote":
     "Nameplate utilisation right now: PV3 {pv3} % · PV4 {pv4} %.",
-  "solar.strings24": "Strings · 24 hours",
   "solar.total": "Total",
   "solar.totalProduced": "Total produced",
   "solar.pv3Util": "PV3 utilisation",
@@ -1022,7 +1041,6 @@ const en: Record<string, string> = {
   "water.noWater": "No water",
   "water.battery": "Battery",
   "water.leakBattery": "KLIPPBOK kitchen",
-  "water.flow24": "Flow · 24 hours",
   "water.footer":
     "BWT Perla softens the water. Salt should stay above 20 %. It can be reduced during holidays.",
 
@@ -1064,7 +1082,7 @@ const en: Record<string, string> = {
   "tech.packetLoss": "Packet loss",
   "tech.packetLoss7d": "Packet loss 7 days",
   "tech.jitter": "Jitter",
-  "tech.pulse": "Network pulse · 6 hours",
+  "tech.pulse": "Network pulse",
   "tech.quality": "Network quality",
   "tech.responds": "responding",
   "tech.notResponding": "not responding",
@@ -1086,7 +1104,7 @@ const en: Record<string, string> = {
   "economy.effectiveYield": "Effective yield",
   "economy.duration": "Duration",
   "economy.price": "Price",
-  "economy.chart30": "Price development · 30 days",
+  "economy.chart30": "Price development",
   "economy.metrics": "Key figures",
   "economy.latest": "latest",
   "economy.changeToday": "Change today",

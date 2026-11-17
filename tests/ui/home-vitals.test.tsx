@@ -223,10 +223,10 @@ describe("Vitals configuration", () => {
       garage.querySelector(".vital-spark path")?.getAttribute("d"),
     ).not.toBe("");
 
-    expect(history.series).toHaveBeenCalledWith("sensor.garage_temp", {
-      buckets: 96,
-      fill: "hold",
-    });
+    expect(history.series).toHaveBeenCalledWith(
+      "sensor.garage_temp",
+      expect.objectContaining({ buckets: 96, fill: "hold" }),
+    );
 
     await user.click(garage);
     expect(props.actions.navigate).toHaveBeenCalledWith("rum/skur");

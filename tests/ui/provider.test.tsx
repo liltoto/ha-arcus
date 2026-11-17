@@ -31,6 +31,7 @@ import type {
   ArcusRoute,
   ArcusStoreState,
 } from "../../src/ui/types";
+import { defaultRange, resolveRange } from "../../src/range";
 import { makeConfig, makeHass } from "../fixtures/home";
 
 /** The sheet tests use the same minimal cache; the provider only forwards it. */
@@ -52,6 +53,7 @@ const actionsStub = (): ArcusActions => {
     performAction: vi.fn(),
     toast: vi.fn(),
     setAtmo: vi.fn(),
+    setHistoryRange: vi.fn(),
   };
 };
 
@@ -70,6 +72,10 @@ const providerState = (
     actions: actionsStub(),
     history: historyStub(),
     now: () => new Date("2026-11-13T01:19:00+01:00"),
+    range: resolveRange(
+      defaultRange(new Date("2026-11-13T01:19:00+01:00")),
+      new Date("2026-11-13T01:19:00+01:00"),
+    ),
     atmo: "night",
     atmoMode: "night",
     dark: true,

@@ -1,3 +1,5 @@
+import type { HistoryCache } from "../../../../data/history";
+import type { ResolvedHistoryRange } from "../../../../range";
 import type { Translator } from "../../../../types";
 import { ListRow } from "../../../molecules/ListRow";
 import { Readout } from "../../../molecules/Readout";
@@ -8,13 +10,22 @@ import type { EnergyView } from "./energy-view";
 interface EnergyPriceProps {
   view: EnergyView;
   t: Translator;
+  history: HistoryCache;
+  range: ResolvedHistoryRange;
+  priceEntity: string | undefined;
 }
 
 /**
  * The always-rendered price section: the current buy price, the cheapest
  * window, the day curve, and the today readings.
  */
-export const EnergyPrice = ({ view, t }: EnergyPriceProps) => {
+export const EnergyPrice = ({
+  view,
+  t,
+  history,
+  range,
+  priceEntity,
+}: EnergyPriceProps) => {
   return (
     <>
       <div className={c("block")}>
@@ -25,6 +36,9 @@ export const EnergyPrice = ({ view, t }: EnergyPriceProps) => {
         <div className={c("block-note")}>{view.nowNote}</div>
         <EnergyDayPrices
           price={view.price}
+          history={history}
+          range={range}
+          priceEntity={priceEntity}
           now={view.nowDate}
           t={t}
           currency={view.currency}

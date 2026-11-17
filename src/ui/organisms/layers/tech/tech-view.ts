@@ -1,4 +1,5 @@
 import type { HistoryCache } from "../../../../data/history";
+import { clipSeries, type ResolvedHistoryRange } from "../../../../range";
 import type { Language, Translator } from "../../../../types";
 
 /** Formats a network reading with the sheet language and digit count. */
@@ -7,15 +8,29 @@ export type TechFormat = (
   digits?: number,
 ) => string;
 
-/** A held history series for one network probe, empty when unwired. */
+/** Buckets per window; 96 across a day is the pulse's original resolution. */
+const PULSE_BUCKETS = 96;
+
+/**
+ * A held history series for one network probe across the selected window.
+ * `clipSeries` stops a live day at the current instant instead of holding the
+ * last value through the rest of today.
+ */
 export const seriesOf = (
   history: HistoryCache,
   entityId: string | undefined,
+  range: ResolvedHistoryRange,
+  now: Date,
 ): Array<number | null> => {
   if (!entityId) return [];
-  return typeof history.series === "function"
-    ? history.series(entityId, { fill: "hold" })
-    : [];
+  if (typeof history.series !== "function") return [];
+  const values = history.series(entityId, {
+    start: range.start,
+    end: range.end,
+    buckets: PULSE_BUCKETS,
+    fill: "hold",
+  });
+  return clipSeries(values, PULSE_BUCKETS, range, now);
 };
 
 /** Uptime in whole hours, or an en dash when the model has no reading. */

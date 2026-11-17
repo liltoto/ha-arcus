@@ -2,6 +2,25 @@
 
 All notable changes to Arcus are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.6.0 - 2026-11-17
+
+History navigation across the card.
+
+### Added
+
+- A card-wide history control on the home view and in charts-bearing sheets: previous/next day, a native date picker, and 1-, 7-, and 30-day windows. The selection is shared by every sheet and resets to today on reload.
+- `HistoryCache.ensureRange()` fetches the exact selected window, so a day a year ago does not download a year of history. Coverage is tracked per entity, a refresh merges into the cached rows instead of replacing a longer window, and `rangeStatus()` distinguishes "not loaded" from "the recorder purged this day".
+- Room, home sparklines, solar, energy, water, heating, tech, economy, and chapter-art charts follow the selected window. Fixed-purpose charts (solar 7-day/365-day, economy 30-day) keep their length and end on the selected day.
+
+### Changed
+
+- Room and home charts now use the selected calendar day instead of a rolling 24-hour window, so "today" and a past day share the same axis.
+- The history fetch is bounded to the visible window and the card's live tick only refreshes while viewing today.
+
+### Verified
+
+- 556 tests, coverage, typecheck, lint, Fallow gates, build, size budget (402.9 KB gzip), Storybook, and the CI visual baselines.
+
 ## 0.5.2 - 2026-11-16
 
 Crash containment and bounded history requests.

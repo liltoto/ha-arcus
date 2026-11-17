@@ -2,12 +2,11 @@ import { useId } from "react";
 import { areaPath, sparkPath } from "../../../../render/charts";
 import { graphAttrs, type GraphInput } from "../../../../render/graph";
 import type { Translator } from "../../../../types";
-import { ChartBox } from "../../../molecules/ChartBox";
+import { ChartBox, type ChartState } from "../../../molecules/ChartBox";
 import { c } from "../../../styles/classes";
 
 const CHART_HEIGHT = 110;
 const CHART_WIDTH = 560;
-const DAY_MS = 86_400_000;
 
 /**
  * `graphAttrs` produces an HTML attribute string for the legacy string views.
@@ -30,12 +29,22 @@ const graphProps = (input: GraphInput): Record<string, string> => {
 
 interface WaterFlowProps {
   values: Array<number | null>;
+  label: string;
+  start: number;
   end: number;
+  state: ChartState;
   t: Translator;
 }
 
-/** The 24-hour flow chart, with the exact legacy graph bindings. */
-export const WaterFlow = ({ values, end, t }: WaterFlowProps) => {
+/** The flow chart for the selected window, with the legacy graph bindings. */
+export const WaterFlow = ({
+  values,
+  label,
+  start,
+  end,
+  state,
+  t,
+}: WaterFlowProps) => {
   const gradientId = `water-chart-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const hasData = values.some(
     (value) => typeof value === "number" && Number.isFinite(value),
@@ -44,7 +53,7 @@ export const WaterFlow = ({ values, end, t }: WaterFlowProps) => {
   const line = sparkPath(values, CHART_WIDTH, CHART_HEIGHT, 2);
   const graph = hasData
     ? graphProps({
-        start: end - DAY_MS,
+        start,
         end,
         unit: "L/min",
         decimals: 1,
@@ -54,10 +63,12 @@ export const WaterFlow = ({ values, end, t }: WaterFlowProps) => {
 
   return (
     <div className={c("block")}>
-      <div className={c("block-label")}>{t("water.flow24")}</div>
+      <div className={c("block-label")}>{label}</div>
       <ChartBox
-        state={hasData ? "ready" : "empty"}
+        state={state}
         emptyLabel={t("empty.chart")}
+        loadingLabel={t("empty.loading")}
+        unavailableLabel={t("empty.unavailable")}
       >
         <svg
           viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}

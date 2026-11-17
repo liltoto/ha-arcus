@@ -1,14 +1,21 @@
 import { useEffect, useRef } from "react";
-import type { HistoryCache, HistoryStatus } from "../../../../data/history";
+import type { HistoryCache } from "../../../../data/history";
+import { type ResolvedHistoryRange } from "../../../../range";
 import { areaPath, sparkPath } from "../../../../render/charts";
 import { applyGraph, type GraphInput } from "../../../../render/graph";
-import { chartStateLabel, type ChartState } from "../../../molecules/ChartBox";
+import {
+  chartStateFor,
+  rangeStatusFor,
+  windowSeries,
+} from "../../../hooks/useHistoryRange";
+import { chartStateLabel } from "../../../molecules/ChartBox";
 import { c } from "../../../styles/classes";
 
 export interface RoomChartProps {
   history: HistoryCache;
   entityId: string | null | undefined;
   color: string;
+  range: ResolvedHistoryRange;
   height?: number;
   unit?: string;
   decimals?: number;
@@ -28,6 +35,7 @@ interface RoomChartSvgProps {
 }
 
 const GRID = [0.25, 0.5, 0.75];
+const BUCKETS = 96;
 
 /** The chart lines and grid; the frame owns the state overlay. */
 const RoomChartSvg = ({
@@ -73,41 +81,6 @@ const RoomChartSvg = ({
   );
 };
 
-/**
- * A history source may implement only the read surface (stories and test
- * harnesses do). Without status tracking the entity reads as idle, which the
- * chart maps to loading until rows arrive.
- */
-const statusFor = (
-  history: HistoryCache,
-  entityId: string | null | undefined,
-): HistoryStatus => {
-  if (!entityId) return "empty";
-  if (typeof history.status !== "function") return "idle";
-  return history.status(entityId);
-};
-
-const roomChartState = (
-  hasData: boolean,
-  unavailable: boolean,
-  status: HistoryStatus,
-): ChartState => {
-  if (hasData) return "ready";
-  if (unavailable) return "unavailable";
-  // A recorder that errored on every transport is unavailable, not empty.
-  if (status === "failed") return "unavailable";
-  return status === "idle" || status === "loading" ? "loading" : "empty";
-};
-
-const roomSeries = (
-  history: HistoryCache,
-  entityId: string | null | undefined,
-): Array<number | null> => {
-  return entityId
-    ? history.series(entityId, { buckets: 96, fill: "hold" })
-    : [];
-};
-
 const roomPaths = (
   values: Array<number | null>,
   hasData: boolean,
@@ -123,14 +96,14 @@ const roomPaths = (
 const roomGraph = (
   values: Array<number | null>,
   hasData: boolean,
-  end: number,
+  range: ResolvedHistoryRange,
   unit: string,
   decimals: number,
 ): GraphInput | null => {
   if (!hasData) return null;
   return {
-    start: end - 86_400_000,
-    end,
+    start: range.start,
+    end: range.end,
     unit,
     decimals,
     series: [{ values }],
@@ -143,14 +116,16 @@ const ChartStateOverlay = ({ label }: { label: string | null }) => {
 };
 
 /**
- * One 24-hour room chart. The legacy renderer wrote the graph hover metadata
- * straight onto `.chart-box`; keep the same attributes so the card's
- * `mountGraphTips` can still read them after a React render.
+ * One room chart for the selected history window. The legacy renderer wrote
+ * the graph hover metadata straight onto `.chart-box`; keep the same
+ * attributes so the card's `mountGraphTips` can still read them after a React
+ * render.
  */
 export const RoomChart = ({
   history,
   entityId,
   color,
+  range,
   height = 120,
   unit = "",
   decimals = 1,
@@ -161,14 +136,14 @@ export const RoomChart = ({
   now,
 }: RoomChartProps) => {
   const boxRef = useRef<HTMLDivElement>(null);
-  const values = roomSeries(history, entityId);
+  const values = windowSeries(history, entityId, range, now(), BUCKETS, "hold");
   const hasData = values.some(
     (value) => typeof value === "number" && Number.isFinite(value),
   );
-  const state = roomChartState(
+  const state = chartStateFor(
     hasData,
+    rangeStatusFor(history, entityId, range),
     unavailable,
-    statusFor(history, entityId),
   );
   const label = chartStateLabel(state, {
     empty: emptyLabel,
@@ -180,7 +155,7 @@ export const RoomChart = ({
     "",
   )}-${height}`;
   const { line, area } = roomPaths(values, hasData, height);
-  const graph = roomGraph(values, hasData, now().getTime(), unit, decimals);
+  const graph = roomGraph(values, hasData, range, unit, decimals);
 
   useEffect(() => {
     if (boxRef.current) applyGraph(boxRef.current, graph);

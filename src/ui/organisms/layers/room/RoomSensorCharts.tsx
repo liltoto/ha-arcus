@@ -1,5 +1,6 @@
 import type { HistoryCache } from "../../../../data/history";
 import { formatNumber } from "../../../../format";
+import { rangePeriodLabel, type ResolvedHistoryRange } from "../../../../range";
 import type {
   ArcusHass,
   EntityRef,
@@ -16,6 +17,7 @@ interface RoomSensorChartProps {
   view: RoomView;
   history: HistoryCache;
   hass: ArcusHass;
+  range: ResolvedHistoryRange;
   now: () => Date;
   t: Translator;
   language: Language;
@@ -35,16 +37,22 @@ export const RoomHumidityChart = ({
   view,
   history,
   hass,
+  range,
   now,
   t,
+  language,
 }: RoomSensorChartProps) => {
   if (!room.humidity) return null;
   return (
     <RoomChartBlock
-      title={t("room.chart24", { label: t("room.humidity") })}
+      title={t("chart.period", {
+        label: t("room.humidity"),
+        period: rangePeriodLabel(range, t, language, now()),
+      })}
       value={view.humidity === null ? "–" : `${Math.round(view.humidity)} %`}
       entityId={room.humidity.entityId}
       color="var(--sky)"
+      range={range}
       height={100}
       unit="%"
       decimals={0}
@@ -63,16 +71,22 @@ export const RoomCo2Chart = ({
   view,
   history,
   hass,
+  range,
   now,
   t,
+  language,
 }: RoomSensorChartProps) => {
   if (!room.co2) return null;
   return (
     <RoomChartBlock
-      title={t("room.chart24", { label: t("room.co2") })}
+      title={t("chart.period", {
+        label: t("room.co2"),
+        period: rangePeriodLabel(range, t, language, now()),
+      })}
       value={view.co2 === null ? "–" : `${Math.round(view.co2)} ppm`}
       entityId={room.co2.entityId}
       color="var(--sage)"
+      range={range}
       height={100}
       unit="ppm"
       decimals={0}
@@ -91,6 +105,7 @@ export const RoomPm25Chart = ({
   view,
   history,
   hass,
+  range,
   now,
   t,
   language,
@@ -98,10 +113,14 @@ export const RoomPm25Chart = ({
   if (!room.pm25) return null;
   return (
     <RoomChartBlock
-      title={t("room.chart24", { label: t("room.pm25") })}
+      title={t("chart.period", {
+        label: t("room.pm25"),
+        period: rangePeriodLabel(range, t, language, now()),
+      })}
       value={view.pm25 === null ? "–" : formatNumber(view.pm25, 1, language)}
       entityId={room.pm25.entityId}
       color="var(--brass)"
+      range={range}
       height={90}
       unit="µg/m³"
       decimals={1}

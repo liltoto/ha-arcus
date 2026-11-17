@@ -1,11 +1,16 @@
 import type { CSSProperties } from "react";
-import type { Translator } from "../../../../types";
+import { rangePeriodLabel, type ResolvedHistoryRange } from "../../../../range";
+import type { Language, Translator } from "../../../../types";
+import type { ChartState } from "../../../molecules/ChartBox";
 import { HistoryChart } from "../../../molecules/HistoryChart";
 import { c } from "../../../styles/classes";
 
 export interface TechPulseProps {
   t: Translator;
-  nowMs: number;
+  language: Language;
+  range: ResolvedHistoryRange;
+  now: () => Date;
+  state: ChartState;
   router: Array<number | null>;
   google: Array<number | null>;
   cloudflare: Array<number | null>;
@@ -13,19 +18,28 @@ export interface TechPulseProps {
 
 /**
  * The pulse chart: one held history series per network probe, drawn by the
- * shared history chart so the card's hover readout keeps working.
+ * shared history chart so the card's hover readout keeps working. The chart
+ * follows the card-wide window; the readings above stay live.
  */
 export const TechPulse = ({
   t,
-  nowMs,
+  language,
+  range,
+  now,
+  state,
   router,
   google,
   cloudflare,
 }: TechPulseProps) => {
+  const title = t("chart.period", {
+    label: t("tech.pulse"),
+    period: rangePeriodLabel(range, t, language, now()),
+  });
+
   return (
     <div className={c("block")}>
       <div className={c("block-head")}>
-        <div className={c("block-label")}>{t("tech.pulse")}</div>
+        <div className={c("block-label")}>{title}</div>
         <div className={c("legend")}>
           <span>
             <i style={{ "--c": "var(--sky)" } as CSSProperties} />
@@ -60,11 +74,12 @@ export const TechPulse = ({
           },
         ]}
         t={t}
-        nowMs={nowMs}
-        windowMs={86_400_000}
+        start={range.start}
+        end={range.end}
         unit="ms"
         decimals={1}
         idPrefix="tech-chart"
+        state={state}
       />
     </div>
   );

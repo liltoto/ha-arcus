@@ -1,6 +1,8 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import type { HistoryCache } from "../../src/data/history";
+import { resolveRange, startOfDay } from "../../src/range";
 import { roomView } from "../../src/ui/home-view";
 import { RoomGrid } from "../../src/ui/organisms/RoomGrid";
 import type { HomeModel, RoomStats } from "../../src/types";
@@ -12,6 +14,34 @@ const statsOf = (model: HomeModel, roomId: string): RoomStats => {
 };
 
 describe("RoomGrid", () => {
+  it("plots the selected history window in every room sparkline", () => {
+    const now = () => new Date("2026-11-13T01:19:00+01:00");
+    const range = resolveRange(
+      { anchor: startOfDay(new Date(2026, 10, 8)), days: 1 },
+      now(),
+    );
+    const series = vi.fn(() => [18, 19, 20]);
+    const history = { series } as unknown as HistoryCache;
+
+    const { container } = renderWithArcus(<RoomGrid />, {
+      now,
+      range,
+      history,
+    });
+
+    expect(series).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        buckets: 48,
+        start: range.start,
+        end: range.end,
+      }),
+    );
+    const spark = container.querySelector(".room-spark");
+    expect(spark).toHaveAttribute("data-gt0", String(range.start));
+    expect(spark).toHaveAttribute("data-gt1", String(range.end));
+  });
+
   it("renders the section head, rooms, system card, and skur last", () => {
     const { container, props } = renderWithArcus(<RoomGrid />);
 

@@ -2,7 +2,7 @@ import { useEffect, useId, useRef } from "react";
 import { areaPath, sparkPath } from "../../render/charts";
 import { applyGraph, type GraphInput } from "../../render/graph";
 import type { Translator } from "../../types";
-import { ChartBox } from "./ChartBox";
+import { ChartBox, type ChartState } from "./ChartBox";
 import { ChartScaffold } from "./ChartScaffold";
 
 export interface HistoryChartSeries {
@@ -16,11 +16,15 @@ export interface HistoryChartSeries {
 export interface HistoryChartProps {
   series: HistoryChartSeries[];
   t: Translator;
-  nowMs: number;
-  windowMs: number;
+  /** Plot window start, epoch milliseconds. */
+  start: number;
+  /** Plot window end, epoch milliseconds. */
+  end: number;
   unit: string;
   decimals: number;
   idPrefix: string;
+  /** Overlay state; defaults to ready/empty from the plotted values. */
+  state?: ChartState;
 }
 
 const CHART_WIDTH = 560;
@@ -28,17 +32,19 @@ const CHART_HEIGHT = 150;
 
 /**
  * The history-backed line chart shared by the economy and tech sheets. The
- * `data-g*` attributes land on the `.chart-box` shell so the card's existing
- * hover readout keeps working.
+ * `start`/`end` bounds are the plotted window, so the `data-g*` attributes on
+ * the `.chart-box` shell make the card's hover readout report the same
+ * timestamps the series were bucketed over.
  */
 export const HistoryChart = ({
   series,
   t,
-  nowMs,
-  windowMs,
+  start,
+  end,
   unit,
   decimals,
   idPrefix,
+  state,
 }: HistoryChartProps) => {
   const gradientId = `${idPrefix}-${useId().replaceAll(":", "")}`;
   const svgRef = useRef<SVGSVGElement>(null);
@@ -54,8 +60,8 @@ export const HistoryChart = ({
     : "";
 
   const graph: GraphInput = {
-    start: nowMs - windowMs,
-    end: nowMs,
+    start,
+    end,
     unit,
     decimals,
     series: series.map((entry) => ({
@@ -77,7 +83,12 @@ export const HistoryChart = ({
   });
 
   return (
-    <ChartBox state={hasData ? "ready" : "empty"} emptyLabel={t("empty.chart")}>
+    <ChartBox
+      state={state ?? (hasData ? "ready" : "empty")}
+      emptyLabel={t("empty.chart")}
+      loadingLabel={t("empty.loading")}
+      unavailableLabel={t("empty.unavailable")}
+    >
       <svg
         ref={svgRef}
         viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
